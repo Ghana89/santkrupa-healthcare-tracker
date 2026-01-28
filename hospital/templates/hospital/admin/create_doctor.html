@@ -1,0 +1,104 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Create Doctor - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>⚕️ Create Doctor Account</h1>
+
+<div class="card">
+    <p>Create a new doctor account in the system. Fill in both personal information and professional details.</p>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-{% if message.tags %}{{ message.tags }}{% else %}success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <h2>👤 Personal Information</h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+            <div class="form-group">
+                <label>Username *</label>
+                {{ user_form.username }}
+                {% if user_form.username.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">{{ user_form.username.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label>First Name *</label>
+                {{ user_form.first_name }}
+                {% if user_form.first_name.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">{{ user_form.first_name.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label>Last Name *</label>
+                {{ user_form.last_name }}
+                {% if user_form.last_name.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">{{ user_form.last_name.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label>Email Address *</label>
+                {{ user_form.email }}
+                {% if user_form.email.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">{{ user_form.email.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <h2>🔐 Password</h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+            <div class="form-group">
+                <label>Password *</label>
+                {{ user_form.password1 }}
+                {% if user_form.password1.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">{{ user_form.password1.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label>Confirm Password *</label>
+                {{ user_form.password2 }}
+                {% if user_form.password2.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">{{ user_form.password2.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <h2>⚕️ Professional Information</h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+            <div class="form-group">
+                <label>Specialization *</label>
+                {{ profile_form.specialization }}
+                {% if profile_form.specialization.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">{{ profile_form.specialization.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label>Medical License Number *</label>
+                {{ profile_form.license_number }}
+                {% if profile_form.license_number.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">{{ profile_form.license_number.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <button type="submit" class="btn">✓ Create Doctor Account</button>
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

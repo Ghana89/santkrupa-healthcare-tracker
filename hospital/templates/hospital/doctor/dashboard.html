@@ -1,0 +1,102 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Doctor Dashboard - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>⚕️ Doctor Dashboard</h1>
+
+<div class="dashboard-grid">
+    <div class="dashboard-item">
+        <div class="icon">📋</div>
+        <h3 style="color: #fff; margin-top: 0;">Pending Prescriptions</h3>
+        <p style="color: #f0f0f0; font-size: 2em; margin: 10px 0;">{{ pending_prescriptions.count }}</p>
+    </div>
+    
+    <div class="dashboard-item">
+        <div class="icon">✅</div>
+        <h3 style="color: #fff; margin-top: 0;">Completed Prescriptions</h3>
+        <p style="color: #f0f0f0; font-size: 2em; margin: 10px 0;">{{ prescriptions|dictsort:"status"|length }}</p>
+    </div>
+    
+    <div class="dashboard-item">
+        <div class="icon">👥</div>
+        <h3 style="color: #fff; margin-top: 0;">Total Patients</h3>
+        <p style="color: #f0f0f0; font-size: 2em; margin: 10px 0;">{{ total_patients }}</p>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Dr. {{ doctor.user.first_name }} {{ doctor.user.last_name }}</h2>
+    <p><strong>Specialization:</strong> {{ doctor.specialization }}</p>
+    <p><strong>License Number:</strong> {{ doctor.license_number }}</p>
+</div>
+
+<div class="card">
+    <h2>📋 Select Patient to Create Prescription</h2>
+    
+    {% if patients %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin: 20px 0;">
+            {% for patient in patients %}
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; border-left: 4px solid #2a5298;">
+                <h3 style="margin-top: 0; color: #1e3c72;">{{ patient.patient_name }}</h3>
+                <p><strong>Patient ID:</strong> {{ patient.patient_id }}</p>
+                <p><strong>Age:</strong> {{ patient.age }} years</p>
+                <p><strong>Phone:</strong> {{ patient.phone_number }}</p>
+                <p><strong>Status:</strong> {{ patient.get_status_display }}</p>
+                <a href="{% url 'create_prescription' patient.id %}" class="btn" style="width: 100%; text-align: center; display: block; margin-bottom: 10px;">Create Prescription</a>
+                <a href="{% url 'patient_history' patient.id %}" class="btn" style="width: 100%; text-align: center; display: block; background-color: #6c757d;">View History</a>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert-info">No patients available.</div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>📊 Your Prescriptions</h2>
+    
+    {% if prescriptions %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Patient Name</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Tests</th>
+                    <th>Medicines</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prescription in prescriptions %}
+                <tr>
+                    <td>{{ prescription.patient.patient_name }}</td>
+                    <td>{{ prescription.prescription_date|date:"M d, Y" }}</td>
+                    <td>
+                        <span style="background: 
+                            {% if prescription.status == 'pending' %}#fff3cd
+                            {% elif prescription.status == 'completed' %}#d4edda
+                            {% else %}#f8d7da{% endif %};
+                            padding: 5px 10px; border-radius: 4px;">
+                            {{ prescription.get_status_display }}
+                        </span>
+                    </td>
+                    <td>{{ prescription.tests.count }}</td>
+                    <td>{{ prescription.medicines.count }}</td>
+                    <td>
+                        <a href="{% url 'add_prescription_details' prescription.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em;">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert-info">No prescriptions created yet.</div>
+    {% endif %}
+</div>
+
+<div class="card" style="text-align: center;">
+    <a href="{% url 'homepage' %}" class="btn btn-secondary">← Back to Home</a>
+</div>
+{% endblock %}

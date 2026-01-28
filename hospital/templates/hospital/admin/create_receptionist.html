@@ -1,0 +1,88 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Create Receptionist - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>👤 Create Receptionist Account</h1>
+
+<div class="card">
+    <p>Create a new receptionist account. Receptionists handle patient registration and initial data entry.</p>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-{% if message.tags %}{{ message.tags }}{% else %}success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+            <div class="form-group">
+                <label>Username *</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">{{ form.username.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label>First Name *</label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">{{ form.first_name.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label>Last Name *</label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">{{ form.last_name.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label>Email Address *</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">{{ form.email.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label>Password *</label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">{{ form.password1.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label>Confirm Password *</label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">{{ form.password2.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <button type="submit" class="btn">✓ Create Receptionist Account</button>
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<div class="card" style="background-color: #f0f7ff; border-left-color: #17a2b8;">
+    <h3 style="color: #0c5460; margin-top: 0;">📌 Receptionist Responsibilities</h3>
+    <ul style="color: #0c5460; margin-left: 20px;">
+        <li>Register new patients in the system</li>
+        <li>Collect patient information (name, age, address, phone)</li>
+        <li>View and manage patient records</li>
+        <li>Generate and provide patient credentials</li>
+    </ul>
+</div>
+{% endblock %}

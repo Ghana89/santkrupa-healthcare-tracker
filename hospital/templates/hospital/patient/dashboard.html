@@ -1,0 +1,150 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Patient Dashboard - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>📊 Patient Dashboard</h1>
+
+<div class="card" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); border-left-color: #28a745;">
+    <h2 style="color: #155724; margin-top: 0;">Welcome, {{ patient.patient_name }}!</h2>
+    <p style="color: #155724; margin: 10px 0;"><strong>Patient ID:</strong> {{ patient.patient_id }}</p>
+    <p style="color: #155724; margin: 0;"><strong>Status:</strong> {{ patient.get_status_display }}</p>
+</div>
+
+<div class="dashboard-grid">
+    <div class="dashboard-item">
+        <div class="icon">💊</div>
+        <h3 style="color: #fff; margin-top: 0;">My Prescriptions</h3>
+        <p style="color: #f0f0f0; font-size: 2em; margin: 10px 0;">{{ prescriptions.count }}</p>
+        <a href="#prescriptions" class="btn" style="background: #fff; color: #2a5298;">View All</a>
+    </div>
+    
+    <div class="dashboard-item">
+        <div class="icon">📁</div>
+        <h3 style="color: #fff; margin-top: 0;">Medical Reports</h3>
+        <p style="color: #f0f0f0; font-size: 2em; margin: 10px 0;">{{ medical_reports.count }}</p>
+        <a href="#reports" class="btn" style="background: #fff; color: #2a5298;">View All</a>
+    </div>
+
+    <div class="dashboard-item">
+        <div class="icon">🔬</div>
+        <h3 style="color: #fff; margin-top: 0;">Test Reports</h3>
+        <p style="color: #f0f0f0; font-size: 2em; margin: 10px 0;">{{ test_reports.count }}</p>
+        <a href="{% url 'view_test_reports' %}" class="btn" style="background: #fff; color: #2a5298;">View All</a>
+    </div>
+    
+    <div class="dashboard-item">
+        <div class="icon">📤</div>
+        <h3 style="color: #fff; margin-top: 0;">Upload Report</h3>
+        <p style="color: #f0f0f0;">Add your medical documents</p>
+        <a href="{% url 'upload_medical_report' %}" class="btn" style="background: #fff; color: #2a5298;">Upload</a>
+    </div>
+
+    <div class="dashboard-item">
+        <div class="icon">🔬</div>
+        <h3 style="color: #fff; margin-top: 0;">Upload Test</h3>
+        <p style="color: #f0f0f0;">Add your test reports</p>
+        <a href="{% url 'upload_test_report' %}" class="btn" style="background: #fff; color: #2a5298;">Upload</a>
+    </div>
+</div>
+
+<!-- PRESCRIPTIONS SECTION -->
+<div class="card">
+    <h2 id="prescriptions">💊 Your Prescriptions</h2>
+    
+    {% if prescriptions %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            {% for prescription in prescriptions %}
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; border-left: 4px solid #2a5298;">
+                <h3 style="margin-top: 0; color: #1e3c72;">
+                    Dr. {{ prescription.doctor.user.first_name }} {{ prescription.doctor.user.last_name }}
+                </h3>
+                <p><strong>Specialization:</strong> {{ prescription.doctor.specialization }}</p>
+                <p><strong>Date:</strong> {{ prescription.prescription_date|date:"M d, Y" }}</p>
+                <p><strong>Status:</strong>
+                    <span style="background: 
+                        {% if prescription.status == 'pending' %}#fff3cd
+                        {% elif prescription.status == 'completed' %}#d4edda
+                        {% else %}#f8d7da{% endif %};
+                        padding: 5px 10px; border-radius: 4px;">
+                        {{ prescription.get_status_display }}
+                    </span>
+                </p>
+                <p style="margin-bottom: 10px;">
+                    <strong>Tests:</strong> {{ prescription.tests.count }} | 
+                    <strong>Medicines:</strong> {{ prescription.medicines.count }}
+                </p>
+                <a href="{% url 'view_prescription' prescription.id %}" class="btn" style="width: 100%; text-align: center;">View Details</a>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert-info">No prescriptions yet. Your doctor will add prescriptions here.</div>
+    {% endif %}
+</div>
+
+<!-- MEDICAL REPORTS SECTION -->
+<div class="card">
+    <h2 id="reports">📁 Your Medical Reports</h2>
+    
+    {% if medical_reports %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Report Type</th>
+                    <th>Description</th>
+                    <th>Uploaded On</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in medical_reports %}
+                <tr>
+                    <td><strong>{{ report.report_type }}</strong></td>
+                    <td>{{ report.description|truncatewords:20 }}</td>
+                    <td>{{ report.uploaded_at|date:"M d, Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="alert-info">No medical reports uploaded yet.</p>
+    {% endif %}
+    
+    <div style="margin-top: 20px;">
+        <a href="{% url 'upload_medical_report' %}" class="btn">📤 Upload New Report</a>
+    </div>
+</div>
+
+<!-- PATIENT INFORMATION -->
+<div class="card">
+    <h2>👤 Your Information</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+        <div>
+            <p><strong>Age:</strong> {{ patient.age }} years</p>
+        </div>
+        <div>
+            <p><strong>Phone:</strong> {{ patient.phone_number }}</p>
+        </div>
+        <div>
+            <p><strong>Address:</strong> {{ patient.address }}</p>
+        </div>
+        <div>
+            <p><strong>Registered:</strong> {{ patient.registration_date }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- HELP SECTION -->
+<div class="card" style="background-color: #f0f7ff; border-left-color: #17a2b8;">
+    <h3 style="color: #0c5460; margin-top: 0;">📌 Quick Help</h3>
+    <ul style="color: #0c5460; margin-left: 20px;">
+        <li><strong>View Prescription:</strong> Click on any prescription to see detailed tests, medicines, and doctor's notes</li>
+        <li><strong>Upload Reports:</strong> Share medical documents and reports with your doctor</li>
+        <li><strong>Track Status:</strong> Monitor the status of your prescriptions and treatments</li>
+    </ul>
+</div>
+
+<div class="card" style="text-align: center;">
+    <a href="{% url 'homepage' %}" class="btn btn-secondary">← Back to Home</a>
+</div>
+{% endblock %}

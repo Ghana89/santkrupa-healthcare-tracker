@@ -1,0 +1,76 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Register Patient - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>📝 Patient Registration Form</h1>
+
+<div class="card">
+    <p>Please fill in the patient details to register them in the system. A default login credential will be auto-generated.</p>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-{% if message.tags %}{{ message.tags }}{% else %}success{% endif %}">
+                <strong>Success!</strong> {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <div class="form-group">
+                <label>Patient Name *</label>
+                {{ form.patient_name }}
+                {% if form.patient_name.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">{{ form.patient_name.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label>Age *</label>
+                {{ form.age }}
+                {% if form.age.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">{{ form.age.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label>Mobile Number *</label>
+                {{ form.phone_number }}
+                {% if form.phone_number.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">{{ form.phone_number.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Address *</label>
+            {{ form.address }}
+            {% if form.address.errors %}
+                <div class="alert-danger" style="margin-top: 8px;">{{ form.address.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="card" style="background-color: #f0f7ff; border-left-color: #17a2b8; margin: 20px 0;">
+            <h3 style="color: #0c5460; margin-top: 0;">📌 Auto-Generated Credentials</h3>
+            <p style="color: #0c5460;">
+                Once registered, the system will automatically generate:
+            </p>
+            <ul style="color: #0c5460; margin-left: 20px;">
+                <li><strong>Patient ID:</strong> Unique identifier (PT + Year + 5 digits)</li>
+                <li><strong>Default Password:</strong> Auto-generated secure password (8 characters)</li>
+            </ul>
+            <p style="color: #0c5460; margin-bottom: 0;">
+                <strong>⚠️ Important:</strong> Share these credentials with the patient immediately after registration.
+            </p>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <button type="submit" class="btn">✓ Register Patient</button>
+            <a href="{% url 'reception_dashboard' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

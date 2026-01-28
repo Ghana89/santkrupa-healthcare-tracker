@@ -1,0 +1,58 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Login - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 50px auto;">
+    <div class="card" style="background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%); color: #fff; border-left: none; text-align: center;">
+        <h1 style="color: #fff; border: none; padding: 0; margin-bottom: 10px;">🏥 SantKrupa Hospital</h1>
+        <p style="color: #f0f0f0; margin: 0;">Login to Your Account</p>
+    </div>
+    
+    <div class="card">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" class="form-control" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-control" required>
+            </div>
+            
+            <button type="submit" class="btn" style="width: 100%; text-align: center; font-size: 1.1em; padding: 12px;">
+                🔓 Login
+            </button>
+        </form>
+    </div>
+    
+    <div class="card" style="background-color: #f0f7ff; border-left-color: #17a2b8; text-align: center;">
+        <h3 style="color: #0c5460; margin-top: 0;">Demo Accounts</h3>
+        <p style="color: #0c5460; margin: 10px 0;">
+            <strong>Receptionist:</strong> Use your assigned username and password
+        </p>
+        <p style="color: #0c5460; margin: 10px 0;">
+            <strong>Doctor:</strong> Use your assigned credentials
+        </p>
+        <p style="color: #0c5460; margin: 0;">
+            <strong>Patient:</strong> Patient ID is auto-generated at registration
+        </p>
+    </div>
+    
+    <div class="card" style="text-align: center;">
+        <p>Don't have an account? Contact the reception desk.</p>
+        <a href="{% url 'homepage' %}" class="btn btn-secondary">← Back to Home</a>
+    </div>
+</div>
+{% endblock %}

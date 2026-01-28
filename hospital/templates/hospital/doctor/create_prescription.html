@@ -1,0 +1,36 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Create Prescription - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>📝 Create Prescription</h1>
+
+<div class="card">
+    <h2>Patient: {{ patient.patient_name }}</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0;">
+        <div>
+            <p><strong>Patient ID:</strong> {{ patient.patient_id }}</p>
+        </div>
+        <div>
+            <p><strong>Age:</strong> {{ patient.age }} years</p>
+        </div>
+        <div>
+            <p><strong>Phone:</strong> {{ patient.phone_number }}</p>
+        </div>
+        <div>
+            <p><strong>Status:</strong> {{ patient.get_status_display }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Confirm Prescription Creation</h2>
+    <p>Click the button below to create a new prescription for this patient. You will then be able to add tests, medicines, and notes.</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn">✓ Create Prescription</button>
+        <a href="{% url 'doctor_dashboard' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

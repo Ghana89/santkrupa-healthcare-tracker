@@ -1,14 +1,64 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Upload Medical Report</title>
-</head>
-<body>
-    <h1>Upload Medical Report</h1>
+{% extends "hospital/base.html" %}
+
+{% block title %}Upload Medical Report - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>📤 Upload Medical Report</h1>
+
+<div class="card">
+    <p>Upload your medical reports, test results, or other healthcare documents. Supported formats: PDF, JPG, PNG.</p>
+    
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <input type="file" name="report_file">
-        <button type="submit">Upload</button>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <div class="form-group">
+            <label for="id_report_file">📎 Select Medical Report File</label>
+            <input type="file" id="id_report_file" name="report_file" accept=".pdf,.jpg,.jpeg,.png" required>
+            <small style="color: #666; display: block; margin-top: 8px;">
+                Supported formats: PDF, JPG, PNG (Max size: 10 MB)
+            </small>
+        </div>
+        
+        <div class="form-group">
+            <label for="id_report_type">Report Type (Optional)</label>
+            <select id="id_report_type" name="report_type" style="width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 6px;">
+                <option value="">-- Select Report Type --</option>
+                <option value="blood_test">Blood Test</option>
+                <option value="x_ray">X-Ray</option>
+                <option value="ultrasound">Ultrasound</option>
+                <option value="ct_scan">CT Scan</option>
+                <option value="mri">MRI</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="id_report_description">Description (Optional)</label>
+            <textarea id="id_report_description" name="description" placeholder="Add any notes about this report..."></textarea>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <button type="submit" class="btn">📤 Upload Report</button>
+            <a href="/dashboard/" class="btn btn-secondary">Cancel</a>
+        </div>
     </form>
-</body>
-</html>
+</div>
+
+<div class="card" style="background-color: #f0f7ff; border-left-color: #17a2b8;">
+    <h3 style="color: #0c5460;">📌 Important Information</h3>
+    <ul style="color: #0c5460; margin-left: 20px;">
+        <li>Ensure all documents are clear and readable</li>
+        <li>Include the test/scan date in the file name</li>
+        <li>Your files are securely stored and only accessible to authorized medical staff</li>
+        <li>Uploaded reports will be reviewed by your doctor</li>
+    </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Reception Dashboard - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>👤 Reception Dashboard</h1>
+
+<div class="dashboard-grid">
+    <div class="dashboard-item">
+        <div class="icon">📝</div>
+        <h3 style="color: #fff; margin-top: 0;">Register New Patient</h3>
+        <p style="color: #f0f0f0;">Add a new patient to the system</p>
+        <a href="{% url 'register_patient' %}" class="btn" style="background: #fff; color: #2a5298;">Register Now</a>
+    </div>
+    
+    <div class="dashboard-item">
+        <div class="icon">✅</div>
+        <h3 style="color: #fff; margin-top: 0;">Patient Check-In</h3>
+        <p style="color: #f0f0f0;">Check in existing patient</p>
+        <a href="{% url 'patient_checkin' %}" class="btn" style="background: #fff; color: #2a5298;">Check In</a>
+    </div>
+    
+    <div class="dashboard-item">
+        <div class="icon">👥</div>
+        <h3 style="color: #fff; margin-top: 0;">Total Patients</h3>
+        <p style="color: #f0f0f0; font-size: 2em; margin: 10px 0;">{{ total_patients }}</p>
+        <a href="#patients" class="btn" style="background: #fff; color: #2a5298;">View All</a>
+    </div>
+    
+    <div class="dashboard-item">
+        <div class="icon">📋</div>
+        <h3 style="color: #fff; margin-top: 0;">Patient Records</h3>
+        <p style="color: #f0f0f0;">View and manage patient information</p>
+        <a href="#patients" class="btn" style="background: #fff; color: #2a5298;">Access Records</a>
+    </div>
+</div>
+
+<div class="card">
+    <h2>📊 All Registered Patients</h2>
+    
+    {% if patients %}
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Patient ID</th>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Registered On</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for patient in patients %}
+                    <tr>
+                        <td><strong>{{ patient.patient_id }}</strong></td>
+                        <td>{{ patient.patient_name }}</td>
+                        <td>{{ patient.age }} years</td>
+                        <td>{{ patient.phone_number }}</td>
+                        <td>
+                            <span style="background: 
+                                {% if patient.status == 'registered' %}#d4edda
+                                {% elif patient.status == 'in_diagnosis' %}#fff3cd
+                                {% elif patient.status == 'treatment_started' %}#d1ecf1
+                                {% else %}#d4edda{% endif %};
+                                padding: 5px 10px; border-radius: 4px;">
+                                {{ patient.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ patient.registration_date }}</td>
+                        <td>
+                            <a href="{% url 'patient_details' patient.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em;">View</a>
+                            <a href="{% url 'delete_patient' patient.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em; background-color: #dc3545; margin-left: 5px;">Delete</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert-info">
+            No patients registered yet.
+        </div>
+    {% endif %}
+</div>
+
+<div class="card" style="text-align: center;">
+    <p>Need help? Contact admin or refer to the system guidelines.</p>
+    <a href="{% url 'homepage' %}" class="btn btn-secondary">← Back to Home</a>
+</div>
+{% endblock %}

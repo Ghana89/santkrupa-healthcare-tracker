@@ -1,14 +1,46 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Register Patient</title>
-</head>
-<body>
-    <h1>Register Patient</h1>
+{% extends "hospital/base.html" %}
+
+{% block title %}Patient Registration - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>👤 Patient Registration</h1>
+
+<div class="card">
+    <p>Please fill out the form below to register as a patient at SantKrupa Hospital.</p>
+    
     <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Register</button>
+        
+        {% if form.non_field_errors %}
+            <div class="alert-danger">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+        
+        {% for field in form %}
+            <div class="form-group">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">
+                        {{ field.errors }}
+                    </div>
+                {% endif %}
+                {% if field.help_text %}
+                    <small style="color: #666; display: block; margin-top: 5px;">{{ field.help_text|safe }}</small>
+                {% endif %}
+            </div>
+        {% endfor %}
+        
+        <div style="margin-top: 30px;">
+            <button type="submit" class="btn">✓ Register Account</button>
+            <a href="/" class="btn btn-secondary">Cancel</a>
+        </div>
     </form>
-</body>
-</html>
+</div>
+
+<div class="card" style="background-color: #f0f7ff; border-left-color: #17a2b8;">
+    <h3 style="color: #0c5460;">Already have an account?</h3>
+    <p style="color: #0c5460;">If you are already a registered patient, please contact the hospital staff for login credentials.</p>
+</div>
+{% endblock %}

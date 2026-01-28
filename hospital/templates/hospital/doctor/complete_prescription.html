@@ -1,0 +1,43 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Complete Prescription - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>✅ Complete Prescription</h1>
+
+<div class="card" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); border-left-color: #28a745;">
+    <h2 style="color: #155724; margin-top: 0;">Confirm Prescription Completion</h2>
+    <p style="color: #155724;">
+        You are about to mark the prescription for <strong>{{ prescription.patient.patient_name }}</strong> as completed.
+    </p>
+    <p style="color: #155724; margin-bottom: 0;">
+        The patient will then be able to view all the prescribed tests, medicines, and your notes.
+    </p>
+</div>
+
+<div class="card">
+    <h2>Prescription Summary</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+        <div>
+            <p><strong>Patient:</strong> {{ prescription.patient.patient_name }}</p>
+        </div>
+        <div>
+            <p><strong>Patient ID:</strong> {{ prescription.patient.patient_id }}</p>
+        </div>
+        <div>
+            <p><strong>Tests:</strong> {{ prescription.tests.count }}</p>
+        </div>
+        <div>
+            <p><strong>Medicines:</strong> {{ prescription.medicines.count }}</p>
+        </div>
+    </div>
+</div>
+
+<div style="text-align: center;">
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn" style="background: #28a745; font-size: 1.1em; padding: 15px 30px;">✓ Yes, Complete Prescription</button>
+        <a href="{% url 'add_prescription_details' prescription.id %}" class="btn btn-secondary">← Cancel</a>
+    </form>
+</div>
+{% endblock %}

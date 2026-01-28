@@ -1,0 +1,145 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}View Prescription - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>💊 Prescription Details</h1>
+
+<div class="card" style="background: linear-gradient(135deg, #d1ecf1 0%, #b8e1ed 100%); border-left-color: #17a2b8;">
+    <h2 style="color: #0c5460; margin-top: 0;">Dr. {{ prescription.doctor.user.first_name }} {{ prescription.doctor.user.last_name }}</h2>
+    <p style="color: #0c5460; margin: 10px 0;"><strong>Specialization:</strong> {{ prescription.doctor.specialization }}</p>
+    <p style="color: #0c5460; margin: 0;"><strong>Prescription Date:</strong> {{ prescription.prescription_date|date:"M d, Y H:i" }}</p>
+</div>
+
+<div class="card">
+    <h2>📋 Prescription Status</h2>
+    <p style="font-size: 1.1em; margin: 0;">
+        <span style="background: 
+            {% if prescription.status == 'pending' %}#fff3cd
+            {% elif prescription.status == 'completed' %}#d4edda
+            {% else %}#f8d7da{% endif %};
+            padding: 10px 20px; border-radius: 6px;">
+            {{ prescription.get_status_display }}
+        </span>
+    </p>
+</div>
+
+<!-- TESTS SECTION -->
+<div class="card">
+    <h2>🧪 Prescribed Tests</h2>
+    
+    {% if prescription.tests.all %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Test Name</th>
+                    <th>Test Type</th>
+                    <th>Scheduled Date</th>
+                    <th>Status</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for test in prescription.tests.all %}
+                <tr>
+                    <td><strong>{{ test.test_name }}</strong></td>
+                    <td>{{ test.get_test_type_display }}</td>
+                    <td>{{ test.test_date|date:"M d, Y"|default:"Not scheduled" }}</td>
+                    <td>
+                        {% if test.is_completed %}
+                            <span style="background: #d4edda; padding: 5px 10px; border-radius: 4px; color: #155724;">✓ Completed</span>
+                        {% else %}
+                            <span style="background: #fff3cd; padding: 5px 10px; border-radius: 4px; color: #856404;">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if test.result %}
+                            <details>
+                                <summary style="cursor: pointer; color: #2a5298;">View Result</summary>
+                                <p style="margin-top: 10px; padding: 10px; background: #f9f9f9; border-radius: 4px;">{{ test.result }}</p>
+                            </details>
+                        {% else %}
+                            <em>Awaiting results</em>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert-info">No tests prescribed.</div>
+    {% endif %}
+</div>
+
+<!-- MEDICINES SECTION -->
+<div class="card">
+    <h2>💊 Prescribed Medicines</h2>
+    
+    {% if prescription.medicines.all %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            {% for medicine in prescription.medicines.all %}
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; border-left: 4px solid #dc3545;">
+                <h3 style="color: #1e3c72; margin-top: 0;">{{ medicine.medicine_name }}</h3>
+                <p><strong>Dosage:</strong> {{ medicine.dosage }}</p>
+                <p><strong>Frequency:</strong> {{ medicine.frequency }}</p>
+                <p><strong>Duration:</strong> {{ medicine.duration }}</p>
+                {% if medicine.instructions %}
+                    <p><strong>Special Instructions:</strong></p>
+                    <p style="background: #fff3cd; padding: 10px; border-radius: 4px; color: #856404;">{{ medicine.instructions }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert-info">No medicines prescribed.</div>
+    {% endif %}
+</div>
+
+<!-- DOCTOR NOTES -->
+{% if doctor_notes %}
+<div class="card">
+    <h2>📝 Doctor's Notes</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+        <div style="background: #f0f7ff; padding: 20px; border-radius: 8px; border-left: 4px solid #0c5460;">
+            <h3 style="color: #0c5460; margin-top: 0;">Observations</h3>
+            <p style="color: #333; white-space: pre-wrap;">{{ doctor_notes.observations }}</p>
+        </div>
+        
+        <div style="background: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #856404;">
+            <h3 style="color: #856404; margin-top: 0;">Diagnosis</h3>
+            <p style="color: #333; white-space: pre-wrap;">{{ doctor_notes.diagnosis }}</p>
+        </div>
+        
+        <div style="background: #d1ecf1; padding: 20px; border-radius: 8px; border-left: 4px solid #17a2b8;">
+            <h3 style="color: #0c5460; margin-top: 0;">Treatment Plan</h3>
+            <p style="color: #333; white-space: pre-wrap;">{{ doctor_notes.treatment_plan }}</p>
+        </div>
+    </div>
+    
+    {% if doctor_notes.notes %}
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #6c757d;">
+            <h3 style="color: #333; margin-top: 0;">Additional Notes</h3>
+            <p style="color: #333; white-space: pre-wrap;">{{ doctor_notes.notes }}</p>
+        </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- IMPORTANT INFORMATION -->
+<div class="card" style="background-color: #fff3cd; border-left-color: #ffc107;">
+    <h3 style="color: #856404; margin-top: 0;">⚠️ Important Information</h3>
+    <ul style="color: #856404; margin-left: 20px;">
+        <li>Follow all medicines strictly as prescribed</li>
+        <li>Complete all prescribed tests on scheduled dates</li>
+        <li>If you experience any side effects, contact your doctor immediately</li>
+        <li>Keep all your medical reports updated</li>
+        <li>In case of emergency, contact: +91-XXXX-XXXX-XX</li>
+    </ul>
+</div>
+
+<div class="card" style="text-align: center;">
+    <a href="{% url 'print_prescription_patient' prescription.id %}" class="btn" style="background: #007bff; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; margin-right: 10px;">🖨️ Print Prescription</a>
+    <a href="{% url 'patient_dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
+</div>
+{% endblock %}

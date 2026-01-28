@@ -1,0 +1,213 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Prescription Details - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>💊 Prescription Details</h1>
+
+<div class="card" style="background: linear-gradient(135deg, #d1ecf1 0%, #b8e1ed 100%); border-left-color: #17a2b8;">
+    <h2 style="color: #0c5460; margin-top: 0;">{{ prescription.patient.patient_name }}</h2>
+    <p style="color: #0c5460; margin: 10px 0;"><strong>Patient ID:</strong> {{ prescription.patient.patient_id }}</p>
+    <p style="color: #0c5460; margin: 0;"><strong>Date:</strong> {{ prescription.prescription_date|date:"M d, Y H:i" }}</p>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 20px 0;">
+    <div class="card">
+        <h3 style="margin-top: 0;">📋 Prescription Info</h3>
+        <p><strong>ID:</strong> {{ prescription.id }}</p>
+        <p><strong>Doctor:</strong> Dr. {{ prescription.doctor.user.first_name }} {{ prescription.doctor.user.last_name }}</p>
+        <p><strong>Specialization:</strong> {{ prescription.doctor.specialization }}</p>
+        <p><strong>Status:</strong> {{ prescription.get_status_display }}</p>
+    </div>
+</div>
+
+<!-- TESTS SECTION -->
+<div class="card">
+    <h2>🧪 Tests Prescribed</h2>
+    
+    {% if tests %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Test Name</th>
+                    <th>Type</th>
+                    <th>Test Date</th>
+                    <th>Completed</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for test in tests %}
+                <tr>
+                    <td><strong>{{ test.test_name }}</strong></td>
+                    <td>{{ test.get_test_type_display }}</td>
+                    <td>{{ test.test_date|date:"M d, Y"|default:"Not scheduled" }}</td>
+                    <td>
+                        {% if test.is_completed %}
+                            <span style="background: #d4edda; padding: 5px 10px; border-radius: 4px; color: #155724;">✓ Yes</span>
+                        {% else %}
+                            <span style="background: #fff3cd; padding: 5px 10px; border-radius: 4px; color: #856404;">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'delete_test' test.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em; background: #dc3545;" onclick="return confirm('Delete this test?');">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="alert-info">No tests prescribed yet.</p>
+    {% endif %}
+    
+    <h3>Add New Test</h3>
+    <form method="post" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_test">
+        
+        <div class="form-group">
+            <label>Test Type *</label>
+            {{ test_form.test_type }}
+        </div>
+        
+        <div class="form-group">
+            <label>Test Name *</label>
+            {{ test_form.test_name }}
+        </div>
+        
+        <div class="form-group">
+            <label>Test Date</label>
+            {{ test_form.test_date }}
+        </div>
+        
+        <div style="grid-column: 1/-1;">
+            <div class="form-group">
+                <label>Description</label>
+                {{ test_form.description }}
+            </div>
+        </div>
+        
+        <div style="grid-column: 1/-1;">
+            <button type="submit" class="btn">+ Add Test</button>
+        </div>
+    </form>
+</div>
+
+<!-- MEDICINES SECTION -->
+<div class="card">
+    <h2>💊 Medicines Prescribed</h2>
+    
+    {% if medicines %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Medicine Name</th>
+                    <th>Dosage</th>
+                    <th>Frequency</th>
+                    <th>Duration</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for medicine in medicines %}
+                <tr>
+                    <td><strong>{{ medicine.medicine_name }}</strong></td>
+                    <td>{{ medicine.dosage }}</td>
+                    <td>{{ medicine.frequency }}</td>
+                    <td>{{ medicine.duration }}</td>
+                    <td>
+                        <a href="{% url 'delete_medicine' medicine.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em; background: #dc3545;" onclick="return confirm('Delete this medicine?');">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="alert-info">No medicines prescribed yet.</p>
+    {% endif %}
+    
+    <h3>Add New Medicine</h3>
+    <form method="post" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_medicine">
+        
+        <div class="form-group">
+            <label>Medicine Name *</label>
+            {{ medicine_form.medicine_name }}
+        </div>
+        
+        <div class="form-group">
+            <label>Dosage (e.g., 500mg) *</label>
+            {{ medicine_form.dosage }}
+        </div>
+        
+        <div class="form-group">
+            <label>Frequency (e.g., Twice daily) *</label>
+            {{ medicine_form.frequency }}
+        </div>
+        
+        <div class="form-group">
+            <label>Duration (e.g., 7 days) *</label>
+            {{ medicine_form.duration }}
+        </div>
+        
+        <div style="grid-column: 1/-1;">
+            <div class="form-group">
+                <label>Special Instructions</label>
+                {{ medicine_form.instructions }}
+            </div>
+        </div>
+        
+        <div style="grid-column: 1/-1;">
+            <button type="submit" class="btn">+ Add Medicine</button>
+        </div>
+    </form>
+</div>
+
+<!-- DOCTOR NOTES SECTION -->
+<div class="card">
+    <h2>📝 Doctor's Notes & Observations</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_notes">
+        
+        <div class="form-group">
+            <label>Observations *</label>
+            {{ notes_form.observations }}
+        </div>
+        
+        <div class="form-group">
+            <label>Diagnosis *</label>
+            {{ notes_form.diagnosis }}
+        </div>
+        
+        <div class="form-group">
+            <label>Treatment Plan *</label>
+            {{ notes_form.treatment_plan }}
+        </div>
+        
+        <div class="form-group">
+            <label>Additional Notes</label>
+            {{ notes_form.notes }}
+        </div>
+        
+        <button type="submit" class="btn">💾 Save Notes</button>
+    </form>
+</div>
+
+<!-- COMPLETE PRESCRIPTION -->
+<div class="card" style="text-align: center; background-color: #f0f7ff; border-left-color: #17a2b8;">
+    <h3 style="color: #0c5460; margin-top: 0;">Ready to Complete?</h3>
+    <p style="color: #0c5460;">Once you complete the prescription, the patient will be able to view all tests, medicines, and your notes.</p>
+    
+    <form method="post" action="{% url 'complete_prescription' prescription.id %}" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn" style="background: #28a745; margin-right: 10px;">✓ Complete Prescription</button>
+    </form>
+
+    <a href="{% url 'print_prescription' prescription.id %}" class="btn" style="background: #007bff; margin-right: 10px;">🖨️ Print Prescription</a>
+    
+    <a href="{% url 'doctor_dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
+</div>
+{% endblock %}

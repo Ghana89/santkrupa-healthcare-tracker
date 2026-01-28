@@ -1,0 +1,69 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Upload Medical Report - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>📤 Upload Medical Report</h1>
+
+<div class="card">
+    <p>Upload your medical reports, test results, and healthcare documents securely to your patient account.</p>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-{% if message.tags %}{{ message.tags }}{% else %}success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="id_report_file">📎 Select Medical Report File *</label>
+            {{ form.report_file }}
+            {% if form.report_file.errors %}
+                <div class="alert-danger" style="margin-top: 8px;">{{ form.report_file.errors }}</div>
+            {% endif %}
+            <small style="color: #666; display: block; margin-top: 8px;">
+                Supported formats: PDF, JPG, PNG (Max size: 10 MB)
+            </small>
+        </div>
+        
+        <div class="form-group">
+            <label for="id_report_type">Report Type</label>
+            {{ form.report_type }}
+            {% if form.report_type.errors %}
+                <div class="alert-danger" style="margin-top: 8px;">{{ form.report_type.errors }}</div>
+            {% endif %}
+            <small style="color: #666; display: block; margin-top: 8px;">
+                e.g., Blood Test, X-Ray, Ultrasound, etc.
+            </small>
+        </div>
+        
+        <div class="form-group">
+            <label for="id_description">Description</label>
+            {{ form.description }}
+            {% if form.description.errors %}
+                <div class="alert-danger" style="margin-top: 8px;">{{ form.description.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <button type="submit" class="btn">📤 Upload Report</button>
+            <a href="{% url 'patient_dashboard' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<div class="card" style="background-color: #f0f7ff; border-left-color: #17a2b8;">
+    <h3 style="color: #0c5460; margin-top: 0;">📌 Important Information</h3>
+    <ul style="color: #0c5460; margin-left: 20px;">
+        <li>Ensure all documents are clear and readable</li>
+        <li>Include the test/scan date information if possible</li>
+        <li>Your files are securely stored and only accessible to authorized medical staff</li>
+        <li>Uploaded reports will be reviewed by your doctor</li>
+        <li>You can upload multiple reports</li>
+    </ul>
+</div>
+{% endblock %}

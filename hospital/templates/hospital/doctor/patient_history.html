@@ -1,0 +1,309 @@
+{% extends 'hospital/base.html' %}
+
+{% block title %}Patient History - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<div class="history-container">
+    <div class="patient-header">
+        <h2>{{ patient.patient_name }}'s Complete Medical History</h2>
+        <p class="patient-id">Patient ID: <strong>{{ patient.patient_id }}</strong></p>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('visits')">Visits</button>
+        <button class="tab-btn" onclick="showTab('prescriptions')">Prescriptions</button>
+        <button class="tab-btn" onclick="showTab('tests')">Test Reports</button>
+        <button class="tab-btn" onclick="showTab('reports')">Medical Reports</button>
+    </div>
+
+    <!-- Visits Tab -->
+    <div id="visits" class="tab-content active">
+        <h3>Hospital Visits</h3>
+        {% if visits %}
+        <div class="visits-list">
+            {% for visit in visits %}
+            <div class="visit-card">
+                <div class="visit-header">
+                    <span class="visit-date">📅 {{ visit.check_in_date|date:"M d, Y - H:i" }}</span>
+                    <span class="status-badge status-{{ visit.status|lower }}">{{ visit.get_status_display }}</span>
+                </div>
+                <p><strong>Purpose:</strong> {{ visit.purpose|default:"Not specified" }}</p>
+                <p><strong>Checked in by:</strong> {{ visit.checked_in_by.get_full_name }}</p>
+                {% if visit.notes %}
+                <p><strong>Notes:</strong> {{ visit.notes }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="no-data">No visit records found.</p>
+        {% endif %}
+    </div>
+
+    <!-- Prescriptions Tab -->
+    <div id="prescriptions" class="tab-content">
+        <h3>Prescriptions</h3>
+        {% if prescriptions %}
+        <div class="prescriptions-list">
+            {% for prescription in prescriptions %}
+            <div class="prescription-card">
+                <div class="prescription-header">
+                    <span>Prescription #{{ prescription.id }}</span>
+                    <span class="status-badge status-{{ prescription.status|lower }}">{{ prescription.get_status_display }}</span>
+                </div>
+                <p><strong>Doctor:</strong> Dr. {{ prescription.doctor.user.get_full_name }}</p>
+                <p><strong>Date:</strong> {{ prescription.prescription_date|date:"M d, Y" }}</p>
+                <p><strong>Tests:</strong> {{ prescription.tests.count }}</p>
+                <p><strong>Medicines:</strong> {{ prescription.medicines.count }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="no-data">No prescriptions found.</p>
+        {% endif %}
+    </div>
+
+    <!-- Test Reports Tab -->
+    <div id="tests" class="tab-content">
+        <h3>Test Reports</h3>
+        {% if test_reports %}
+        <div class="reports-list">
+            {% for report in test_reports %}
+            <div class="report-card">
+                <div class="report-header">
+                    <span class="test-type">🔬 {{ report.test_type }}</span>
+                    <span class="report-date">{{ report.uploaded_at|date:"M d, Y" }}</span>
+                </div>
+                {% if report.test_date %}
+                <p><strong>Test Date:</strong> {{ report.test_date }}</p>
+                {% endif %}
+                <p><strong>Uploaded by:</strong> {{ report.uploaded_by.get_full_name|default:"System" }}</p>
+                {% if report.notes %}
+                <p><strong>Notes:</strong> {{ report.notes }}</p>
+                {% endif %}
+                <p><a href="{{ report.report_file.url }}" target="_blank" class="btn-small">Download Report</a></p>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="no-data">No test reports found.</p>
+        {% endif %}
+    </div>
+
+    <!-- Medical Reports Tab -->
+    <div id="reports" class="tab-content">
+        <h3>Medical Reports</h3>
+        {% if medical_reports %}
+        <div class="reports-list">
+            {% for report in medical_reports %}
+            <div class="report-card">
+                <div class="report-header">
+                    <span class="report-type">📄 {{ report.report_type|default:"Medical Report" }}</span>
+                    <span class="report-date">{{ report.uploaded_at|date:"M d, Y" }}</span>
+                </div>
+                {% if report.description %}
+                <p><strong>Description:</strong> {{ report.description }}</p>
+                {% endif %}
+                <p><a href="{{ report.report_file.url }}" target="_blank" class="btn-small">Download Report</a></p>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="no-data">No medical reports found.</p>
+        {% endif %}
+    </div>
+
+    <a href="{% url 'doctor_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+
+<script>
+    function showTab(tabName) {
+        // Hide all tabs
+        var tabs = document.querySelectorAll('.tab-content');
+        tabs.forEach(function(tab) {
+            tab.classList.remove('active');
+        });
+
+        // Deactivate all buttons
+        var buttons = document.querySelectorAll('.tab-btn');
+        buttons.forEach(function(btn) {
+            btn.classList.remove('active');
+        });
+
+        // Show selected tab and activate button
+        document.getElementById(tabName).classList.add('active');
+        event.target.classList.add('active');
+    }
+</script>
+
+<style>
+    .history-container {
+        padding: 20px;
+    }
+
+    .patient-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .patient-header h2 {
+        margin: 0 0 10px 0;
+    }
+
+    .patient-id {
+        margin: 0;
+        opacity: 0.9;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #ddd;
+    }
+
+    .tab-btn {
+        padding: 12px 20px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: #666;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    .tab-btn:hover {
+        color: #2a5298;
+    }
+
+    .tab-btn.active {
+        color: #2a5298;
+        border-bottom-color: #2a5298;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .tab-content h3 {
+        margin-top: 0;
+        color: #2a5298;
+    }
+
+    .visits-list, .prescriptions-list, .reports-list {
+        display: grid;
+        gap: 15px;
+    }
+
+    .visit-card, .prescription-card, .report-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        background: #f9f9f9;
+    }
+
+    .visit-card:hover, .prescription-card:hover, .report-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+
+    .visit-header, .prescription-header, .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .visit-date, .report-date {
+        font-weight: 500;
+        color: #333;
+    }
+
+    .test-type, .report-type {
+        font-weight: 500;
+        color: #2a5298;
+    }
+
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .status-checked_in {
+        background-color: #cfe2ff;
+        color: #084298;
+    }
+
+    .status-in_consultation {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .status-completed {
+        background-color: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .visit-card p, .prescription-card p, .report-card p {
+        margin: 8px 0;
+        color: #555;
+    }
+
+    .btn-small {
+        display: inline-block;
+        padding: 6px 12px;
+        background-color: #2a5298;
+        color: white;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 12px;
+    }
+
+    .btn-small:hover {
+        background-color: #1e3c72;
+    }
+
+    .no-data {
+        text-align: center;
+        color: #999;
+        padding: 30px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 20px;
+    }
+
+    .btn-secondary {
+        background-color: #999;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #777;
+    }
+</style>
+{% endblock %}

@@ -1,11 +1,62 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Download Prescription</title>
-</head>
-<body>
-    <h1>Prescription</h1>
-    <p>{{ prescription.description }}</p>
-    <a href="/media/{{ prescription.id }}.pdf" download>Download Prescription</a>
-</body>
-</html>
+{% extends "hospital/base.html" %}
+
+{% block title %}Download Prescription - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>💊 Your Prescription</h1>
+
+<div class="card" style="background: linear-gradient(135deg, #d1ecf1 0%, #b8e1ed 100%); border-left-color: #17a2b8;">
+    <p style="color: #0c5460; margin: 0;"><strong>Important:</strong> Please follow your doctor's instructions carefully. Do not exceed prescribed dosage.</p>
+</div>
+
+<div class="card">
+    <h2 style="color: #1e3c72;">Prescription Details</h2>
+    
+    <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <h3 style="margin-top: 0;">Prescribed Medication</h3>
+        <p><strong>Description:</strong></p>
+        <p style="background: #fff; padding: 15px; border-radius: 6px; border-left: 4px solid #2a5298;">
+            {% if prescription.description %}
+                {{ prescription.description }}
+            {% else %}
+                <em>No description provided</em>
+            {% endif %}
+        </p>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 20px 0;">
+        <div style="background: #f0f7ff; padding: 15px; border-radius: 8px; border-left: 4px solid #0c5460;">
+            <strong>Prescription ID:</strong><br>
+            <span style="color: #0c5460;">{{ prescription.id }}</span>
+        </div>
+        <div style="background: #f0f7ff; padding: 15px; border-radius: 8px; border-left: 4px solid #0c5460;">
+            <strong>Date Issued:</strong><br>
+            <span style="color: #0c5460;">{% now "d M, Y" %}</span>
+        </div>
+        <div style="background: #f0f7ff; padding: 15px; border-radius: 8px; border-left: 4px solid #0c5460;">
+            <strong>Valid Until:</strong><br>
+            <span style="color: #0c5460;">30 days from issue date</span>
+        </div>
+    </div>
+    
+    <h3>📋 Instructions</h3>
+    <ol style="margin-left: 20px; color: #555;">
+        <li>Take medication as prescribed by your doctor</li>
+        <li>Do not miss scheduled doses</li>
+        <li>If you experience any side effects, contact your doctor immediately</li>
+        <li>Store medication in a cool, dry place</li>
+        <li>Keep medications out of reach of children</li>
+    </ol>
+</div>
+
+<div class="card" style="text-align: center; margin: 30px 0;">
+    <a href="/media/prescription_{{ prescription.id }}.pdf" download class="btn">📥 Download as PDF</a>
+    <a href="/dashboard/" class="btn btn-secondary">← Back to Dashboard</a>
+</div>
+
+<div class="card" style="background-color: #fff3cd; border-left-color: #ffc107;">
+    <h3 style="color: #856404; margin-top: 0;">⚠️ Important Reminder</h3>
+    <p style="color: #856404;">If you have any questions about your medication or experience any adverse effects, please contact your healthcare provider immediately or visit our hospital.</p>
+    <p style="color: #856404;"><strong>Emergency Contact: +91-XXXX-XXXX-XX</strong></p>
+</div>
+{% endblock %}

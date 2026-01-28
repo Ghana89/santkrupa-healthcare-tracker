@@ -130,3 +130,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Specify the custom user model
 AUTH_USER_MODEL = 'hospital.User'
+
+# Login URL
+LOGIN_URL = 'login'

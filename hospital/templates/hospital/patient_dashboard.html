@@ -1,11 +1,61 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Patient Dashboard</title>
-</head>
-<body>
-    <h1>Welcome to the Patient Dashboard</h1>
-    <a href="/upload-report/">Upload Medical Report</a><br>
-    <a href="/download-prescription/1/">Download Prescription</a>
-</body>
-</html>
+{% extends "hospital/base.html" %}
+
+{% block title %}Patient Dashboard - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>📊 Patient Dashboard</h1>
+
+<div class="card" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); border-left-color: #28a745;">
+    <p style="color: #155724; margin: 0;"><strong>Welcome!</strong> Manage your health records and prescriptions from here.</p>
+</div>
+
+<div class="dashboard-grid">
+    <div class="dashboard-item">
+        <div class="icon">📁</div>
+        <h3 style="color: #fff; margin-top: 0;">Upload Medical Report</h3>
+        <p style="color: #f0f0f0;">Submit your recent medical documents</p>
+        <a href="/upload-report/" class="btn" style="background: #fff; color: #2a5298; margin-top: 15px;">Upload Report</a>
+    </div>
+    
+    <div class="dashboard-item">
+        <div class="icon">💊</div>
+        <h3 style="color: #fff; margin-top: 0;">Download Prescription</h3>
+        <p style="color: #f0f0f0;">Get your current prescriptions</p>
+        <a href="/download-prescription/1/" class="btn" style="background: #fff; color: #2a5298; margin-top: 15px;">Download</a>
+    </div>
+    
+    <div class="dashboard-item">
+        <div class="icon">📞</div>
+        <h3 style="color: #fff; margin-top: 0;">Contact Doctor</h3>
+        <p style="color: #f0f0f0;">Schedule an appointment</p>
+        <a href="#appointment" class="btn" style="background: #fff; color: #2a5298; margin-top: 15px;">Book Now</a>
+    </div>
+</div>
+
+<div class="card">
+    <h2>📋 Your Health Information</h2>
+    <table>
+        <tr>
+            <th>Field</th>
+            <th>Information</th>
+        </tr>
+        <tr>
+            <td>Patient ID</td>
+            <td>Displayed here</td>
+        </tr>
+        <tr>
+            <td>Last Appointment</td>
+            <td>View appointment history</td>
+        </tr>
+        <tr>
+            <td>Active Prescriptions</td>
+            <td>View current medications</td>
+        </tr>
+    </table>
+</div>
+
+<div class="card" style="background-color: #f9f9f9; border-left-color: #6c757d;">
+    <h3>Quick Actions</h3>
+    <a href="/" class="btn btn-secondary">← Back to Home</a>
+</div>
+{% endblock %}

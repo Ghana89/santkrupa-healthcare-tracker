@@ -1,0 +1,102 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Patient Details - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>📋 Patient Details</h1>
+
+<div class="card" style="background: linear-gradient(135deg, #d1ecf1 0%, #b8e1ed 100%); border-left-color: #17a2b8;">
+    <h2 style="color: #0c5460; margin-top: 0;">{{ patient.patient_name }}</h2>
+    <p style="color: #0c5460; margin: 10px 0;"><strong>Patient ID:</strong> {{ patient.patient_id }}</p>
+    <p style="color: #0c5460; margin: 0;"><strong>Status:</strong> {{ patient.get_status_display }}</p>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 20px 0;">
+    <div class="card">
+        <h3 style="margin-top: 0;">👤 Personal Information</h3>
+        <p><strong>Age:</strong> {{ patient.age }} years</p>
+        <p><strong>Phone:</strong> {{ patient.phone_number }}</p>
+        <p><strong>Address:</strong> {{ patient.address }}</p>
+        <p><strong>Registered On:</strong> {{ patient.registration_date }}</p>
+    </div>
+    
+    <div class="card">
+        <h3 style="margin-top: 0;">🔐 Login Credentials</h3>
+        <p><strong>Default Password:</strong></p>
+        <div style="background: #f0f0f0; padding: 10px; border-radius: 4px; font-family: monospace;">
+            {{ patient.default_password }}
+        </div>
+        <p style="font-size: 0.9em; color: #666;">
+            <strong>⚠️ Note:</strong> Patient should change password on first login.
+        </p>
+    </div>
+</div>
+
+<div class="card">
+    <h2>📝 Prescriptions</h2>
+    {% if prescriptions %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Doctor</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Tests</th>
+                    <th>Medicines</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prescription in prescriptions %}
+                <tr>
+                    <td>Dr. {{ prescription.doctor.user.first_name }} {{ prescription.doctor.user.last_name }}</td>
+                    <td>{{ prescription.prescription_date|date:"M d, Y" }}</td>
+                    <td>
+                        <span style="background: 
+                            {% if prescription.status == 'pending' %}#fff3cd
+                            {% elif prescription.status == 'completed' %}#d4edda
+                            {% else %}#f8d7da{% endif %};
+                            padding: 5px 10px; border-radius: 4px;">
+                            {{ prescription.get_status_display }}
+                        </span>
+                    </td>
+                    <td>{{ prescription.tests.count }}</td>
+                    <td>{{ prescription.medicines.count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert-info">No prescriptions yet.</div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>📁 Medical Reports</h2>
+    {% if medical_reports %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Uploaded On</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in medical_reports %}
+                <tr>
+                    <td>{{ report.report_type }}</td>
+                    <td>{{ report.description }}</td>
+                    <td>{{ report.uploaded_at|date:"M d, Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert-info">No medical reports uploaded yet.</div>
+    {% endif %}
+</div>
+
+<div class="card" style="text-align: center;">
+    <a href="{% url 'reception_dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
+</div>
+{% endblock %}

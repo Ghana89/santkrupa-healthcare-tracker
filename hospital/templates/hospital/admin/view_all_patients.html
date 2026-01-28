@@ -1,0 +1,57 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}All Patients - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>👥 All Patients</h1>
+
+<div class="card">
+    <h2>Total: {{ patients|length }} Patients</h2>
+    
+    {% if patients %}
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Patient ID</th>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Registered On</th>
+                        <th>Registered By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for patient in patients %}
+                    <tr>
+                        <td><strong>{{ patient.patient_id }}</strong></td>
+                        <td>{{ patient.patient_name }}</td>
+                        <td>{{ patient.age }} years</td>
+                        <td>{{ patient.phone_number }}</td>
+                        <td>
+                            <span style="background: 
+                                {% if patient.status == 'registered' %}#d4edda
+                                {% elif patient.status == 'in_diagnosis' %}#fff3cd
+                                {% elif patient.status == 'treatment_started' %}#d1ecf1
+                                {% else %}#d4edda{% endif %};
+                                padding: 5px 10px; border-radius: 4px;">
+                                {{ patient.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ patient.registration_date }}</td>
+                        <td>{{ patient.registered_by.first_name }} {{ patient.registered_by.last_name }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert-info">No patients registered yet.</div>
+    {% endif %}
+</div>
+
+<div class="card" style="text-align: center;">
+    <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
+</div>
+{% endblock %}

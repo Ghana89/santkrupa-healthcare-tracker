@@ -1,0 +1,140 @@
+{% extends 'hospital/base.html' %}
+
+{% block title %}Patient Check-in - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Patient Check-in / Visit</h2>
+    <p class="form-subtitle">Register an existing patient's visit to the hospital</p>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="POST" class="form">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="patient_id">Patient ID or Select Patient</label>
+            <input type="text" name="patient_id" id="patient_id" 
+                   class="form-control" 
+                   placeholder="Enter Patient ID (e.g., PT202600234)"
+                   list="patient-list" required>
+            
+            <datalist id="patient-list">
+                {% for patient in patients %}
+                <option value="{{ patient.patient_id }}">{{ patient.patient_name }} - {{ patient.patient_id }}</option>
+                {% endfor %}
+            </datalist>
+        </div>
+
+        <div class="form-group">
+            <label for="purpose">Purpose of Visit</label>
+            {{ form.purpose }}
+        </div>
+
+        <div class="form-group">
+            <label for="notes">Additional Notes</label>
+            {{ form.notes }}
+        </div>
+
+        <button type="submit" class="btn btn-primary">Check In Patient</button>
+        <a href="{% url 'reception_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+    </form>
+</div>
+
+<style>
+    .form-container {
+        max-width: 500px;
+        margin: 0 auto;
+        padding: 30px;
+    }
+
+    .form-subtitle {
+        color: #666;
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #2a5298;
+        box-shadow: 0 0 5px rgba(42, 82, 152, 0.3);
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        margin-right: 10px;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background-color: #2a5298;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #1e3c72;
+    }
+
+    .btn-secondary {
+        background-color: #999;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #777;
+    }
+
+    .messages {
+        margin-bottom: 20px;
+    }
+
+    .alert {
+        padding: 12px 15px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .alert-error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+</style>
+{% endblock %}
