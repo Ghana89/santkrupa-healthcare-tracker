@@ -1,20 +1,15 @@
 """
-URL configuration for santkrupa_hospital project.
+URL configuration for santkrupa_hospital project - Multi-tenant enabled
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from hospital import views
 
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    
-    # Authentication
+# Clinic-specific URL patterns
+clinic_urlpatterns = [
+    # Clinic-specific authentication
     path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
-    
-    # Public
-    path('', views.homepage, name='homepage'),
-    
+
     # Reception
     path('reception/dashboard/', views.reception_dashboard, name='reception_dashboard'),
     path('reception/register-patient/', views.register_patient, name='register_patient'),
@@ -49,4 +44,20 @@ urlpatterns = [
     path('admin-dashboard/all-receptionists/', views.view_all_receptionists, name='view_all_receptionists'),
     path('admin-dashboard/doctor/<int:doctor_id>/delete/', views.delete_doctor, name='delete_doctor'),
     path('admin-dashboard/receptionist/<int:user_id>/delete/', views.delete_receptionist, name='delete_receptionist'),
+]
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    
+    # Authentication (Global)
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('register/', views.register_patient, name='register'),  # Public registration
+    path('register-clinic/', views.register_clinic, name='register_clinic'),
+    
+    # Public pages (Global)
+    path('', views.homepage, name='homepage'),
+    
+    # Multi-tenant clinic URLs
+    path('clinic/<slug:clinic_slug>/', include(clinic_urlpatterns)),
 ]

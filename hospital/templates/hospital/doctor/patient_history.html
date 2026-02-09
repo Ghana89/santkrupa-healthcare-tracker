@@ -113,7 +113,11 @@
         {% endif %}
     </div>
 
-    <a href="{% url 'doctor_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+    {% if clinic %}
+    <a href="{% url 'doctor_dashboard' clinic.slug %}" class="btn btn-secondary">Back to Dashboard</a>
+    {% else %}
+    <a href="{% url 'homepage' %}" class="btn btn-secondary">Back to Dashboard</a>
+    {% endif %}
 </div>
 
 <script>

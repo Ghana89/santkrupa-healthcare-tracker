@@ -10,14 +10,22 @@
         <div class="icon">📝</div>
         <h3 style="color: #fff; margin-top: 0;">Register New Patient</h3>
         <p style="color: #f0f0f0;">Add a new patient to the system</p>
-        <a href="{% url 'register_patient' %}" class="btn" style="background: #fff; color: #2a5298;">Register Now</a>
+        {% if clinic %}
+        <a href="{% url 'register_patient' clinic.slug %}" class="btn" style="background: #fff; color: #2a5298;">Register Now</a>
+        {% else %}
+        <a href="{% url 'register' %}" class="btn" style="background: #fff; color: #2a5298;">Register Now</a>
+        {% endif %}
     </div>
     
     <div class="dashboard-item">
         <div class="icon">✅</div>
         <h3 style="color: #fff; margin-top: 0;">Patient Check-In</h3>
         <p style="color: #f0f0f0;">Check in existing patient</p>
-        <a href="{% url 'patient_checkin' %}" class="btn" style="background: #fff; color: #2a5298;">Check In</a>
+        {% if clinic %}
+        <a href="{% url 'patient_checkin' clinic.slug %}" class="btn" style="background: #fff; color: #2a5298;">Check In</a>
+        {% else %}
+        <a href="{% url 'homepage' %}" class="btn" style="background: #fff; color: #2a5298;">Check In</a>
+        {% endif %}
     </div>
     
     <div class="dashboard-item">
@@ -71,8 +79,13 @@
                         </td>
                         <td>{{ patient.registration_date }}</td>
                         <td>
-                            <a href="{% url 'patient_details' patient.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em;">View</a>
-                            <a href="{% url 'delete_patient' patient.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em; background-color: #dc3545; margin-left: 5px;">Delete</a>
+                            {% if clinic %}
+                            <a href="{% url 'patient_details' clinic.slug patient.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em;">View</a>
+                            <a href="{% url 'delete_patient' clinic.slug patient.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em; background-color: #dc3545; margin-left: 5px;">Delete</a>
+                            {% else %}
+                            <a href="#" class="btn" style="padding: 6px 12px; font-size: 0.9em;">View</a>
+                            <a href="#" class="btn" style="padding: 6px 12px; font-size: 0.9em; background-color: #dc3545; margin-left: 5px;">Delete</a>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}

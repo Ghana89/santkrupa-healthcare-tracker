@@ -5,26 +5,75 @@ from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-from .models import Patient, MedicalReport, Prescription, Doctor, Test, Medicine, DoctorNotes, User, PatientVisit, TestReport
+from .models import Patient, MedicalReport, Prescription, Doctor, Test, Medicine, DoctorNotes, User, PatientVisit, TestReport, Clinic
 from .forms import (PatientRegistrationForm, PrescriptionForm, TestForm, MedicineForm,
                     DoctorNotesForm, MedicalReportForm, DoctorUserCreationForm, 
-                    ReceptionistUserCreationForm, DoctorProfileForm, PatientVisitForm, TestReportForm)
+                    ReceptionistUserCreationForm, DoctorProfileForm, PatientVisitForm, TestReportForm, ClinicRegistrationForm)
+from django.utils.crypto import get_random_string
+
+
+# ==================== HELPER FUNCTIONS ====================
+
+def get_clinic_from_slug_or_middleware(clinic_slug, request):
+    """
+    Helper function to get clinic from URL slug or middleware context.
+    
+    Priority:
+    1. clinic_slug parameter (if provided)
+    2. request.clinic from middleware
+    3. user.clinic (if authenticated)
+    
+    Returns: Clinic object or None
+    """
+    if clinic_slug:
+        try:
+            return Clinic.objects.get(slug=clinic_slug)
+        except Clinic.DoesNotExist:
+            return None
+    
+    # Try request clinic from middleware
+    if hasattr(request, 'clinic') and request.clinic:
+        return request.clinic
+    
+    # Try user's clinic
+    if request.user.is_authenticated and hasattr(request.user, 'clinic'):
+        return request.user.clinic
+    
+    return None
 
 
 # ==================== AUTHENTICATION VIEWS ====================
 
 @require_http_methods(["GET", "POST"])
-def login_view(request):
+def login_view(request, clinic_slug=None):
     """User login"""
     if request.user.is_authenticated:
+        # choose clinic slug preference: explicit param -> middleware -> user's clinic
+        target_slug = None
+        if clinic_slug:
+            target_slug = clinic_slug
+        elif hasattr(request, 'clinic') and request.clinic:
+            target_slug = request.clinic.slug
+        elif getattr(request.user, 'clinic', None):
+            target_slug = request.user.clinic.slug
+
         if request.user.role == 'patient':
+            if target_slug:
+                return redirect('patient_dashboard', clinic_slug=target_slug)
             return redirect('patient_dashboard')
         elif request.user.role == 'doctor':
+            if target_slug:
+                return redirect('doctor_dashboard', clinic_slug=target_slug)
             return redirect('doctor_dashboard')
         elif request.user.role == 'receptionist':
+            if target_slug:
+                return redirect('reception_dashboard', clinic_slug=target_slug)
             return redirect('reception_dashboard')
         elif request.user.role == 'admin':
-            return redirect('admin_dashboard')
+            if target_slug:
+                return redirect('admin_dashboard', clinic_slug=target_slug)
+            # no clinic context available — send to homepage to avoid reversing clinic-scoped URL without slug
+            return redirect('homepage')
     
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -38,14 +87,28 @@ def login_view(request):
             if next_url:
                 return redirect(next_url)
             
+            # Redirect to clinic-specific dashboards when clinic context exists
+            clinic = getattr(request, 'clinic', None)
+            # prefer clinic from request, then user's clinic
+            target_clinic = clinic or getattr(user, 'clinic', None)
+
             if user.role == 'patient':
+                if target_clinic:
+                    return redirect('patient_dashboard', clinic_slug=target_clinic.slug)
                 return redirect('patient_dashboard')
             elif user.role == 'doctor':
+                if target_clinic:
+                    return redirect('doctor_dashboard', clinic_slug=target_clinic.slug)
                 return redirect('doctor_dashboard')
             elif user.role == 'receptionist':
+                if target_clinic:
+                    return redirect('reception_dashboard', clinic_slug=target_clinic.slug)
                 return redirect('reception_dashboard')
             elif user.role == 'admin':
-                return redirect('admin_dashboard')
+                if target_clinic:
+                    return redirect('admin_dashboard', clinic_slug=target_clinic.slug)
+                # avoid reversing clinic-scoped admin URL without slug
+                return redirect('homepage')
             else:
                 return redirect('homepage')
         else:
@@ -65,54 +128,151 @@ def logout_view(request):
 def homepage(request):
     """Homepage - Direct to appropriate role dashboard"""
     if request.user.is_authenticated:
+        # Resolve clinic slug preference: middleware -> user's clinic
+        clinic = getattr(request, 'clinic', None)
+        target_slug = clinic.slug if clinic else (getattr(request.user, 'clinic', None).slug if getattr(request.user, 'clinic', None) else None)
+
         if request.user.role == 'patient':
+            if target_slug:
+                return redirect('patient_dashboard', clinic_slug=target_slug)
             return redirect('patient_dashboard')
         elif request.user.role == 'doctor':
+            if target_slug:
+                return redirect('doctor_dashboard', clinic_slug=target_slug)
             return redirect('doctor_dashboard')
         elif request.user.role == 'receptionist':
+            if target_slug:
+                return redirect('reception_dashboard', clinic_slug=target_slug)
             return redirect('reception_dashboard')
         elif request.user.role == 'admin':
-            return redirect('admin_dashboard')
+            if target_slug:
+                return redirect('admin_dashboard', clinic_slug=target_slug)
+            # Keep admin on homepage if no clinic association to avoid reversing clinic-scoped URL
+            # fallthrough to render platform homepage
     
-    total_patients = Patient.objects.count()
-    total_doctors = Doctor.objects.count()
+    # Get clinic context (for clinic-specific homepage if accessed from clinic URL)
+    clinic = getattr(request, 'clinic', None)
+    clinics = Clinic.objects.filter(is_active=True).order_by('name')
     
+    # Calculate statistics
+    if clinic:
+        # Clinic-specific statistics
+        total_patients = Patient.objects.filter(clinic=clinic).count()
+        total_doctors = Doctor.objects.filter(clinic=clinic).count()
+    else:
+        # Platform-wide statistics (for non-clinic users)
+        total_patients = Patient.objects.count()
+        total_doctors = Doctor.objects.count()
+    
+    total_clinics = clinics.count()
+
     context = {
         'total_patients': total_patients,
         'total_doctors': total_doctors,
+        'total_clinics': total_clinics,
+        'clinics': clinics,
+        'clinic': clinic,
     }
     return render(request, 'hospital/homepage.html', context)
+
+
+@require_http_methods(["GET", "POST"])
+def register_clinic(request):
+    """Public clinic registration"""
+    if request.method == 'POST':
+        form = ClinicRegistrationForm(request.POST)
+        if form.is_valid():
+            clinic = form.save(commit=False)
+            clinic.is_active = True
+            clinic.save()
+            # Auto-create a clinic admin account
+            base_username = f"{clinic.slug}_admin".lower()
+            username = base_username
+            suffix = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}{suffix}"
+                suffix += 1
+
+            password = get_random_string(10)
+            admin_user = User.objects.create_user(
+                username=username,
+                password=password,
+                email=clinic.email or '',
+                clinic=clinic,
+                role='admin',
+            )
+            admin_user.is_staff = True
+            admin_user.save()
+
+            messages.success(request, (
+                f"Clinic '{clinic.name}' registered. "
+                f"Admin account created: username='{username}', password='{password}'. "
+                f"Login at /clinic/{clinic.slug}/login/ and change the password immediately."
+            ))
+            return redirect('homepage')
+    else:
+        form = ClinicRegistrationForm()
+
+    return render(request, 'hospital/register_clinic.html', {'form': form})
 
 
 # ==================== RECEPTION VIEWS ====================
 
 @login_required(login_url='login')
 @require_http_methods(["GET", "POST"])
-def reception_dashboard(request):
+def reception_dashboard(request, clinic_slug=None):
     """Reception person dashboard"""
     if request.user.role != 'receptionist':
         return redirect('homepage')
     
-    patients = Patient.objects.all().order_by('-registration_date')
+    # Resolve clinic: URL slug -> middleware -> user's clinic
+    clinic = getattr(request, 'clinic', None)
+    if not clinic and clinic_slug:
+        try:
+            clinic = Clinic.objects.get(slug=clinic_slug)
+        except Clinic.DoesNotExist:
+            clinic = None
+    if not clinic and getattr(request.user, 'clinic', None):
+        clinic = request.user.clinic
+    
+    # Get clinic-specific patients
+    patients = Patient.objects.filter(clinic=clinic).order_by('-registration_date') if clinic else Patient.objects.all().order_by('-registration_date')
+    
+    # Get today's check-ins (from PatientVisit)
+    from django.utils import timezone
+    today = timezone.now().date()
+    todays_visits = PatientVisit.objects.filter(check_in_date__date=today, clinic=clinic).count() if clinic else PatientVisit.objects.filter(check_in_date__date=today).count()
+    
+    # Get pending prescriptions
+    pending_prescriptions = Prescription.objects.filter(status='pending', clinic=clinic).count() if clinic else Prescription.objects.filter(status='pending').count()
+    
     context = {
+        'clinic': clinic,
         'patients': patients,
         'total_patients': patients.count(),
+        'todays_visits': todays_visits,
+        'pending_prescriptions': pending_prescriptions,
     }
     return render(request, 'hospital/reception/dashboard.html', context)
 
 
 @login_required(login_url='login')
 @require_http_methods(["GET", "POST"])
-def register_patient(request):
+def register_patient(request, clinic_slug=None):
     """Reception - Register new patient"""
     if request.user.role != 'receptionist':
         return redirect('homepage')
+    
+    # Get clinic context
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
     
     if request.method == 'POST':
         form = PatientRegistrationForm(request.POST)
         if form.is_valid():
             patient = form.save(commit=False)
             patient.registered_by = request.user
+            if clinic:
+                patient.clinic = clinic
             patient.save()
             
             messages.success(
@@ -120,11 +280,13 @@ def register_patient(request):
                 f"Patient {patient.patient_name} registered successfully! "
                 f"Patient ID: {patient.patient_id}, Password: {patient.default_password}"
             )
+            if clinic_slug:
+                return redirect('reception_dashboard', clinic_slug=clinic_slug)
             return redirect('reception_dashboard')
     else:
         form = PatientRegistrationForm()
     
-    context = {'form': form}
+    context = {'form': form, 'clinic': clinic}
     return render(request, 'hospital/reception/register_patient.html', context)
 
 
@@ -199,7 +361,7 @@ def delete_patient(request, patient_id):
 
 @login_required(login_url='login')
 @require_http_methods(["GET", "POST"])
-def doctor_dashboard(request):
+def doctor_dashboard(request, clinic_slug=None):
     """Doctor dashboard - View patients for prescription"""
     if request.user.role != 'doctor':
         return redirect('homepage')
@@ -210,16 +372,42 @@ def doctor_dashboard(request):
         messages.error(request, "Doctor profile not found!")
         return redirect('homepage')
     
-    # Get patients that need prescriptions or have pending prescriptions
-    patients = Patient.objects.all()
-    prescriptions = Prescription.objects.filter(doctor=doctor).order_by('-prescription_date')
+    # Resolve clinic: URL slug -> middleware -> user's clinic -> doctor's clinic
+    clinic = getattr(request, 'clinic', None)
+    if not clinic and clinic_slug:
+        try:
+            clinic = Clinic.objects.get(slug=clinic_slug)
+        except Clinic.DoesNotExist:
+            clinic = None
+    if not clinic and getattr(request.user, 'clinic', None):
+        clinic = request.user.clinic
+    if not clinic and getattr(doctor, 'clinic', None):
+        clinic = doctor.clinic
+    
+    # Get clinic-specific patients
+    if clinic:
+        patients = Patient.objects.filter(clinic=clinic).order_by('-registration_date')
+        prescriptions = Prescription.objects.filter(doctor=doctor, clinic=clinic).order_by('-prescription_date')
+    else:
+        patients = Patient.objects.all().order_by('-registration_date')
+        prescriptions = Prescription.objects.filter(doctor=doctor).order_by('-prescription_date')
+    
     pending_prescriptions = prescriptions.filter(status='pending')
+    pending_test_results = Test.objects.filter(prescription__doctor=doctor, clinic=clinic, is_completed=False) if clinic else Test.objects.filter(prescription__doctor=doctor, is_completed=False)
+    
+    # Get today's consultations from PatientVisit
+    from django.utils import timezone
+    today = timezone.now().date()
+    todays_consultations = PatientVisit.objects.filter(doctor=doctor, check_in_date__date=today, clinic=clinic) if clinic else PatientVisit.objects.filter(doctor=doctor, check_in_date__date=today)
     
     context = {
         'doctor': doctor,
+        'clinic': clinic,
         'patients': patients,
         'prescriptions': prescriptions,
         'pending_prescriptions': pending_prescriptions,
+        'pending_test_results': pending_test_results,
+        'todays_consultations': todays_consultations,
         'total_patients': patients.count(),
     }
     return render(request, 'hospital/doctor/dashboard.html', context)
@@ -412,7 +600,7 @@ def patient_history(request, patient_id):
 # ==================== PATIENT VIEWS ====================
 
 @login_required(login_url='login')
-def patient_dashboard(request):
+def patient_dashboard(request, clinic_slug=None):
     """Patient dashboard"""
     if request.user.role != 'patient':
         return redirect('homepage')
@@ -422,15 +610,41 @@ def patient_dashboard(request):
     except Patient.DoesNotExist:
         return redirect('homepage')
     
-    prescriptions = patient.prescriptions.all()
-    medical_reports = patient.medical_reports.all()
-    test_reports = patient.test_reports.all()
+    # Resolve clinic: URL slug -> middleware -> user's clinic -> patient's clinic
+    clinic = getattr(request, 'clinic', None)
+    if not clinic and clinic_slug:
+        try:
+            clinic = Clinic.objects.get(slug=clinic_slug)
+        except Clinic.DoesNotExist:
+            clinic = None
+    if not clinic and getattr(request.user, 'clinic', None):
+        clinic = request.user.clinic
+    if not clinic and getattr(patient, 'clinic', None):
+        clinic = patient.clinic
+    
+    prescriptions = patient.prescriptions.all().order_by('-prescription_date')
+    medical_reports = patient.medical_reports.all().order_by('-uploaded_date')
+    test_reports = patient.test_reports.all().order_by('-uploaded_date')
+    
+    # Get pending tests (tests awaiting lab submission)
+    pending_tests = Test.objects.filter(prescription__patient=patient, is_completed=False).count()
+    
+    # Get recent visits
+    recent_visits = PatientVisit.objects.filter(patient=patient).order_by('-check_in_date')[:5]
+    
+    # Get appointments (future visits)
+    from django.utils import timezone
+    upcoming_visits = PatientVisit.objects.filter(patient=patient, check_in_date__date__gte=timezone.now().date()).order_by('check_in_date')[:3]
     
     context = {
         'patient': patient,
+        'clinic': clinic,
         'prescriptions': prescriptions,
         'medical_reports': medical_reports,
         'test_reports': test_reports,
+        'pending_tests': pending_tests,
+        'recent_visits': recent_visits,
+        'upcoming_visits': upcoming_visits,
     }
     return render(request, 'hospital/patient/dashboard.html', context)
 
@@ -537,16 +751,40 @@ def view_test_reports(request):
 # ==================== ADMIN VIEWS ====================
 
 @login_required(login_url='login')
-def admin_dashboard(request):
+@login_required(login_url='login')
+def admin_dashboard(request, clinic_slug=None):
     """Admin dashboard"""
     if request.user.role != 'admin':
         return redirect('homepage')
     
-    total_patients = Patient.objects.count()
-    total_doctors = Doctor.objects.count()
-    total_prescriptions = Prescription.objects.count()
-    total_users = User.objects.count()
-    total_receptionists = User.objects.filter(role='receptionist').count()
+    # Resolve clinic: URL slug -> middleware -> user's clinic
+    clinic = getattr(request, 'clinic', None)
+    if not clinic and clinic_slug:
+        try:
+            clinic = Clinic.objects.get(slug=clinic_slug)
+        except Clinic.DoesNotExist:
+            clinic = None
+    if not clinic and getattr(request.user, 'clinic', None):
+        clinic = request.user.clinic
+    
+    # Filter all data by clinic
+    total_patients = Patient.objects.filter(clinic=clinic).count() if clinic else Patient.objects.count()
+    total_doctors = Doctor.objects.filter(clinic=clinic).count() if clinic else Doctor.objects.count()
+    total_prescriptions = Prescription.objects.filter(clinic=clinic).count() if clinic else Prescription.objects.count()
+    total_users = User.objects.filter(clinic=clinic).count() if clinic else User.objects.count()
+    total_receptionists = User.objects.filter(clinic=clinic, role='receptionist').count() if clinic else User.objects.filter(role='receptionist').count()
+    
+    # Get pending items
+    pending_prescriptions = Prescription.objects.filter(status='pending', clinic=clinic).count() if clinic else Prescription.objects.filter(status='pending').count()
+    pending_tests = Test.objects.filter(is_completed=False, clinic=clinic).count() if clinic else Test.objects.filter(is_completed=False).count()
+    
+    # Get today's stats
+    from django.utils import timezone
+    today = timezone.now().date()
+    todays_patients = PatientVisit.objects.filter(check_in_date__date=today, clinic=clinic).count() if clinic else PatientVisit.objects.filter(check_in_date__date=today).count()
+    
+    # Get recent registrations
+    recent_patients = Patient.objects.filter(clinic=clinic).order_by('-registration_date')[:5] if clinic else Patient.objects.order_by('-registration_date')[:5]
     
     context = {
         'total_patients': total_patients,
@@ -554,15 +792,24 @@ def admin_dashboard(request):
         'total_prescriptions': total_prescriptions,
         'total_users': total_users,
         'total_receptionists': total_receptionists,
+        'pending_prescriptions': pending_prescriptions,
+        'pending_tests': pending_tests,
+        'todays_patients': todays_patients,
+        'recent_patients': recent_patients,
+        'clinic': clinic,
     }
     return render(request, 'hospital/admin/dashboard.html', context)
 
 
 @login_required(login_url='login')
 @require_http_methods(["GET", "POST"])
-def create_doctor(request):
+def create_doctor(request, clinic_slug=None):
     """Admin - Create doctor user and profile"""
     if request.user.role != 'admin':
+        return redirect('homepage')
+    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    if not clinic:
         return redirect('homepage')
     
     if request.method == 'POST':
@@ -572,14 +819,16 @@ def create_doctor(request):
         if user_form.is_valid() and profile_form.is_valid():
             user = user_form.save(commit=False)
             user.role = 'doctor'
+            user.clinic = clinic
             user.save()
             
             doctor = profile_form.save(commit=False)
             doctor.user = user
+            doctor.clinic = clinic
             doctor.save()
             
             messages.success(request, f"Doctor {user.first_name} {user.last_name} created successfully!")
-            return redirect('admin_dashboard')
+            return redirect('admin_dashboard', clinic_slug=clinic.slug)
     else:
         user_form = DoctorUserCreationForm()
         profile_form = DoctorProfileForm()
@@ -587,15 +836,20 @@ def create_doctor(request):
     context = {
         'user_form': user_form,
         'profile_form': profile_form,
+        'clinic': clinic,
     }
     return render(request, 'hospital/admin/create_doctor.html', context)
 
 
 @login_required(login_url='login')
 @require_http_methods(["GET", "POST"])
-def create_receptionist(request):
+def create_receptionist(request, clinic_slug=None):
     """Admin - Create receptionist user"""
     if request.user.role != 'admin':
+        return redirect('homepage')
+    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    if not clinic:
         return redirect('homepage')
     
     if request.method == 'POST':
@@ -603,80 +857,101 @@ def create_receptionist(request):
         if form.is_valid():
             user = form.save(commit=False)
             user.role = 'receptionist'
+            user.clinic = clinic
             user.save()
             messages.success(request, f"Receptionist {user.first_name} {user.last_name} created successfully!")
-            return redirect('admin_dashboard')
+            return redirect('admin_dashboard', clinic_slug=clinic.slug)
     else:
         form = ReceptionistUserCreationForm()
     
-    context = {'form': form}
+    context = {'form': form, 'clinic': clinic}
     return render(request, 'hospital/admin/create_receptionist.html', context)
 
 
 @login_required(login_url='login')
-def view_all_patients(request):
+def view_all_patients(request, clinic_slug=None):
     """Admin - View all patients"""
     if request.user.role != 'admin':
         return redirect('homepage')
     
-    patients = Patient.objects.all().order_by('-registration_date')
-    context = {'patients': patients}
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    if not clinic:
+        return redirect('homepage')
+    
+    patients = Patient.objects.filter(clinic=clinic).order_by('-registration_date')
+    context = {'patients': patients, 'clinic': clinic}
     return render(request, 'hospital/admin/view_all_patients.html', context)
 
 
 @login_required(login_url='login')
-def view_all_doctors(request):
+def view_all_doctors(request, clinic_slug=None):
     """Admin - View all doctors"""
     if request.user.role != 'admin':
         return redirect('homepage')
     
-    doctors = Doctor.objects.all()
-    context = {'doctors': doctors}
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    if not clinic:
+        return redirect('homepage')
+    
+    doctors = Doctor.objects.filter(clinic=clinic)
+    context = {'doctors': doctors, 'clinic': clinic}
     return render(request, 'hospital/admin/view_all_doctors.html', context)
 
 
 @login_required(login_url='login')
-def delete_doctor(request, doctor_id):
+def delete_doctor(request, clinic_slug, doctor_id):
     """Admin - Delete doctor"""
     if request.user.role != 'admin':
         return redirect('homepage')
     
-    doctor = get_object_or_404(Doctor, id=doctor_id)
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    if not clinic:
+        return redirect('homepage')
+    
+    doctor = get_object_or_404(Doctor, id=doctor_id, clinic=clinic)
     
     if request.method == 'POST':
         user_name = doctor.user.get_full_name()
         doctor.user.delete()
         messages.success(request, f"Doctor {user_name} deleted successfully!")
-        return redirect('view_all_doctors')
+        return redirect('view_all_doctors', clinic_slug=clinic.slug)
     
-    context = {'doctor': doctor}
+    context = {'doctor': doctor, 'clinic': clinic}
     return render(request, 'hospital/admin/confirm_delete_doctor.html', context)
 
 
 @login_required(login_url='login')
-def delete_receptionist(request, user_id):
+def delete_receptionist(request, clinic_slug, user_id):
     """Admin - Delete receptionist"""
     if request.user.role != 'admin':
         return redirect('homepage')
     
-    user = get_object_or_404(User, id=user_id, role='receptionist')
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    if not clinic:
+        return redirect('homepage')
+    
+    user = get_object_or_404(User, id=user_id, role='receptionist', clinic=clinic)
     
     if request.method == 'POST':
         user_name = user.get_full_name()
         user.delete()
         messages.success(request, f"Receptionist {user_name} deleted successfully!")
-        return redirect('view_all_receptionists')
+        return redirect('view_all_receptionists', clinic_slug=clinic.slug)
     
-    context = {'user': user}
+    context = {'user': user, 'clinic': clinic}
     return render(request, 'hospital/admin/confirm_delete_receptionist.html', context)
 
 
 @login_required(login_url='login')
-def view_all_receptionists(request):
+def view_all_receptionists(request, clinic_slug=None):
     """Admin - View all receptionists"""
     if request.user.role != 'admin':
         return redirect('homepage')
     
-    receptionists = User.objects.filter(role='receptionist')
-    context = {'receptionists': receptionists}
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    if not clinic:
+        return redirect('homepage')
+    
+    receptionists = User.objects.filter(role='receptionist', clinic=clinic)
+    context = {'receptionists': receptionists, 'clinic': clinic}
     return render(request, 'hospital/admin/view_all_receptionists.html', context)

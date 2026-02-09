@@ -43,8 +43,13 @@
                 <p><strong>Age:</strong> {{ patient.age }} years</p>
                 <p><strong>Phone:</strong> {{ patient.phone_number }}</p>
                 <p><strong>Status:</strong> {{ patient.get_status_display }}</p>
-                <a href="{% url 'create_prescription' patient.id %}" class="btn" style="width: 100%; text-align: center; display: block; margin-bottom: 10px;">Create Prescription</a>
-                <a href="{% url 'patient_history' patient.id %}" class="btn" style="width: 100%; text-align: center; display: block; background-color: #6c757d;">View History</a>
+                {% if clinic %}
+                <a href="{% url 'create_prescription' clinic.slug patient.id %}" class="btn" style="width: 100%; text-align: center; display: block; margin-bottom: 10px;">Create Prescription</a>
+                <a href="{% url 'patient_history' clinic.slug patient.id %}" class="btn" style="width: 100%; text-align: center; display: block; background-color: #6c757d;">View History</a>
+                {% else %}
+                <a href="#" class="btn" style="width: 100%; text-align: center; display: block; margin-bottom: 10px;">Create Prescription</a>
+                <a href="#" class="btn" style="width: 100%; text-align: center; display: block; background-color: #6c757d;">View History</a>
+                {% endif %}
             </div>
             {% endfor %}
         </div>

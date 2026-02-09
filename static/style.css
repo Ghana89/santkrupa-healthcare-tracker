@@ -388,3 +388,825 @@ footer {
         margin: 10px 0;
     }
 }
+
+/* ============================================
+   MULTI-TENANT HOMEPAGE STYLES
+   ============================================ */
+
+.hero-section {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #0f66a3 100%);
+    color: #fff;
+    padding: 60px 20px;
+    text-align: center;
+    margin-bottom: 50px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(30, 60, 114, 0.2);
+}
+
+.hero-content h1.hero-title {
+    font-size: 3em;
+    margin: 0 0 15px 0;
+    font-weight: 800;
+    letter-spacing: 2px;
+    border: none;
+}
+
+.hero-subtitle {
+    font-size: 1.5em;
+    margin: 10px 0;
+    color: #e0e0e0;
+    font-weight: 300;
+}
+
+.hero-description {
+    font-size: 1.1em;
+    margin: 15px 0 0 0;
+    color: #b0d4ff;
+    opacity: 0.95;
+}
+
+/* Clinic Selector Section */
+.clinic-selector-container {
+    margin: 50px auto;
+    max-width: 1200px;
+    padding: 0 20px;
+}
+
+.clinic-selector-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    padding: 40px;
+    border-top: 5px solid #2a5298;
+}
+
+.selector-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.selector-header h2 {
+    color: #1e3c72;
+    font-size: 2em;
+    margin: 0 0 10px 0;
+    border: none;
+    padding: 0;
+}
+
+.selector-subtitle {
+    color: #666;
+    font-size: 1.05em;
+    margin: 10px 0 0 0;
+}
+
+.clinic-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.clinic-card {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.clinic-card:hover {
+    border-color: #2a5298;
+    box-shadow: 0 10px 30px rgba(42, 82, 152, 0.15);
+    transform: translateY(-5px);
+    background: #fff;
+}
+
+.clinic-card-header {
+    margin-bottom: 20px;
+}
+
+.clinic-card-header h3 {
+    color: #1e3c72;
+    margin: 0 0 8px 0;
+    font-size: 1.4em;
+    border: none;
+    padding: 0;
+}
+
+.clinic-location {
+    display: block;
+    color: #999;
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+.clinic-card-info {
+    margin-bottom: 20px;
+    flex-grow: 1;
+}
+
+.clinic-card-info p {
+    margin: 8px 0;
+    color: #555;
+    font-size: 0.95em;
+}
+
+.clinic-card-info strong {
+    color: #333;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.clinic-btn {
+    background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+    color: #fff;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.clinic-btn:hover {
+    box-shadow: 0 8px 20px rgba(42, 82, 152, 0.4);
+    transform: scale(1.02);
+}
+
+.no-clinics-message {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+    font-size: 1.1em;
+}
+
+.selector-footer {
+    text-align: center;
+    padding-top: 30px;
+    border-top: 2px solid #f0f0f0;
+}
+
+.btn-register-clinic {
+    display: inline-block;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: #fff;
+    padding: 14px 40px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.05em;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-register-clinic:hover {
+    box-shadow: 0 10px 25px rgba(40, 167, 69, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Portal Access Section */
+.portals-container {
+    max-width: 1200px;
+    margin: 60px auto;
+    padding: 0 20px;
+}
+
+.portals-title {
+    font-size: 2.2em;
+    color: #1e3c72;
+    text-align: center;
+    margin: 0 0 10px 0;
+    border: none;
+    padding: 0;
+}
+
+.portals-subtitle {
+    text-align: center;
+    color: #666;
+    font-size: 1.05em;
+    margin-bottom: 40px;
+}
+
+.portals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 25px;
+    margin-bottom: 50px;
+}
+
+.portal-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border-top: 4px solid #2a5298;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.portal-card:hover {
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+    transform: translateY(-5px);
+}
+
+.portal-icon {
+    font-size: 3.5em;
+    margin-bottom: 15px;
+}
+
+.portal-card h3 {
+    color: #1e3c72;
+    font-size: 1.4em;
+    margin: 15px 0;
+    border: none;
+    padding: 0;
+}
+
+.portal-card p {
+    color: #666;
+    margin: 15px 0;
+    font-size: 0.95em;
+    line-height: 1.5;
+}
+
+.portal-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+    color: #fff;
+    padding: 12px 25px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 15px;
+    transition: all 0.3s ease;
+}
+
+.portal-btn:hover {
+    box-shadow: 0 8px 20px rgba(42, 82, 152, 0.3);
+    transform: scale(1.05);
+}
+
+.reception-portal {
+    border-top-color: #007bff;
+}
+
+.doctor-portal {
+    border-top-color: #28a745;
+}
+
+.patient-portal {
+    border-top-color: #ffc107;
+}
+
+.admin-portal {
+    border-top-color: #dc3545;
+}
+
+/* Statistics Section */
+.stats-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 60px 20px;
+    margin: 50px 0;
+    border-radius: 12px;
+}
+
+.stats-title {
+    font-size: 2.2em;
+    color: #1e3c72;
+    text-align: center;
+    margin: 0 0 50px 0;
+    border: none;
+    padding: 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.stat-card {
+    background: #fff;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12);
+    transform: translateY(-5px);
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #2a5298 0%, #1e3c72 100%);
+}
+
+.stat-icon {
+    font-size: 2.5em;
+    margin-bottom: 15px;
+}
+
+.stat-value {
+    font-size: 3.5em;
+    color: #2a5298;
+    font-weight: 800;
+    margin: 20px 0;
+}
+
+.stat-label {
+    font-size: 1.1em;
+    color: #666;
+    margin-top: 10px;
+}
+
+/* Info Section */
+.info-section {
+    max-width: 1200px;
+    margin: 60px auto;
+    padding: 0 20px;
+}
+
+.info-card {
+    background: #fff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    border-left: 5px solid #2a5298;
+}
+
+.info-card h2 {
+    color: #1e3c72;
+    font-size: 2em;
+    margin: 0 0 20px 0;
+    border: none;
+    padding: 0;
+}
+
+.info-card p {
+    color: #555;
+    margin: 15px 0;
+    font-size: 1em;
+    line-height: 1.8;
+}
+
+.info-card h3 {
+    color: #1e3c72;
+    margin-top: 25px;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+    border: none;
+    padding: 0;
+}
+
+.info-card ul {
+    list-style: none;
+    margin: 20px 0;
+}
+
+.info-card li {
+    padding: 10px 0;
+    color: #555;
+    font-size: 1em;
+    line-height: 1.8;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.info-card li:last-child {
+    border-bottom: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 40px 20px;
+    }
+
+    .hero-content h1.hero-title {
+        font-size: 2.2em;
+    }
+
+    .hero-subtitle {
+        font-size: 1.2em;
+    }
+
+    .clinic-selector-card {
+        padding: 25px;
+    }
+
+    .clinic-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .portals-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .selector-header h2 {
+        font-size: 1.5em;
+    }
+
+    .stat-value {
+        font-size: 2.5em;
+    }
+}
+
+/* ============================================
+   BOOTSTRAP ENHANCED HOMEPAGE STYLES
+   ============================================ */
+
+:root {
+    --primary-color: #0d6efd;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+}
+
+/* Hero Banner */
+.hero-banner {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 50%, #0a58ca 100%);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(13, 110, 253, 0.2);
+}
+
+.hero-overlay {
+    position: relative;
+    padding: 80px 20px;
+    text-align: center;
+    color: white;
+}
+
+.hero-overlay h1 {
+    font-size: 3.5em;
+    font-weight: 800;
+    margin: 0;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.hero-overlay .lead {
+    font-size: 1.5em;
+    opacity: 0.95;
+}
+
+.hero-overlay .fs-5 {
+    opacity: 0.85;
+    font-weight: 300;
+}
+
+/* Login CTA Cards */
+.login-cta .card {
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.login-cta .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15) !important;
+}
+
+.icon-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+
+.login-card, .registration-card {
+    background: #fff;
+    border-top: 4px solid #0d6efd;
+}
+
+.registration-card {
+    border-top-color: #198754;
+}
+
+/* Clinic Cards */
+.clinic-card {
+    transition: all 0.3s ease;
+}
+
+.clinic-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12) !important;
+    border-color: #0d6efd;
+}
+
+.clinic-card .card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 20px;
+}
+
+.clinic-card .card-title {
+    font-size: 1.2em;
+    margin: 0;
+}
+
+.clinic-card .card-body {
+    padding: 20px;
+}
+
+.clinic-card .card-body p {
+    margin: 12px 0;
+    font-size: 0.95em;
+    color: #555;
+}
+
+.clinic-card .badge {
+    font-size: 0.85em;
+    padding: 6px 10px;
+}
+
+.clinic-card .card-footer {
+    padding: 15px 20px;
+}
+
+.clinic-card .btn {
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.clinic-card .btn:hover {
+    transform: scale(1.02);
+}
+
+/* Statistics Section */
+.stats-section {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    border-radius: 10px;
+    color: white;
+}
+
+.stats-section h2 {
+    color: white;
+    border: none;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15) !important;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0d6efd 0%, #0b5ed7 100%);
+}
+
+.stat-icon {
+    margin-bottom: 15px;
+}
+
+.stat-value {
+    font-size: 2.5em;
+    margin: 15px 0;
+    font-weight: 800;
+}
+
+.stat-label {
+    color: #888;
+    font-size: 1em;
+}
+
+/* Role Cards */
+.roles-section h2 {
+    color: #0d6efd;
+    border: none;
+}
+
+.role-card {
+    background: white;
+    border-radius: 10px;
+    padding: 30px;
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.role-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1) !important;
+}
+
+.role-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    color: white;
+    font-size: 1.8rem;
+}
+
+.role-card h4 {
+    margin: 15px 0;
+    font-weight: 700;
+    border: none;
+}
+
+.role-card p {
+    font-size: 0.9em;
+    line-height: 1.5;
+    margin: 10px 0;
+}
+
+.role-card .btn {
+    margin-top: 15px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+/* Feature Cards */
+.features-section h2 {
+    color: #0d6efd;
+    border: none;
+}
+
+.feature-card {
+    background: white;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+    height: 100%;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1) !important;
+}
+
+.feature-icon {
+    font-size: 2.5em;
+    color: #0d6efd;
+    margin-bottom: 20px;
+}
+
+.feature-card h5 {
+    color: #1a1a1a;
+    font-weight: 700;
+    margin: 15px 0;
+    border: none;
+}
+
+.feature-card p {
+    color: #666;
+    font-size: 0.95em;
+    line-height: 1.6;
+}
+
+/* CTA Section */
+.cta-section {
+    margin-bottom: 50px;
+}
+
+.bg-gradient {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%) !important;
+}
+
+.cta-section .card {
+    border: none !important;
+}
+
+.cta-section .card-body {
+    padding: 60px !important;
+}
+
+.cta-section h3 {
+    font-size: 2em;
+    font-weight: 700;
+    border: none;
+}
+
+.cta-section .btn {
+    padding: 12px 40px;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.cta-section .btn:hover {
+    transform: scale(1.05);
+}
+
+/* About Section */
+.about-section h2 {
+    color: #0d6efd;
+    border: none;
+}
+
+.about-item {
+    padding: 12px 0;
+    border-bottom: 1px solid #e9ecef;
+    color: #555;
+}
+
+.about-item:last-child {
+    border-bottom: none;
+}
+
+.about-item i {
+    color: #198754;
+    font-size: 1.1em;
+}
+
+.bg-light-blue {
+    background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%);
+}
+
+/* Hover Effects */
+.hover-lift {
+    transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Responsive Design for Bootstrap */
+@media (max-width: 768px) {
+    .hero-overlay h1 {
+        font-size: 2.2em;
+    }
+
+    .hero-overlay .lead {
+        font-size: 1.2em;
+    }
+
+    .stat-value {
+        font-size: 2em;
+    }
+
+    .cta-section .card-body {
+        padding: 30px !important;
+    }
+
+    .cta-section .btn {
+        margin: 5px;
+    }
+
+    .about-section .col-lg-6 {
+        margin-bottom: 30px;
+    }
+
+    .role-card {
+        padding: 20px;
+    }
+}

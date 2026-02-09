@@ -1,0 +1,171 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Welcome - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">🏥 SantKrupa Hospital</h1>
+        <p class="hero-subtitle">Multi-Clinic Healthcare Management Platform</p>
+        <p class="hero-description">Unified healthcare delivery across multiple clinics. Secure, scalable, and patient-first.</p>
+    </div>
+</div>
+
+<!-- Clinic Selector Section -->
+<div class="clinic-selector-container">
+    <div class="clinic-selector-card">
+        <div class="selector-header">
+            <h2>🏢 Select Your Clinic</h2>
+            <p class="selector-subtitle">Access your clinic's portal to manage patients and operations</p>
+        </div>
+        
+        {% if clinics %}
+            <div class="clinic-grid">
+                {% for c in clinics %}
+                    <div class="clinic-card" onclick="redirectToClinicLogin('{{ c.slug }}')">
+                        <div class="clinic-card-header">
+                            <h3>{{ c.name }}</h3>
+                            <span class="clinic-location">📍 {{ c.city }}, {{ c.state }}</span>
+                        </div>
+                        <div class="clinic-card-info">
+                            <p><strong>Phone:</strong> {{ c.phone_number }}</p>
+                            <p><strong>Status:</strong> <span class="status-badge status-active">Active</span></p>
+                        </div>
+                        <button class="clinic-btn">Enter Portal →</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-clinics-message">
+                <p>📭 No clinics available yet</p>
+            </div>
+        {% endif %}
+
+        <div class="selector-footer">
+            <a href="{% url 'register_clinic' %}" class="btn-register-clinic">
+                <span>+ Register New Clinic</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+
+<!-- Portal Access Section -->
+<div class="portals-container">
+    <h2 class="portals-title">Access Your Portal</h2>
+    <p class="portals-subtitle">Different portals for different roles</p>
+    
+    <div class="portals-grid">
+        <!-- Reception Portal -->
+        <div class="portal-card reception-portal">
+            <div class="portal-icon">👤</div>
+            <h3>Reception Staff</h3>
+            <p>Register patients, manage check-ins, and maintain records</p>
+            <a href="{% url 'login' %}" class="portal-btn">Access Portal</a>
+        </div>
+        
+        <!-- Doctor Portal -->
+        <div class="portal-card doctor-portal">
+            <div class="portal-icon">⚕️</div>
+            <h3>Doctor Portal</h3>
+            <p>Prescribe tests, create medical notes, and manage patient care</p>
+            <a href="{% url 'login' %}" class="portal-btn">Access Portal</a>
+        </div>
+        
+        <!-- Patient Portal -->
+        <div class="portal-card patient-portal">
+            <div class="portal-icon">💳</div>
+            <h3>Patient Portal</h3>
+            <p>View prescriptions, test reports, and health records</p>
+            <a href="{% url 'login' %}" class="portal-btn">Access Portal</a>
+        </div>
+        
+        <!-- Admin Portal -->
+        <div class="portal-card admin-portal">
+            <div class="portal-icon">⚙️</div>
+            <h3>Clinic Admin</h3>
+            <p>Manage users, doctors, and clinic settings</p>
+            <a href="{% url 'login' %}" class="portal-btn">Access Portal</a>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Section -->
+<div class="stats-section">
+    <h2 class="stats-title">Platform Overview</h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value" id="stat-patients">{{ total_patients }}</div>
+            <div class="stat-label">Active Patients</div>
+            <div class="stat-icon">👥</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="stat-doctors">{{ total_doctors }}</div>
+            <div class="stat-label">Registered Doctors</div>
+            <div class="stat-icon">👨‍⚕️</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="stat-clinics">{{ clinics|length }}</div>
+            <div class="stat-label">Active Clinics</div>
+            <div class="stat-icon">🏢</div>
+        </div>
+    </div>
+</div>
+
+<div class="info-section">
+    <div class="info-card">
+        <h2>About SantKrupa Hospital</h2>
+        <p>Welcome to SantKrupa Hospital, a state-of-the-art medical facility dedicated to providing exceptional healthcare services to our community. With a team of experienced doctors and modern medical equipment, we ensure the best care for our patients.</p>
+        
+        <h3>Our Multi-Clinic Advantage:</h3>
+        <ul>
+            <li>✅ <strong>Unified Management:</strong> Manage multiple clinics from a single platform</li>
+            <li>✅ <strong>Secure Data:</strong> HIPAA-compliant storage with clinic-level isolation</li>
+            <li>✅ <strong>Scalable:</strong> Add clinics and manage growth effortlessly</li>
+            <li>✅ <strong>24/7 Access:</strong> Online portal for patients, doctors, and staff</li>
+            <li>✅ <strong>Digital Prescriptions:</strong> Paperless prescription management</li>
+            <li>✅ <strong>Medical Records:</strong> Secure storage of health documents</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+function redirectToClinicLogin(slug) {
+    if (slug) {
+        window.location.href = '/clinic/' + slug + '/login/';
+    }
+}
+</script>
+
+    </ul>
+</div>
+
+<div class="card">
+    <h2>🔄 How Our System Works</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 8px;">
+            <h3 style="color: #1e3c72; margin-top: 0;">1️⃣ Patient Registration</h3>
+            <p>Reception staff registers patients with their personal information. Each patient gets a unique ID and login credentials.</p>
+        </div>
+        
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 8px;">
+            <h3 style="color: #1e3c72; margin-top: 0;">2️⃣ Doctor Consultation</h3>
+            <p>Doctors view registered patients and create prescriptions with detailed notes, tests, and medications.</p>
+        </div>
+        
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 8px;">
+            <h3 style="color: #1e3c72; margin-top: 0;">3️⃣ Patient Access</h3>
+            <p>Patients log in to view their prescriptions, download medicines, track tests, and upload medical reports.</p>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="background-color: #f0f7ff; border-left-color: #17a2b8;">
+    <h3 style="color: #0c5460; margin-top: 0;">📞 Contact Information</h3>
+    <p style="color: #0c5460; margin: 10px 0;"><strong>Phone:</strong> +91-XXXX-XXXX-XX</p>
+    <p style="color: #0c5460; margin: 10px 0;"><strong>Email:</strong> info@santkrupahospital.com</p>
+    <p style="color: #0c5460; margin: 0;"><strong>Emergency:</strong> +91-XXXX-XXXX-XX</p>
+</div>
+{% endblock %}

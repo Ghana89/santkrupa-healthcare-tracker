@@ -34,10 +34,10 @@
         </table>
     </div>
     {% else %}
-    <p class="no-data">No receptionists found. <a href="{% url 'create_receptionist' %}">Create one</a></p>
+    <p class="no-data">No receptionists found. <a href="{% url 'create_receptionist' clinic_slug=clinic.slug %}">Create one</a></p>
     {% endif %}
 
-    <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+    <a href="{% url 'admin_dashboard' clinic_slug=clinic.slug %}" class="btn btn-secondary">Back to Dashboard</a>
 </div>
 
 <style>

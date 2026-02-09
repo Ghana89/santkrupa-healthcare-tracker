@@ -1,0 +1,33 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Register Clinic - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<div style="max-width:700px; margin:30px auto;">
+    <div class="card" style="text-align:center; background:linear-gradient(135deg,#2a5298 0%,#1e3c72 100%); color:#fff;">
+        <h1 style="margin:0;">Register Your Clinic</h1>
+        <p style="margin:5px 0 15px;">Create a clinic account to use the SantKrupa platform</p>
+    </div>
+
+    <div class="card">
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-group">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                    {% for error in field.errors %}
+                        <div class="alert-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <button type="submit" class="btn">Register Clinic</button>
+        </form>
+    </div>
+
+    <div style="text-align:center; margin-top:12px;">
+        <a href="{% url 'homepage' %}" class="btn btn-secondary">← Back to Home</a>
+    </div>
+</div>
+{% endblock %}

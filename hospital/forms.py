@@ -1,6 +1,44 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import Patient, Prescription, Test, Medicine, DoctorNotes, MedicalReport, Doctor, User, PatientVisit, TestReport
+from .models import Patient, Prescription, Test, Medicine, DoctorNotes, MedicalReport, Doctor, User, PatientVisit, TestReport, Clinic
+from django.utils.text import slugify
+
+
+# Clinic registration form
+class ClinicRegistrationForm(forms.ModelForm):
+    class Meta:
+        model = Clinic
+        fields = ['name', 'slug', 'address', 'city', 'state', 'zip_code', 'phone_number', 'email', 'website', 'registration_number']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Clinic name'}),
+            'slug': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'clinic-slug (URL friendly)'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'city': forms.TextInput(attrs={'class': 'form-control'}),
+            'state': forms.TextInput(attrs={'class': 'form-control'}),
+            'zip_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'website': forms.URLInput(attrs={'class': 'form-control'}),
+            'registration_number': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Explanatory help text for slug field
+        self.fields['slug'].help_text = (
+            "Used in URLs: /clinic/{slug}/ — lowercase letters, numbers, hyphens and underscores. "
+            "Example: santkrupa-hospital or clinic_123"
+        )
+
+    def clean_slug(self):
+        raw = self.cleaned_data.get('slug', '')
+        if not raw:
+            raise forms.ValidationError('Please provide a slug for the clinic.')
+        # Normalize slug to URL-friendly form
+        normalized = slugify(raw)
+        if not normalized:
+            raise forms.ValidationError('Invalid slug after normalization. Use letters, numbers, hyphens or underscores.')
+        return normalized
 
 
 # Reception - Patient Registration Form

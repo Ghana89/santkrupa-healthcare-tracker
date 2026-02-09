@@ -5,8 +5,8 @@
 {% block content %}
 <div style="max-width: 500px; margin: 50px auto;">
     <div class="card" style="background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%); color: #fff; border-left: none; text-align: center;">
-        <h1 style="color: #fff; border: none; padding: 0; margin-bottom: 10px;">🏥 SantKrupa Hospital</h1>
-        <p style="color: #f0f0f0; margin: 0;">Login to Your Account</p>
+        <h1 style="color: #fff; border: none; padding: 0; margin-bottom: 10px;">{% if request.clinic %}🏥 {{ request.clinic.name }}{% else %}🏥 SantKrupa Hospital{% endif %}</h1>
+        <p style="color: #f0f0f0; margin: 0;">{% if request.clinic %}Login to {{ request.clinic.name }}{% else %}Login to Your Account{% endif %}</p>
     </div>
     
     <div class="card">

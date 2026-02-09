@@ -1,88 +1,366 @@
 {% extends "hospital/base.html" %}
 
-{% block title %}Admin Dashboard - SantKrupa Hospital{% endblock %}
+{% block title %}Clinic Admin Dashboard - SantKrupa Hospital{% endblock %}
 
 {% block content %}
-<h1>⚙️ Admin Dashboard</h1>
 
-<div class="dashboard-grid">
-    <div class="dashboard-item">
-        <div class="icon">👥</div>
-        <h3 style="color: #fff; margin-top: 0;">Total Patients</h3>
-        <p style="color: #f0f0f0; font-size: 2.5em; margin: 10px 0;">{{ total_patients }}</p>
-        <a href="{% url 'view_all_patients' %}" class="btn" style="background: #fff; color: #2a5298;">View All</a>
+<!-- Header Section -->
+<div class="row mb-5">
+    <div class="col-lg-8">
+        <h1 class="display-5 fw-bold mb-2">
+            <i class="fas fa-tachometer-alt"></i> Clinic Admin Dashboard
+        </h1>
+        {% if clinic %}
+        <p class="lead text-muted">
+            <span class="badge bg-primary me-2">{{ clinic.name }}</span>
+            <span class="text-secondary">{{ clinic.city }}, {{ clinic.state }}</span>
+        </p>
+        {% endif %}
+        <p class="text-muted">Manage your clinic's operations, staff, and patients</p>
     </div>
-    
-    <div class="dashboard-item">
-        <div class="icon">⚕️</div>
-        <h3 style="color: #fff; margin-top: 0;">Total Doctors</h3>
-        <p style="color: #f0f0f0; font-size: 2.5em; margin: 10px 0;">{{ total_doctors }}</p>
-        <a href="{% url 'view_all_doctors' %}" class="btn" style="background: #fff; color: #2a5298;">View All</a>
-    </div>
-
-    <div class="dashboard-item">
-        <div class="icon">👔</div>
-        <h3 style="color: #fff; margin-top: 0;">Total Receptionists</h3>
-        <p style="color: #f0f0f0; font-size: 2.5em; margin: 10px 0;">{{ total_receptionists }}</p>
-        <a href="{% url 'view_all_receptionists' %}" class="btn" style="background: #fff; color: #2a5298;">View All</a>
-    </div>
-    
-    <div class="dashboard-item">
-        <div class="icon">📋</div>
-        <h3 style="color: #fff; margin-top: 0;">Total Prescriptions</h3>
-        <p style="color: #f0f0f0; font-size: 2.5em; margin: 10px 0;">{{ total_prescriptions }}</p>
-    </div>
-    
-    <div class="dashboard-item">
-        <div class="icon">👤</div>
-        <h3 style="color: #fff; margin-top: 0;">Total Users</h3>
-        <p style="color: #f0f0f0; font-size: 2.5em; margin: 10px 0;">{{ total_users }}</p>
+    <div class="col-lg-4 text-end">
+        <a href="{% url 'homepage' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
     </div>
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin: 20px 0;">
-    <div class="card">
-        <h3 style="margin-top: 0;">➕ Create Doctor Account</h3>
-        <p>Add a new doctor to the system with specialization and license details.</p>
-        <a href="{% url 'create_doctor' %}" class="btn" style="width: 100%; text-align: center;">Create Doctor</a>
+<!-- Quick Stats -->
+<div class="row g-4 mb-5">
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted text-uppercase mb-1">Total Patients</h6>
+                        <h2 class="mb-0 text-primary fw-bold">{{ total_patients }}</h2>
+                        <small class="text-success">Today: {{ todays_patients }}</small>
+                    </div>
+                    <div class="stat-icon-lg text-primary opacity-25">
+                        <i class="fas fa-users fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    <div class="card">
-        <h3 style="margin-top: 0;">➕ Create Receptionist Account</h3>
-        <p>Add a new receptionist for patient registration duties.</p>
-        <a href="{% url 'create_receptionist' %}" class="btn" style="width: 100%; text-align: center;">Create Receptionist</a>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted text-uppercase mb-1">Total Doctors</h6>
+                        <h2 class="mb-0 text-success fw-bold">{{ total_doctors }}</h2>
+                        <small class="text-muted">Active</small>
+                    </div>
+                    <div class="stat-icon-lg text-success opacity-25">
+                        <i class="fas fa-user-md fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    <div class="card">
-        <h3 style="margin-top: 0;">📊 Admin Panel</h3>
-        <p>Access Django admin panel for advanced management.</p>
-        <a href="{% url 'admin:index' %}" class="btn" style="width: 100%; text-align: center;">Go to Admin</a>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted text-uppercase mb-1">Pending Items</h6>
+                        <h2 class="mb-0 text-warning fw-bold">{{ pending_prescriptions|add:pending_tests }}</h2>
+                        <small class="text-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Action needed
+                        </small>
+                    </div>
+                    <div class="stat-icon-lg text-warning opacity-25">
+                        <i class="fas fa-tasks fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted text-uppercase mb-1">Total Prescriptions</h6>
+                        <h2 class="mb-0 text-info fw-bold">{{ total_prescriptions }}</h2>
+                        <small class="text-danger">Pending: {{ pending_prescriptions }}</small>
+                    </div>
+                    <div class="stat-icon-lg text-info opacity-25">
+                        <i class="fas fa-file-medical fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="card">
-    <h2>System Summary</h2>
-    <table>
-        <tr>
-            <td><strong>Total Users:</strong></td>
-            <td>{{ total_users }}</td>
-        </tr>
-        <tr>
-            <td><strong>Total Doctors:</strong></td>
-            <td>{{ total_doctors }}</td>
-        </tr>
-        <tr>
-            <td><strong>Total Patients:</strong></td>
-            <td>{{ total_patients }}</td>
-        </tr>
-        <tr>
-            <td><strong>Total Prescriptions:</strong></td>
-            <td>{{ total_prescriptions }}</td>
-        </tr>
-    </table>
+<!-- Management Sections -->
+<div class="row g-4 mb-5">
+    <!-- Pending Items Alert -->
+    {% if pending_prescriptions > 0 or pending_tests > 0 %}
+    <div class="col-12">
+        <div class="alert alert-warning border-0 shadow-sm" role="alert">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <i class="fas fa-exclamation-circle fa-2x text-warning"></i>
+                </div>
+                <div class="col">
+                    <h5 class="alert-heading mb-1">Pending Items Requiring Attention</h5>
+                    <p class="mb-0 text-muted">
+                        <strong>{{ pending_prescriptions }}</strong> pending prescriptions | 
+                        <strong>{{ pending_tests }}</strong> pending tests
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Patient Management -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-primary bg-gradient border-0 p-4">
+                <h5 class="text-white mb-0">
+                    <i class="fas fa-hospital-user"></i> Patient Management
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">Register new patients and manage patient records</p>
+                <div class="d-grid gap-2">
+                    {% if clinic %}
+                    <a href="{% url 'register_patient' clinic.slug %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-user-plus"></i> Register New Patient
+                    </a>
+                    <a href="{% url 'view_all_patients' clinic.slug %}" class="btn btn-outline-primary">
+                        <i class="fas fa-list"></i> View All Patients
+                    </a>
+                    {% else %}
+                    <a href="{% url 'register' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-user-plus"></i> Register New Patient
+                    </a>
+                    <a href="{% url 'homepage' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-list"></i> View All Patients
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff Management -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-success bg-gradient border-0 p-4">
+                <h5 class="text-white mb-0">
+                    <i class="fas fa-users-cog"></i> Staff Management
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">Create and manage doctors and reception staff</p>
+                <div class="d-grid gap-2">
+                    {% if clinic %}
+                    <a href="{% url 'create_doctor' clinic.slug %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-stethoscope"></i> Add Doctor
+                    </a>
+                    <a href="{% url 'create_receptionist' clinic.slug %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-headset"></i> Add Receptionist
+                    </a>
+                    {% else %}
+                    <a href="{% url 'homepage' %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-stethoscope"></i> Add Doctor
+                    </a>
+                    <a href="{% url 'homepage' %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-headset"></i> Add Receptionist
+                    </a>
+                    {% endif %}
+                </div>
+                <hr>
+                <div class="d-grid gap-2">
+                    {% if clinic %}
+                    <a href="{% url 'view_all_doctors' clinic.slug %}" class="btn btn-outline-success btn-sm">
+                        View All Doctors
+                    </a>
+                    <a href="{% url 'view_all_receptionists' clinic.slug %}" class="btn btn-outline-success btn-sm">
+                        View All Receptionists
+                    </a>
+                    {% else %}
+                    <a href="{% url 'homepage' %}" class="btn btn-outline-success btn-sm">View All Doctors</a>
+                    <a href="{% url 'homepage' %}" class="btn btn-outline-success btn-sm">View All Receptionists</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="card" style="text-align: center;">
-    <a href="{% url 'homepage' %}" class="btn btn-secondary">← Back to Home</a>
+<!-- Additional Actions -->
+<div class="row g-4 mb-5">
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm hover-lift">
+            <div class="card-body text-center p-4">
+                <div class="feature-icon mb-3">
+                    <i class="fas fa-chart-bar fa-2x text-info"></i>
+                </div>
+                <h5 class="card-title">View Analytics</h5>
+                <p class="text-muted small">Check clinic statistics and metrics</p>
+                <a href="#" class="btn btn-sm btn-outline-info">
+                    <i class="fas fa-arrow-right"></i> Analyze
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm hover-lift">
+            <div class="card-body text-center p-4">
+                <div class="feature-icon mb-3">
+                    <i class="fas fa-cog fa-2x text-warning"></i>
+                </div>
+                <h5 class="card-title">Clinic Settings</h5>
+                <p class="text-muted small">Manage clinic profile and settings</p>
+                <a href="#" class="btn btn-sm btn-outline-warning">
+                    <i class="fas fa-arrow-right"></i> Settings
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm hover-lift">
+            <div class="card-body text-center p-4">
+                <div class="feature-icon mb-3">
+                    <i class="fas fa-lock fa-2x text-danger"></i>
+                </div>
+                <h5 class="card-title">Admin Panel</h5>
+                <p class="text-muted small">Advanced system management</p>
+                <a href="{% url 'admin:index' %}" class="btn btn-sm btn-outline-danger">
+                    <i class="fas fa-arrow-right"></i> Django Admin
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- System Summary Table -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light border-0 p-4">
+                <h5 class="mb-0">
+                    <i class="fas fa-table"></i> System Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold">Total Users</td>
+                                <td><span class="badge bg-primary">{{ total_users }}</span></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Total Doctors</td>
+                                <td><span class="badge bg-success">{{ total_doctors }}</span></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Total Patients</td>
+                                <td><span class="badge bg-primary">{{ total_patients }}</span></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Total Prescriptions</td>
+                                <td><span class="badge bg-info">{{ total_prescriptions }}</span></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Total Receptionists</td>
+                                <td><span class="badge bg-warning">{{ total_receptionists }}</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Registrations -->
+{% if recent_patients %}
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light border-0 p-4">
+                <h5 class="mb-0">
+                    <i class="fas fa-history"></i> Recent Patient Registrations
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Patient ID</th>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Registration Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for patient in recent_patients %}
+                            <tr>
+                                <td><strong>{{ patient.patient_id }}</strong></td>
+                                <td>{{ patient.first_name }} {{ patient.last_name }}</td>
+                                <td>{{ patient.phone_number }}</td>
+                                <td><small class="text-muted">{{ patient.registration_date|date:"M d, Y" }}</small></td>
+                                <td>
+                                    <a href="{% url 'view_all_patients' %}" class="btn btn-sm btn-outline-primary">
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.stat-icon-lg {
+    display: flex;
+    align-items: center;
+
 {% endblock %}
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+}
+
+.feature-icon {
+    font-size: 2.5rem;
+}
+
+.hover-lift {
+    transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1) !important;
+}
+
+.bg-gradient {
+    background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-rgb) 100%);
+}
+
+.bg-success.bg-gradient {
+    background: linear-gradient(135deg, var(--bs-success) 0%, var(--bs-success-rgb) 100%);
+}
+</style>
+

@@ -208,6 +208,10 @@
 
     <a href="{% url 'print_prescription' prescription.id %}" class="btn" style="background: #007bff; margin-right: 10px;">🖨️ Print Prescription</a>
     
-    <a href="{% url 'doctor_dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
+    {% if clinic %}
+    <a href="{% url 'doctor_dashboard' clinic.slug %}" class="btn btn-secondary">← Back to Dashboard</a>
+    {% else %}
+    <a href="{% url 'homepage' %}" class="btn btn-secondary">← Back to Dashboard</a>
+    {% endif %}
 </div>
 {% endblock %}
