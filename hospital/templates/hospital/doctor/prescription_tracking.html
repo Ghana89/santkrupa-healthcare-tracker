@@ -1,0 +1,162 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Prescription Tracking - {{ clinic.name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 1400px; margin: 0 auto;">
+    <h1>📋 Prescription Tracking Dashboard</h1>
+    <p style="color: #666; margin-bottom: 20px;"><strong>Doctor:</strong> Dr. {{ doctor.user.first_name }} {{ doctor.user.last_name }} | <strong>Clinic:</strong> {{ clinic.name }}</p>
+
+    <!-- Filters and Search -->
+    <div class="card" style="margin-bottom: 20px;">
+        <h3 style="margin-top: 0;">Filters & Search</h3>
+        <form method="get" style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px;">
+            <div>
+                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Search by Patient Name</label>
+                <input type="text" name="search" placeholder="Patient name..." value="{{ search_query }}" 
+                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            
+            <div>
+                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Filter by Status</label>
+                <select name="status" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="">-- All Statuses --</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                    <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; align-items: flex-end;">
+                <button type="submit" class="btn" style="width: 100%;">Search</button>
+            </div>
+            
+            <div style="display: flex; align-items: flex-end;">
+                <a href="{% url 'doctor_prescription_tracking' clinic.slug %}" class="btn btn-secondary" style="width: 100%; text-align: center;">Clear</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Prescription Statistics -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+        <div class="card" style="text-align: center; background: #fff3cd;">
+            <h4 style="margin: 0 0 10px 0; color: #856404;">Pending</h4>
+            <p style="font-size: 2em; font-weight: bold; color: #856404; margin: 0;">
+                {{ prescriptions|dictsort:"status"|length }}
+            </p>
+        </div>
+        <div class="card" style="text-align: center; background: #d4edda;">
+            <h4 style="margin: 0 0 10px 0; color: #155724;">Completed</h4>
+            <p style="font-size: 2em; font-weight: bold; color: #155724; margin: 0;">0</p>
+        </div>
+        <div class="card" style="text-align: center; background: #f8d7da;">
+            <h4 style="margin: 0 0 10px 0; color: #721c24;">Cancelled</h4>
+            <p style="font-size: 2em; font-weight: bold; color: #721c24; margin: 0;">0</p>
+        </div>
+    </div>
+
+    <!-- Prescription Records Table -->
+    <div class="card">
+        <h2>All Prescriptions ({{ prescriptions|length }})</h2>
+        
+        {% if prescriptions %}
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f8f9fa; border-bottom: 2px solid #ddd;">
+                            <th style="padding: 12px; text-align: left; font-weight: bold;">Patient Name</th>
+                            <th style="padding: 12px; text-align: left; font-weight: bold;">Patient ID</th>
+                            <th style="padding: 12px; text-align: center; font-weight: bold;">Date</th>
+                            <th style="padding: 12px; text-align: center; font-weight: bold;">Tests</th>
+                            <th style="padding: 12px; text-align: center; font-weight: bold;">Medicines</th>
+                            <th style="padding: 12px; text-align: center; font-weight: bold;">Status</th>
+                            <th style="padding: 12px; text-align: center; font-weight: bold;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prescription in prescriptions %}
+                        <tr style="border-bottom: 1px solid #eee; hover: background: #f5f5f5;">
+                            <td style="padding: 12px;"><strong>{{ prescription.patient.patient_name }}</strong></td>
+                            <td style="padding: 12px;">{{ prescription.patient.patient_id }}</td>
+                            <td style="padding: 12px; text-align: center; color: #666;">{{ prescription.prescription_date|date:"M d, Y H:i" }}</td>
+                            <td style="padding: 12px; text-align: center;">
+                                <span style="background: #e3f2fd; padding: 4px 8px; border-radius: 4px; font-size: 0.9em;">
+                                    {{ prescription.tests.count }}
+                                </span>
+                            </td>
+                            <td style="padding: 12px; text-align: center;">
+                                <span style="background: #f3e5f5; padding: 4px 8px; border-radius: 4px; font-size: 0.9em;">
+                                    {{ prescription.medicines.count }}
+                                </span>
+                            </td>
+                            <td style="padding: 12px; text-align: center;">
+                                <span style="background: 
+                                    {% if prescription.status == 'pending' %}#fff3cd
+                                    {% elif prescription.status == 'completed' %}#d4edda
+                                    {% else %}#f8d7da{% endif %};
+                                    padding: 5px 10px; border-radius: 4px; font-size: 0.9em; font-weight: bold;">
+                                    {{ prescription.get_status_display }}
+                                </span>
+                            </td>
+                            <td style="padding: 12px; text-align: center;">
+                                <a href="{% url 'add_prescription_details' clinic.slug prescription.id %}" 
+                                   class="btn" style="padding: 6px 12px; font-size: 0.9em; background: #007bff; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">
+                                    Edit
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert-info" style="padding: 15px; background: #e7f3ff; border-left: 4px solid #2196F3; border-radius: 4px;">
+                📋 No prescriptions found matching your filters.
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Back Button -->
+    <div style="text-align: center; margin-top: 30px;">
+        <a href="{% url 'doctor_dashboard' clinic.slug %}" class="btn btn-secondary" style="display: inline-block; padding: 10px 20px;">← Back to Dashboard</a>
+    </div>
+</div>
+
+<style>
+    .card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1em;
+    }
+    
+    .btn:hover {
+        opacity: 0.9;
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+    }
+    
+    .alert-info {
+        background: #e7f3ff;
+        color: #004085;
+        padding: 12px;
+        border-radius: 4px;
+    }
+    
+    tr:hover {
+        background: #f5f5f5 !important;
+    }
+</style>
+{% endblock %}

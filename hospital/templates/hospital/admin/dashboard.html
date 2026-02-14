@@ -207,9 +207,51 @@
                 </div>
                 <h5 class="card-title">View Analytics</h5>
                 <p class="text-muted small">Check clinic statistics and metrics</p>
-                <a href="#" class="btn btn-sm btn-outline-info">
-                    <i class="fas fa-arrow-right"></i> Analyze
+                <a href="{% if clinic %}{% url 'checkin_dashboard' clinic.slug %}{% else %}{% url 'checkin_dashboard_global' %}{% endif %}" class="btn btn-sm btn-outline-info">
+                    <i class="fas fa-arrow-right"></i> Check-ins
                 </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm hover-lift">
+            <div class="card-body text-center p-4">
+                <div class="feature-icon mb-3">
+                    <i class="fas fa-pills fa-2x text-success"></i>
+                </div>
+                <h5 class="card-title">Manage Medicines</h5>
+                <p class="text-muted small">Register & configure medicine templates</p>
+                {% if clinic %}
+                <a href="{% url 'manage_master_medicines' clinic.slug %}" class="btn btn-sm btn-outline-success">
+                    <i class="fas fa-arrow-right"></i> Medicines
+                </a>
+                {% else %}
+                <a href="{% url 'homepage' %}" class="btn btn-sm btn-outline-success">
+                    <i class="fas fa-arrow-right"></i> Medicines
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm hover-lift">
+            <div class="card-body text-center p-4">
+                <div class="feature-icon mb-3">
+                    <i class="fas fa-flask-vial fa-2x text-info"></i>
+                </div>
+                <h5 class="card-title">Manage Tests</h5>
+                <p class="text-muted small">Register & configure test templates</p>
+                {% if clinic %}
+                <a href="{% url 'manage_master_tests' clinic.slug %}" class="btn btn-sm btn-outline-info">
+                    <i class="fas fa-arrow-right"></i> Tests
+                </a>
+                {% else %}
+                <a href="{% url 'homepage' %}" class="btn btn-sm btn-outline-info">
+                    <i class="fas fa-arrow-right"></i> Tests
+                </a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -316,9 +358,11 @@
                                 <td>{{ patient.phone_number }}</td>
                                 <td><small class="text-muted">{{ patient.registration_date|date:"M d, Y" }}</small></td>
                                 <td>
-                                    <a href="{% url 'view_all_patients' %}" class="btn btn-sm btn-outline-primary">
-                                        View
-                                    </a>
+                                    {% if clinic %}
+                                    <a href="{% url 'view_all_patients' clinic.slug %}" class="btn btn-sm btn-outline-primary">View</a>
+                                    {% else %}
+                                    <a href="{% url 'homepage' %}" class="btn btn-sm btn-outline-primary">View</a>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}

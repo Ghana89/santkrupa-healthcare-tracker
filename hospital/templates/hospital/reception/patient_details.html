@@ -97,6 +97,6 @@
 </div>
 
 <div class="card" style="text-align: center;">
-    <a href="{% url 'reception_dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
+    <a href="{% if clinic %}{% url 'reception_dashboard' clinic.slug %}{% else %}{% url 'homepage' %}{% endif %}" class="btn btn-secondary">← Back to Dashboard</a>
 </div>
 {% endblock %}

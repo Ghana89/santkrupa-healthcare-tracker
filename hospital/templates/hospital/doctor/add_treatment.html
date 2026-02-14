@@ -1,0 +1,261 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Add Treatment - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 900px; margin: 0 auto; padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1>💊 Add Treatment / Injection / Saline</h1>
+        <a href="{% url 'admission_details' admission_id=admission.id clinic_slug=clinic.slug %}" class="btn" style="background-color: #666;">
+            ← Back
+        </a>
+    </div>
+
+    <div class="card" style="margin-bottom: 20px;">
+        <h3>Patient: {{ admission.patient.patient_name }} ({{ admission.patient.patient_id }})</h3>
+        <p style="color: #666; margin: 5px 0 0 0;">Admitted: {{ admission.admission_date|date:"M d, Y H:i" }} | {{ admission.get_admission_type_display }}</p>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-{% if message.tags %}{{ message.tags }}{% else %}success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" class="card">
+        {% csrf_token %}
+        
+        <!-- Treatment Type -->
+        <div class="form-group">
+            <label for="treatment_type" style="display: block; font-weight: bold; margin-bottom: 8px;">*Treatment Type</label>
+            <select name="treatment_type" id="treatment_type" required onchange="toggleFields(this.value)" 
+                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                <option value="">-- Select Treatment Type --</option>
+                {% for value, label in treatment_types %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Treatment Name -->
+        <div class="form-group">
+            <label for="treatment_name" style="display: block; font-weight: bold; margin-bottom: 8px;">*Treatment/Medication Name</label>
+            <input type="text" name="treatment_name" id="treatment_name" required 
+                   list="treatment_suggestions"
+                   placeholder="e.g., Paracetamol, Glucose, Vaccination, etc."
+                   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box;">
+            <datalist id="treatment_suggestions">
+                {% for medicine in medicines %}
+                    <option value="{{ medicine.medicine_name }}">
+                {% endfor %}
+            </datalist>
+            <small style="color: #666;">Type to search clinic medicines or enter custom treatment</small>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+            <label for="description" style="display: block; font-weight: bold; margin-bottom: 8px;">Description</label>
+            <textarea name="description" id="description" rows="3"
+                      placeholder="Additional details about the treatment..."
+                      style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box; font-family: inherit;"></textarea>
+        </div>
+
+        <!-- Medication/Injection Fields -->
+        <div id="medication-fields" style="display: none;">
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+            <h3 style="margin-top: 20px;">Medication Details</h3>
+            
+            <div class="form-group">
+                <label for="dosage" style="display: block; font-weight: bold; margin-bottom: 8px;">Dosage</label>
+                <input type="text" name="dosage" id="dosage" 
+                       placeholder="e.g., 500mg, 1000mg, 2ml"
+                       style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box;">
+            </div>
+
+            <div class="form-group">
+                <label for="frequency" style="display: block; font-weight: bold; margin-bottom: 8px;">Frequency</label>
+                <input type="text" name="frequency" id="frequency" 
+                       placeholder="e.g., Once daily, Twice daily, Every 4 hours"
+                       style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box;">
+            </div>
+
+            <div class="form-group">
+                <label for="route" style="display: block; font-weight: bold; margin-bottom: 8px;">Route</label>
+                <select name="route" id="route" 
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                    <option value="">-- Select Route --</option>
+                    <option value="Oral">Oral (Mouth)</option>
+                    <option value="IV">IV (Intravenous)</option>
+                    <option value="IM">IM (Intramuscular)</option>
+                    <option value="SC">SC (Subcutaneous)</option>
+                    <option value="Inhalation">Inhalation</option>
+                    <option value="Topical">Topical (Skin)</option>
+                    <option value="Rectal">Rectal</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Saline/IV Fields -->
+        <div id="saline-fields" style="display: none;">
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+            <h3 style="margin-top: 20px;">IV/Saline Details</h3>
+            
+            <div class="form-group">
+                <label for="saline_type" style="display: block; font-weight: bold; margin-bottom: 8px;">Saline Type</label>
+                <select name="saline_type" id="saline_type"
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                    <option value="">-- Select Saline Type --</option>
+                    <option value="Normal Saline (0.9%)">Normal Saline (0.9%)</option>
+                    <option value="D5W (5% Dextrose)">D5W (5% Dextrose)</option>
+                    <option value="Ringer's Lactate">Ringer's Lactate</option>
+                    <option value="Half Normal Saline (0.45%)">Half Normal Saline (0.45%)</option>
+                    <option value="Mannitol">Mannitol</option>
+                    <option value="Blood">Blood Transfusion</option>
+                    <option value="Blood Components">Blood Components</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="quantity" style="display: block; font-weight: bold; margin-bottom: 8px;">Quantity</label>
+                <input type="text" name="quantity" id="quantity" 
+                       placeholder="e.g., 500ml, 1L, 250ml"
+                       style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box;">
+            </div>
+        </div>
+
+        <!-- Oxygen Therapy Fields -->
+        <div id="oxygen-fields" style="display: none;">
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+            <h3 style="margin-top: 20px;">Oxygen Therapy Details</h3>
+            
+            <div class="form-group">
+                <label for="oxygen_type" style="display: block; font-weight: bold; margin-bottom: 8px;">Oxygen Type</label>
+                <select name="oxygen_type" id="oxygen_type"
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                    <option value="">-- Select Oxygen Type --</option>
+                    <option value="Nasal Cannula">Nasal Cannula</option>
+                    <option value="Face Mask">Face Mask</option>
+                    <option value="Non-Rebreather Mask">Non-Rebreather Mask</option>
+                    <option value="Ventilator">Ventilator</option>
+                    <option value="CPAP">CPAP</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="oxygen_flow_rate" style="display: block; font-weight: bold; margin-bottom: 8px;">Flow Rate</label>
+                <input type="text" name="oxygen_flow_rate" id="oxygen_flow_rate" 
+                       placeholder="e.g., 2L/min, 40%, 5L/min"
+                       style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box;">
+            </div>
+        </div>
+
+        <!-- Duration -->
+        <div id="duration-field" style="display: none;">
+            <div class="form-group">
+                <label for="duration" style="display: block; font-weight: bold; margin-bottom: 8px;">Duration</label>
+                <input type="text" name="duration" id="duration" 
+                       placeholder="e.g., 30 minutes, 2 hours, 1 week"
+                       style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box;">
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group">
+            <label for="notes" style="display: block; font-weight: bold; margin-bottom: 8px;">Notes / Observations</label>
+            <textarea name="notes" id="notes" rows="3"
+                      placeholder="Patient response, any side effects, observations, etc."
+                      style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box; font-family: inherit;"></textarea>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="submit" class="btn" style="flex: 1;">✅ Save Treatment</button>
+            <a href="{% url 'admission_details' admission_id=admission.id clinic_slug=clinic.slug %}" class="btn" style="flex: 1; text-align: center; background-color: #999;">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .btn {
+        background-color: #667eea;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        transition: background-color 0.3s ease;
+        border: 1px solid #667eea;
+    }
+    
+    .btn:hover {
+        background-color: #5a67d8;
+        border-color: #5a67d8;
+    }
+    
+    .card {
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        box-sizing: border-box;
+    }
+    
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        padding: 12px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+    }
+    
+    h1, h3 {
+        color: #333;
+        margin: 0 0 15px 0;
+    }
+    
+    .container {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+</style>
+
+<script>
+function toggleFields(treatmentType) {
+    // Hide all fields first
+    document.getElementById('medication-fields').style.display = 'none';
+    document.getElementById('saline-fields').style.display = 'none';
+    document.getElementById('oxygen-fields').style.display = 'none';
+    document.getElementById('duration-field').style.display = 'none';
+    
+    // Show relevant fields based on treatment type
+    if (treatmentType === 'medication' || treatmentType === 'injection') {
+        document.getElementById('medication-fields').style.display = 'block';
+        document.getElementById('duration-field').style.display = 'block';
+    } else if (treatmentType === 'saline') {
+        document.getElementById('saline-fields').style.display = 'block';
+        document.getElementById('duration-field').style.display = 'block';
+    } else if (treatmentType === 'oxygen') {
+        document.getElementById('oxygen-fields').style.display = 'block';
+        document.getElementById('duration-field').style.display = 'block';
+    } else if (treatmentType === 'procedure') {
+        document.getElementById('duration-field').style.display = 'block';
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends 'hospital/base.html' %}
+
+{% block title %}Check-in Dashboard - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<h1>📊 Check-in Dashboard</h1>
+
+<div class="card">
+    <form method="get" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <label>Granularity:
+            <select name="granularity">
+                <option value="day" {% if granularity == 'day' %}selected{% endif %}>Day</option>
+                <option value="month" {% if granularity == 'month' %}selected{% endif %}>Month</option>
+                <option value="year" {% if granularity == 'year' %}selected{% endif %}>Year</option>
+            </select>
+        </label>
+
+        <label>Quick period:
+            <select name="period">
+                <option value="" {% if not period %}selected{% endif %}>All time</option>
+                <option value="today" {% if period == 'today' %}selected{% endif %}>Today</option>
+                <option value="this_month" {% if period == 'this_month' %}selected{% endif %}>This month</option>
+                <option value="this_year" {% if period == 'this_year' %}selected{% endif %}>This year</option>
+            </select>
+        </label>
+
+        <button type="submit" class="btn">Apply</button>
+        <a href="{% if clinic %}{% url 'reception_dashboard' clinic.slug %}{% else %}{% url 'homepage' %}{% endif %}" class="btn btn-secondary">Back</a>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Summary</h3>
+    <p>Total visits matching filters: <strong>{{ total_visits }}</strong></p>
+</div>
+
+<div class="card">
+    <h3>Check-in Records</h3>
+    {% if tabular_visits %}
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Patient ID</th>
+                <th>Patient Name</th>
+                <th>Doctor</th>
+                <th>Prescription</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in tabular_visits %}
+            <tr>
+                <td>{{ v.check_in_date }}</td>
+                <td>{{ v.patient_id }}</td>
+                <td>{{ v.patient_name }}</td>
+                <td>{{ v.doctor_name }}</td>
+                <td>
+                    {% if v.prescription_id %}
+                        {% if clinic %}
+                            <a href="{% url 'view_prescription' clinic.slug v.prescription_id %}">View Prescription</a>
+                        {% else %}
+                            <a href="{% url 'view_prescription' v.prescription_id %}">View Prescription</a>
+                        {% endif %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if clinic %}
+                        <a href="{% url 'patient_details' clinic.slug v.patient_pk %}">Details</a>
+                        &nbsp;|&nbsp;
+                        <a href="{% url 'patient_history' clinic.slug v.patient_pk %}">History</a>
+                    {% else %}
+                        <a href="{% url 'homepage' %}">Details</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert-info">No check-ins found for selected filters.</div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>Recent Visits</h3>
+    {% if recent_visits %}
+    <table>
+        <thead>
+            <tr><th>Time</th><th>Patient</th><th>Patient ID</th><th>Checked-in by</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+            {% for v in recent_visits %}
+            <tr>
+                <td>{{ v.check_in_date }}</td>
+                <td>{{ v.patient.patient_name }}</td>
+                <td>{{ v.patient.patient_id }}</td>
+                <td>{% if v.checked_in_by %}{{ v.checked_in_by.username }}{% else %}-{% endif %}</td>
+                <td>{{ v.purpose }}</td>
+                    <td>
+                        {% if clinic %}
+                            <a href="{% url 'patient_details' clinic.slug v.patient.id %}">Details</a>
+                            &nbsp;|&nbsp;
+                            <a href="{% url 'patient_history' clinic.slug v.patient.id %}">History</a>
+                        {% else %}
+                            <a href="{% url 'homepage' %}">Details</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert-info">No recent visits.</div>
+    {% endif %}
+</div>
+
+{% endblock %}

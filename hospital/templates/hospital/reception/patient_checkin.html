@@ -28,9 +28,9 @@
                    list="patient-list" required>
             
             <datalist id="patient-list">
-                {% for patient in patients %}
-                <option value="{{ patient.patient_id }}">{{ patient.patient_name }} - {{ patient.patient_id }}</option>
-                {% endfor %}
+                        {% for patient in patients %}
+                        <option value="{{ patient.patient_id }}" label="{{ patient.patient_name }}">{{ patient.patient_name }} - {{ patient.patient_id }}</option>
+                        {% endfor %}
             </datalist>
         </div>
 
@@ -45,9 +45,64 @@
         </div>
 
         <button type="submit" class="btn btn-primary">Check In Patient</button>
-        <a href="{% url 'reception_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+        <a href="{% if clinic %}{% url 'reception_dashboard' clinic.slug %}{% else %}{% url 'homepage' %}{% endif %}" class="btn btn-secondary">Back to Dashboard</a>
     </form>
 </div>
+
+<script>
+// Debounced autocomplete for patient lookup
+(() => {
+    const input = document.getElementById('patient_id');
+    const datalist = document.getElementById('patient-list');
+    if (!input || !datalist) return;
+
+    let timeout = null;
+    const debounce = (fn, wait) => {
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => fn.apply(this, args), wait);
+        };
+    };
+
+    const buildUrl = (q) => {
+        const clinicSlug = "{% if clinic %}{{ clinic.slug }}{% endif %}";
+        if (clinicSlug) {
+            return `/clinic/${clinicSlug}/reception/patient-search/?q=${encodeURIComponent(q)}`;
+        }
+        return `/reception/patient-search/?q=${encodeURIComponent(q)}`;
+    };
+
+    const updateOptions = (items) => {
+        // clear existing
+        datalist.innerHTML = '';
+        items.forEach(it => {
+            const opt = document.createElement('option');
+            opt.value = it.patient_id;
+            opt.label = it.patient_name;
+            // Provide readable text in case browser shows it
+            opt.textContent = `${it.patient_name} - ${it.patient_id}`;
+            datalist.appendChild(opt);
+        });
+    };
+
+    const fetchSuggestions = async (q) => {
+        if (!q || q.length < 2) return updateOptions([]);
+        try {
+            const resp = await fetch(buildUrl(q));
+            if (!resp.ok) return;
+            const data = await resp.json();
+            updateOptions(data.results || []);
+        } catch (e) {
+            // silent
+        }
+    };
+
+    input.addEventListener('input', debounce((e) => {
+        const q = e.target.value.trim();
+        fetchSuggestions(q);
+    }, 250));
+})();
+</script>
 
 <style>
     .form-container {

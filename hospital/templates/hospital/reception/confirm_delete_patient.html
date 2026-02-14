@@ -21,7 +21,7 @@
             {% csrf_token %}
             <button type="submit" class="btn btn-danger">Yes, Delete Patient</button>
         </form>
-        <a href="{% url 'reception_dashboard' %}" class="btn btn-secondary">Cancel</a>
+        <a href="{% url 'reception_dashboard' clinic.slug %}" class="btn btn-secondary">Cancel</a>
     </div>
 </div>
 

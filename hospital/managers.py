@@ -32,22 +32,18 @@ class ClinicQuerySet(models.QuerySet):
 
 
 class ClinicManager(models.Manager):
-    """Manager that auto-filters by current clinic"""
+    """Manager for multi-tenant queries"""
     
     def get_queryset(self):
-        """Override to automatically filter by clinic"""
-        qs = super().get_queryset()
-        clinic = get_current_clinic()
-        
-        # If no clinic context, return empty queryset (safe default)
-        if clinic:
-            return qs.filter(clinic=clinic)
-        return qs.none()
+        """Return base queryset without auto-filtering"""
+        return super().get_queryset()
     
     def for_clinic(self, clinic):
         """Get queryset for specific clinic"""
+        if not clinic:
+            raise ImproperlyConfigured("Clinic context is required")
         return self.get_queryset().filter(clinic=clinic)
     
     def all_clinics(self):
-        """Get all records (bypass clinic filtering)"""
-        return super().get_queryset()
+        """Get all records (explicitly show intent)"""
+        return self.get_queryset()

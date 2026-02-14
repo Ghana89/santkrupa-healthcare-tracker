@@ -163,6 +163,10 @@ class Prescription(models.Model):
     prescription_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     
+    # Admission Recommendation
+    admission_recommended = models.BooleanField(default=False, help_text="Doctor recommends patient admission to hospital")
+    admission_reason = models.TextField(blank=True, help_text="Reason for recommending admission")
+    
     objects = ClinicManager()
     
     def __str__(self):
@@ -243,6 +247,21 @@ class MedicalReport(models.Model):
     def __str__(self):
         return f"Report for {self.patient.patient_name}"
     
+    @property
+    def file_exists(self):
+        """Check if the uploaded file exists"""
+        import os
+        if self.report_file:
+            return os.path.exists(self.report_file.path)
+        return False
+    
+    @property
+    def file_name(self):
+        """Get the original file name"""
+        if self.report_file:
+            return self.report_file.name.split('/')[-1]
+        return 'Unknown'
+    
     class Meta:
         ordering = ['-uploaded_at']
 
@@ -291,3 +310,186 @@ class TestReport(models.Model):
     
     class Meta:
         ordering = ['-uploaded_at']
+
+# ============================================================================
+# MASTER DATA MODELS - Medicine & Test Templates
+# ============================================================================
+
+class MasterMedicine(models.Model):
+    """
+    Master template for medicines per clinic.
+    Doctors select from these when creating prescriptions.
+    """
+    clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='master_medicines', null=True, blank=True)
+    medicine_name = models.CharField(max_length=200)
+    dosage_options = models.TextField(help_text="Comma-separated list: e.g., '500mg, 1000mg, 2000mg'")
+    frequency_options = models.TextField(help_text="Comma-separated list: e.g., 'Once daily, Twice daily, Thrice daily'")
+    default_frequency = models.CharField(max_length=100, blank=True, help_text="Default frequency suggestion")
+    default_duration = models.CharField(max_length=100, blank=True, help_text="Default duration suggestion: e.g., '7 days'")
+    category = models.CharField(max_length=100, blank=True, help_text="e.g., 'Antibiotic, Pain Reliever, etc.'")
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+    
+    objects = ClinicManager()
+    
+    class Meta:
+        ordering = ['medicine_name']
+        unique_together = [['clinic', 'medicine_name']]
+    
+    def __str__(self):
+        return f"{self.medicine_name} - {self.clinic.name}"
+
+
+class MasterTest(models.Model):
+    """
+    Master template for tests per clinic.
+    Doctors select from these when creating prescriptions.
+    """
+    TEST_TYPES = [
+        ('blood', 'Blood Test'),
+        ('urine', 'Urine Test'),
+        ('xray', 'X-Ray'),
+        ('ultrasound', 'Ultrasound'),
+        ('ecg', 'ECG'),
+        ('ct_scan', 'CT Scan'),
+        ('mri', 'MRI'),
+        ('other', 'Other'),
+    ]
+    
+    clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='master_tests', null=True, blank=True)
+    test_name = models.CharField(max_length=200)
+    test_type = models.CharField(max_length=50, choices=TEST_TYPES)
+    description = models.TextField(blank=True)
+    category = models.CharField(max_length=100, blank=True, help_text="e.g., 'Cardiology, Pathology, etc.'")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+    
+    objects = ClinicManager()
+    
+    class Meta:
+        ordering = ['test_type', 'test_name']
+        unique_together = [['clinic', 'test_name']]
+    
+    def __str__(self):
+        return f"{self.test_name} ({self.get_test_type_display()}) - {self.clinic.name}"
+
+
+# ============================================================================
+# ADMISSION & HOSPITALIZATION MODELS
+# ============================================================================
+
+class PatientAdmission(models.Model):
+    """
+    Track patient admission to hospital/ICU
+    """
+    ADMISSION_TYPES = [
+        ('general', 'General Ward'),
+        ('icu', 'ICU'),
+        ('emergency', 'Emergency'),
+        ('day_care', 'Day Care'),
+        ('isolation', 'Isolation Ward'),
+    ]
+    
+    DISCHARGE_STATUS = [
+        ('admitted', 'Admitted'),
+        ('in_treatment', 'In Treatment'),
+        ('improving', 'Improving'),
+        ('stable', 'Stable'),
+        ('ready_for_discharge', 'Ready for Discharge'),
+        ('discharged', 'Discharged'),
+        ('shifted', 'Shifted to Another Facility'),
+        ('deceased', 'Deceased'),
+    ]
+    
+    clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='patient_admissions', null=True, blank=True)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='admissions')
+    doctor = models.ForeignKey(Doctor, on_delete=models.SET_NULL, null=True, blank=True, related_name='admissions')
+    
+    admission_date = models.DateTimeField(auto_now_add=True)
+    admission_type = models.CharField(max_length=50, choices=ADMISSION_TYPES, default='general')
+    bed_number = models.CharField(max_length=50, blank=True, help_text="e.g., 'ICU-5', 'Ward-A-12'")
+    room_number = models.CharField(max_length=50, blank=True)
+    
+    reason_for_admission = models.TextField(help_text="Chief complaint, symptoms")
+    medical_history = models.TextField(blank=True, help_text="Relevant past medical history")
+    allergies = models.TextField(blank=True, help_text="Drug allergies, food allergies, etc.")
+    
+    status = models.CharField(max_length=30, choices=DISCHARGE_STATUS, default='admitted')
+    
+    discharge_date = models.DateTimeField(null=True, blank=True)
+    discharge_notes = models.TextField(blank=True)
+    follow_up_date = models.DateField(null=True, blank=True)
+    follow_up_instructions = models.TextField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    objects = ClinicManager()
+    
+    def __str__(self):
+        return f"{self.patient.patient_name} - Admitted on {self.admission_date.strftime('%Y-%m-%d')}"
+    
+    class Meta:
+        ordering = ['-admission_date']
+
+
+class TreatmentLog(models.Model):
+    """
+    Track treatments/procedures/medications given during admission
+    """
+    TREATMENT_TYPES = [
+        ('medication', 'Medication'),
+        ('injection', 'Injection'),
+        ('saline', 'Saline/IV Fluid'),
+        ('oxygen', 'Oxygen Therapy'),
+        ('procedure', 'Procedure/Surgery'),
+        ('monitoring', 'Monitoring'),
+        ('therapy', 'Physical Therapy'),
+        ('other', 'Other'),
+    ]
+    
+    clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='treatment_logs', null=True, blank=True)
+    admission = models.ForeignKey(PatientAdmission, on_delete=models.CASCADE, related_name='treatment_logs')
+    administered_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                       limit_choices_to={'role__in': ['doctor']},
+                                       related_name='administered_treatments')
+    
+    treatment_type = models.CharField(max_length=50, choices=TREATMENT_TYPES)
+    treatment_name = models.CharField(max_length=200, help_text="Name of medication, injection, procedure, etc.")
+    description = models.TextField(blank=True)
+    
+    # For medications/injections
+    dosage = models.CharField(max_length=100, blank=True)
+    frequency = models.CharField(max_length=100, blank=True)
+    route = models.CharField(max_length=100, blank=True, help_text="e.g., 'IV', 'IM', 'Oral', 'Inhalation'")
+    
+    # For saline/IV
+    saline_type = models.CharField(max_length=100, blank=True, help_text="e.g., 'Normal Saline (0.9%)', 'D5W', 'Ringer\'s Lactate'")
+    quantity = models.CharField(max_length=100, blank=True, help_text="e.g., '500ml', '1L'")
+    
+    # For oxygen
+    oxygen_flow_rate = models.CharField(max_length=100, blank=True, help_text="e.g., '2L/min', '60%'")
+    oxygen_type = models.CharField(max_length=100, blank=True, help_text="e.g., 'Nasal Cannula', 'Mask', 'Ventilator'")
+    
+    # General
+    administered_date = models.DateTimeField()
+    duration = models.CharField(max_length=100, blank=True, help_text="e.g., '30 mins', '2 hours'")
+    notes = models.TextField(blank=True, help_text="Observations, patient response, any complications")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    objects = ClinicManager()
+    
+    def __str__(self):
+        return f"{self.get_treatment_type_display()} - {self.treatment_name}"
+    
+    class Meta:
+        ordering = ['-administered_date']
+        indexes = [
+            models.Index(fields=['admission', '-administered_date']),
+            models.Index(fields=['clinic', '-administered_date']),
+        ]

@@ -1,0 +1,197 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Admissions Dashboard - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1400px; margin: 0 auto; padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1>🏥 Admissions Dashboard</h1>
+        {% if clinic %}
+            <a href="{% url 'doctor_dashboard' clinic_slug=clinic.slug %}" class="btn" style="background-color: #666;">
+                ← Back to Dashboard
+            </a>
+        {% endif %}
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-{% if message.tags %}{{ message.tags }}{% else %}success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Statistics Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+        <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px;">
+            <h3 style="margin: 0; font-size: 24px; color: white;">{{ total_admitted }}</h3>
+            <p style="margin: 5px 0 0 0; color: rgba(255,255,255,0.8);">Currently Admitted</p>
+        </div>
+        
+        <div class="card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 8px;">
+            <h3 style="margin: 0; font-size: 24px; color: white;">{{ icu_patients }}</h3>
+            <p style="margin: 5px 0 0 0; color: rgba(255,255,255,0.8);">ICU Patients</p>
+        </div>
+        
+        <div class="card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; border-radius: 8px;">
+            <h3 style="margin: 0; font-size: 24px; color: white;">{{ general_ward }}</h3>
+            <p style="margin: 5px 0 0 0; color: rgba(255,255,255,0.8);">General Ward</p>
+        </div>
+        
+        <div class="card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; padding: 20px; border-radius: 8px;">
+            <h3 style="margin: 0; font-size: 24px; color: white;">{{ emergency }}</h3>
+            <p style="margin: 5px 0 0 0; color: rgba(255,255,255,0.8);">Emergency</p>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="card" style="margin-bottom: 30px;">
+        <form method="get" style="display: flex; gap: 10px; align-items: center;">
+            <input type="text" name="search" placeholder="Search by patient name or ID..." 
+                   value="{{ search_query }}" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+            <button type="submit" class="btn">🔍 Search</button>
+            {% if search_query %}
+                <a href="{% url 'admissions_dashboard' clinic_slug=clinic.slug %}" class="btn" style="background-color: #999;">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Current Admissions Section -->
+    <div class="card" style="margin-bottom: 30px;">
+        <h2>👥 Currently Admitted Patients</h2>
+        
+        {% if current_admissions %}
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;">
+                            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Patient Name</th>
+                            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Patient ID</th>
+                            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Admission Type</th>
+                            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Bed/Room</th>
+                            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Admission Date</th>
+                            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Status</th>
+                            <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for admission in current_admissions %}
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 12px; border: 1px solid #ddd;">{{ admission.patient.patient_name }}</td>
+                                <td style="padding: 12px; border: 1px solid #ddd;">{{ admission.patient.patient_id }}</td>
+                                <td style="padding: 12px; border: 1px solid #ddd;">
+                                    <span style="background-color: 
+                                        {% if admission.admission_type == 'icu' %}#ff6b6b
+                                        {% elif admission.admission_type == 'emergency' %}#ffa500
+                                        {% elif admission.admission_type == 'general' %}#4ecdc4
+                                        {% else %}#95e1d3{% endif %};
+                                        color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px;">
+                                        {{ admission.get_admission_type_display }}
+                                    </span>
+                                </td>
+                                <td style="padding: 12px; border: 1px solid #ddd;">
+                                    {{ admission.bed_number }}{% if admission.room_number %}, {{ admission.room_number }}{% endif %}
+                                </td>
+                                <td style="padding: 12px; border: 1px solid #ddd;">{{ admission.admission_date|date:"M d, Y H:i" }}</td>
+                                <td style="padding: 12px; border: 1px solid #ddd;">
+                                    <span style="background-color: 
+                                        {% if admission.status == 'admitted' %}#ffd93d
+                                        {% elif admission.status == 'in_treatment' %}#6bcf7f
+                                        {% elif admission.status == 'improving' %}#4ecdc4
+                                        {% elif admission.status == 'stable' %}#a8dadc
+                                        {% else %}#f1faee{% endif %};
+                                        padding: 5px 10px; border-radius: 4px; font-size: 12px;">
+                                        {{ admission.get_status_display }}
+                                    </span>
+                                </td>
+                                <td style="padding: 12px; text-align: center; border: 1px solid #ddd;">
+                                    <a href="{% url 'admission_details' admission_id=admission.id clinic_slug=clinic.slug %}" 
+                                       class="btn" style="padding: 6px 12px; font-size: 12px;">Details</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p style="color: #999; text-align: center; padding: 20px;">No patients currently admitted.</p>
+        {% endif %}
+    </div>
+
+    <!-- Recently Discharged Section -->
+    {% if discharged_admissions %}
+    <div class="card">
+        <h2>✅ Recently Discharged</h2>
+        
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;">
+                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Patient Name</th>
+                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Admission Type</th>
+                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Admission Date</th>
+                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Discharge Date</th>
+                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Days Admitted</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for admission in discharged_admissions %}
+                        <tr style="border-bottom: 1px solid #eee; opacity: 0.8;">
+                            <td style="padding: 12px; border: 1px solid #ddd;">{{ admission.patient.patient_name }}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd;">{{ admission.get_admission_type_display }}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd;">{{ admission.admission_date|date:"M d, Y" }}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd;">{{ admission.discharge_date|date:"M d, Y" }}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd;">
+                                {% if admission.discharge_date %}
+                                    {{ admission.discharge_date|add:"-d"|add:admission.admission_date|add:"d" }} days
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .btn {
+        background-color: #667eea;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        transition: background-color 0.3s ease;
+    }
+    
+    .btn:hover {
+        background-color: #5a67d8;
+    }
+    
+    .card {
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        padding: 12px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+    }
+    
+    h1, h2 {
+        color: #333;
+        margin: 0 0 15px 0;
+    }
+</style>
+{% endblock %}

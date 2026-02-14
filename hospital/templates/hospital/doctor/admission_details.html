@@ -1,0 +1,370 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Admission Details - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1>🏥 Admission Details</h1>
+        <a href="{% url 'admissions_dashboard' clinic_slug=clinic.slug %}" class="btn" style="background-color: #666;">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-{% if message.tags %}{{ message.tags }}{% else %}success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+        <!-- Main Content -->
+        <div>
+            <!-- Patient Info Card -->
+            <div class="card" style="margin-bottom: 20px;">
+                <h2>👤 Patient Information</h2>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    <div>
+                        <p style="color: #666; margin: 0; font-size: 12px;">Patient Name</p>
+                        <p style="margin: 5px 0 0 0; font-size: 16px; font-weight: bold;">{{ admission.patient.patient_name }}</p>
+                    </div>
+                    <div>
+                        <p style="color: #666; margin: 0; font-size: 12px;">Patient ID</p>
+                        <p style="margin: 5px 0 0 0; font-size: 16px; font-weight: bold;">{{ admission.patient.patient_id }}</p>
+                    </div>
+                    <div>
+                        <p style="color: #666; margin: 0; font-size: 12px;">Age</p>
+                        <p style="margin: 5px 0 0 0; font-size: 16px;">{{ admission.patient.age }} years</p>
+                    </div>
+                    <div>
+                        <p style="color: #666; margin: 0; font-size: 12px;">Phone</p>
+                        <p style="margin: 5px 0 0 0; font-size: 16px;">{{ admission.patient.phone_number }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admission Info Card -->
+            <div class="card" style="margin-bottom: 20px;">
+                <h2>📋 Admission Information</h2>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    <div>
+                        <p style="color: #666; margin: 0; font-size: 12px;">Admission Type</p>
+                        <p style="margin: 5px 0 0 0; font-size: 16px; font-weight: bold;">{{ admission.get_admission_type_display }}</p>
+                    </div>
+                    <div>
+                        <p style="color: #666; margin: 0; font-size: 12px;">Bed Number</p>
+                        <p style="margin: 5px 0 0 0; font-size: 16px;">{{ admission.bed_number|default:"Not assigned" }}</p>
+                    </div>
+                    <div>
+                        <p style="color: #666; margin: 0; font-size: 12px;">Room Number</p>
+                        <p style="margin: 5px 0 0 0; font-size: 16px;">{{ admission.room_number|default:"Not assigned" }}</p>
+                    </div>
+                    <div>
+                        <p style="color: #666; margin: 0; font-size: 12px;">Admitted On</p>
+                        <p style="margin: 5px 0 0 0; font-size: 16px;">{{ admission.admission_date|date:"M d, Y H:i" }}</p>
+                    </div>
+                </div>
+                
+                <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
+                
+                <div>
+                    <p style="color: #666; margin: 0; font-size: 12px;">Reason for Admission</p>
+                    <p style="margin: 10px 0 0 0;">{{ admission.reason_for_admission }}</p>
+                </div>
+                
+                {% if admission.medical_history %}
+                <div style="margin-top: 15px;">
+                    <p style="color: #666; margin: 0; font-size: 12px;">Medical History</p>
+                    <p style="margin: 10px 0 0 0;">{{ admission.medical_history }}</p>
+                </div>
+                {% endif %}
+                
+                {% if admission.allergies %}
+                <div style="margin-top: 15px;">
+                    <p style="color: #666; margin: 0; font-size: 12px;">⚠️ Allergies</p>
+                    <p style="margin: 10px 0 0 0; color: #d32f2f; font-weight: bold;">{{ admission.allergies }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Treatment Log Card -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2>💊 Treatment Log ({{ treatments.count }} records)</h2>
+                    {% if admission.status != 'discharged' %}
+                    <a href="{% url 'add_treatment' admission_id=admission.id clinic_slug=clinic.slug %}" class="btn">
+                        ➕ Add Treatment
+                    </a>
+                    {% endif %}
+                </div>
+                
+                {% if treatments %}
+                    <div style="max-height: 600px; overflow-y: auto;">
+                        {% for treatment in treatments %}
+                            <div style="background-color: {% if treatment.treatment_type == 'medication' %}#e3f2fd{% elif treatment.treatment_type == 'injection' %}#f3e5f5{% elif treatment.treatment_type == 'saline' %}#e0f2f1{% elif treatment.treatment_type == 'oxygen' %}#fff3e0{% else %}#f5f5f5{% endif %}; padding: 15px; margin-bottom: 10px; border-left: 4px solid {% if treatment.treatment_type == 'medication' %}#2196f3{% elif treatment.treatment_type == 'injection' %}#9c27b0{% elif treatment.treatment_type == 'saline' %}#009688{% elif treatment.treatment_type == 'oxygen' %}#ff9800{% else %}#666{% endif %}; border-radius: 4px;">
+                                <div style="display: flex; justify-content: space-between; align-items: start;">
+                                    <div style="flex: 1;">
+                                        <p style="margin: 0; font-weight: bold; color: #333;">{{ treatment.get_treatment_type_display }}: {{ treatment.treatment_name }}</p>
+                                        <p style="margin: 5px 0 0 0; color: #666; font-size: 12px;">{{ treatment.administered_date|date:"M d, Y H:i" }}</p>
+                                    </div>
+                                    {% if treatment.administered_by %}
+                                    <p style="margin: 0; font-size: 12px; color: #999;">by {{ treatment.administered_by.first_name }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if treatment.dosage or treatment.frequency or treatment.route %}
+                                <div style="margin-top: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 12px;">
+                                    {% if treatment.dosage %}
+                                    <div><strong>Dosage:</strong> {{ treatment.dosage }}</div>
+                                    {% endif %}
+                                    {% if treatment.frequency %}
+                                    <div><strong>Frequency:</strong> {{ treatment.frequency }}</div>
+                                    {% endif %}
+                                    {% if treatment.route %}
+                                    <div><strong>Route:</strong> {{ treatment.route }}</div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                
+                                {% if treatment.saline_type or treatment.quantity %}
+                                <div style="margin-top: 8px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 12px;">
+                                    {% if treatment.saline_type %}
+                                    <div><strong>Saline:</strong> {{ treatment.saline_type }}</div>
+                                    {% endif %}
+                                    {% if treatment.quantity %}
+                                    <div><strong>Quantity:</strong> {{ treatment.quantity }}</div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                
+                                {% if treatment.oxygen_type or treatment.oxygen_flow_rate %}
+                                <div style="margin-top: 8px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 12px;">
+                                    {% if treatment.oxygen_type %}
+                                    <div><strong>Type:</strong> {{ treatment.oxygen_type }}</div>
+                                    {% endif %}
+                                    {% if treatment.oxygen_flow_rate %}
+                                    <div><strong>Flow Rate:</strong> {{ treatment.oxygen_flow_rate }}</div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                
+                                {% if treatment.duration %}
+                                <p style="margin: 8px 0 0 0; font-size: 12px;"><strong>Duration:</strong> {{ treatment.duration }}</p>
+                                {% endif %}
+                                
+                                {% if treatment.description %}
+                                <p style="margin: 8px 0 0 0; font-size: 12px;">{{ treatment.description }}</p>
+                                {% endif %}
+                                
+                                {% if treatment.notes %}
+                                <div style="margin-top: 8px; padding: 8px; background-color: rgba(0,0,0,0.03); border-radius: 3px; font-size: 12px;">
+                                    <strong>Notes:</strong> {{ treatment.notes }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p style="color: #999; text-align: center; padding: 20px;">No treatments recorded yet.</p>
+                {% endif %}
+            </div>
+
+            <!-- Medical Reports Card -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2>📄 Medical Reports ({{ medical_reports.count }} files)</h2>
+                    {% if admission.status != 'discharged' %}
+                    <a href="{% url 'upload_admission_report' admission_id=admission.id clinic_slug=clinic.slug %}" class="btn" style="background-color: #4caf50; border-color: #4caf50;">
+                        📤 Upload Report
+                    </a>
+                    {% endif %}
+                </div>
+                
+                {% if medical_reports %}
+                    <div style="max-height: 600px; overflow-y: auto;">
+                        {% for report in medical_reports %}
+                            <div style="background-color: #f5f5f5; padding: 15px; margin-bottom: 10px; border-left: 4px solid #ff9800; border-radius: 4px;">
+                                <div style="display: flex; justify-content: space-between; align-items: start;">
+                                    <div style="flex: 1;">
+                                        <p style="margin: 0; font-weight: bold; color: #333;">📎 {{ report.report_type }}</p>
+                                        <p style="margin: 5px 0 0 0; color: #666; font-size: 12px;">{{ report.uploaded_at|date:"M d, Y H:i" }}</p>
+                                    </div>
+                                </div>
+                                
+                                {% if report.description %}
+                                <p style="margin: 8px 0 0 0; font-size: 12px;">{{ report.description }}</p>
+                                {% endif %}
+                                
+                                <div style="margin-top: 10px;">
+                                    <a href="{{ report.report_file.url }}" target="_blank" download class="btn" style="background-color: #2196f3; border: none; padding: 6px 12px; font-size: 12px; display: inline-block;">
+                                        📥 Download
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p style="color: #999; text-align: center; padding: 20px;">No medical reports uploaded yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div>
+            <!-- Status Card -->
+            <div class="card" style="margin-bottom: 20px;">
+                <h2>Status</h2>
+                <p style="margin: 15px 0; text-align: center;">
+                    <span style="background-color: 
+                        {% if admission.status == 'admitted' %}#ffd93d
+                        {% elif admission.status == 'in_treatment' %}#6bcf7f
+                        {% elif admission.status == 'improving' %}#4ecdc4
+                        {% elif admission.status == 'stable' %}#a8dadc
+                        {% elif admission.status == 'ready_for_discharge' %}#fdab9f
+                        {% elif admission.status == 'discharged' %}#90ee90
+                        {% else %}#f1faee{% endif %};
+                        padding: 10px 15px; border-radius: 20px; display: inline-block;">
+                        {{ admission.get_status_display }}
+                    </span>
+                </p>
+
+                {% if admission.status != 'discharged' %}
+                <form method="post" action="{% url 'update_admission_status' admission_id=admission.id clinic_slug=clinic.slug %}" style="margin-top: 15px;">
+                    {% csrf_token %}
+                    <div style="margin-bottom: 10px;">
+                        <label for="status_select" style="display: block; margin-bottom: 5px; font-size: 12px;">Update Status:</label>
+                        <select name="status" id="status_select" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                            {% for value, label in discharge_statuses %}
+                                <option value="{{ value }}" {% if admission.status == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%;">Update Status</button>
+                </form>
+                {% else %}
+                    <div style="margin-top: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 4px;">
+                        <p style="margin: 0; font-size: 12px; color: #2e7d32;"><strong>Discharged on:</strong></p>
+                        <p style="margin: 5px 0 0 0;">{{ admission.discharge_date|date:"M d, Y H:i" }}</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Days Admitted Card -->
+            <div class="card" style="margin-bottom: 20px;">
+                <h2>📅 Duration</h2>
+                <div style="text-align: center; padding: 15px;">
+                    {% if admission.discharge_date %}
+                        <p style="margin: 0; font-size: 24px; font-weight: bold;">
+                            {% widthratio admission.discharge_date|add:"-d"|add:admission.admission_date|add:"d" 1 1 %} days
+                        </p>
+                        <p style="margin: 5px 0 0 0; color: #666; font-size: 12px;">Admitted - Discharged</p>
+                    {% else %}
+                        <p style="margin: 0; font-size: 24px; font-weight: bold;" id="days-admitted">0 days</p>
+                        <p style="margin: 5px 0 0 0; color: #666; font-size: 12px;">Currently admitted</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Doctor Info Card -->
+            {% if admission.doctor %}
+            <div class="card" style="margin-bottom: 20px;">
+                <h2>👨‍⚕️ Doctor</h2>
+                <p style="margin: 15px 0;">Dr. {{ admission.doctor.user.first_name }} {{ admission.doctor.user.last_name }}</p>
+                <p style="margin: 0; color: #666; font-size: 12px;">{{ admission.doctor.specialization }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Discharge Info Card -->
+            {% if admission.status == 'discharged' %}
+            <div class="card">
+                <h2>📝 Discharge Notes</h2>
+                {% if admission.discharge_notes %}
+                    <p style="margin: 0;">{{ admission.discharge_notes }}</p>
+                {% else %}
+                    <p style="margin: 0; color: #999;">No discharge notes.</p>
+                {% endif %}
+
+                {% if admission.follow_up_date %}
+                <div style="margin-top: 15px; padding: 10px; background-color: #fff3cd; border-radius: 4px;">
+                    <p style="margin: 0; font-size: 12px; color: #856404;"><strong>Follow-up Date:</strong></p>
+                    <p style="margin: 5px 0 0 0;">{{ admission.follow_up_date|date:"M d, Y" }}</p>
+                </div>
+                {% endif %}
+
+                {% if admission.follow_up_instructions %}
+                <div style="margin-top: 15px;">
+                    <p style="margin: 0; font-size: 12px; color: #666;"><strong>Instructions:</strong></p>
+                    <p style="margin: 8px 0 0 0; white-space: pre-wrap;">{{ admission.follow_up_instructions }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn {
+        background-color: #667eea;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        transition: background-color 0.3s ease;
+    }
+    
+    .btn:hover {
+        background-color: #5a67d8;
+    }
+    
+    .card {
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        padding: 12px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+    }
+    
+    h1, h2 {
+        color: #333;
+        margin: 0 0 15px 0;
+    }
+    
+    .container {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    @media (max-width: 900px) {
+        [style*="grid-template-columns: 2fr 1fr"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>
+
+<script>
+// Calculate days admitted
+document.addEventListener('DOMContentLoaded', function() {
+    const daysAdmittedEl = document.getElementById('days-admitted');
+    if (daysAdmittedEl) {
+        const admissionDate = new Date('{{ admission.admission_date|date:"Y-m-d H:i" }}');
+        const today = new Date();
+        const daysAdmitted = Math.floor((today - admissionDate) / (1000 * 60 * 60 * 24));
+        daysAdmittedEl.textContent = daysAdmitted + ' day' + (daysAdmitted !== 1 ? 's' : '');
+    }
+});
+</script>
+{% endblock %}

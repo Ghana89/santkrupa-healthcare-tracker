@@ -37,7 +37,11 @@
     <form method="post">
         {% csrf_token %}
         <button type="submit" class="btn" style="background: #28a745; font-size: 1.1em; padding: 15px 30px;">✓ Yes, Complete Prescription</button>
+        {% if clinic %}
+        <a href="{% url 'add_prescription_details' clinic.slug prescription.id %}" class="btn btn-secondary">← Cancel</a>
+        {% else %}
         <a href="{% url 'add_prescription_details' prescription.id %}" class="btn btn-secondary">← Cancel</a>
+        {% endif %}
     </form>
 </div>
 {% endblock %}

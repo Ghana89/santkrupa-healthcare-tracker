@@ -1,0 +1,161 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Admission Recommendations - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1>Admission Recommendations</h1>
+        <a href="{% url 'doctor_dashboard' clinic_slug=clinic.slug %}" class="btn" style="background-color: #666;">
+            Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Status Filter -->
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <a href="{% url 'admission_recommendations' clinic_slug=clinic.slug %}" 
+           class="btn" style="background-color: {% if not status_filter %}#667eea{% else %}#999{% endif %};">
+            All ({{ recommendations|length }})
+        </a>
+        <a href="{% url 'admission_recommendations' clinic_slug=clinic.slug %}?status=pending" 
+           class="btn" style="background-color: {% if status_filter == 'pending' %}#ffc107{% else %}#999{% endif %};">
+            Pending Admission
+        </a>
+        <a href="{% url 'admission_recommendations' clinic_slug=clinic.slug %}?status=admitted" 
+           class="btn" style="background-color: {% if status_filter == 'admitted' %}#4caf50{% else %}#999{% endif %};">
+            Already Admitted
+        </a>
+    </div>
+
+    <!-- Recommendations List -->
+    {% if recommendations %}
+        <div style="display: grid; gap: 15px;">
+            {% for rec in recommendations %}
+                <div class="card" style="border-left: 4px solid {% if rec.is_admitted %}#4caf50{% else %}#ffc107{% endif %};">
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                        <div>
+                            <h3 style="margin: 0 0 5px 0;">{{ rec.patient.patient_name }}</h3>
+                            <p style="margin: 0; color: #666; font-size: 13px;">
+                                Patient ID: <strong>{{ rec.patient.patient_id }}</strong> | 
+                                Age: <strong>{{ rec.patient.age }}</strong> | 
+                                Phone: <strong>{{ rec.patient.phone_number }}</strong>
+                            </p>
+                        </div>
+                        <span style="background-color: {% if rec.is_admitted %}#4caf50{% else %}#ffc107{% endif %};
+                            color: white; padding: 8px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">
+                            {% if rec.is_admitted %}
+                                Admitted
+                            {% else %}
+                                Pending Admission
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <div style="background-color: #f9f9f9; padding: 12px; border-radius: 4px; margin-bottom: 15px;">
+                        <p style="margin: 0; color: #666; font-size: 12px;"><strong>Reason for Admission:</strong></p>
+                        <p style="margin: 8px 0 0 0;">{{ rec.admission_reason|default:"No specific reason provided" }}</p>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <p style="margin: 0; color: #666; font-size: 12px;">Doctor</p>
+                            <p style="margin: 8px 0 0 0;">Dr. {{ rec.doctor.user.first_name }} {{ rec.doctor.user.last_name }}</p>
+                        </div>
+                        <div>
+                            <p style="margin: 0; color: #666; font-size: 12px;">Recommended On</p>
+                            <p style="margin: 8px 0 0 0;">{{ rec.prescription_date|date:"M d, Y H:i" }}</p>
+                        </div>
+                        <div>
+                            <p style="margin: 0; color: #666; font-size: 12px;">Tests Prescribed</p>
+                            <p style="margin: 8px 0 0 0;">{{ rec.tests.count }} test(s)</p>
+                        </div>
+                        <div>
+                            <p style="margin: 0; color: #666; font-size: 12px;">Medicines Prescribed</p>
+                            <p style="margin: 8px 0 0 0;">{{ rec.medicines.count }} medicine(s)</p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        {% if not rec.is_admitted %}
+                            <a href="{% url 'admit_patient' rec.patient.id clinic_slug=clinic.slug %}" class="btn" style="flex: 1;">
+                                Admit Patient Now
+                            </a>
+                        {% else %}
+                            <a href="{% url 'admission_details' rec.current_admission_id clinic_slug=clinic.slug %}" 
+                               class="btn" style="flex: 1; background-color: #4caf50;">
+                                View Current Admission
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'add_prescription_details' rec.id clinic_slug=clinic.slug %}" class="btn" style="flex: 1; background-color: #666;">
+                            View Prescription
+                        </a>
+                        <a href="{% url 'patient_history' rec.patient.id clinic_slug=clinic.slug %}" class="btn" style="flex: 1; background-color: #999;">
+                            View History
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card" style="text-align: center; padding: 40px;">
+            <p style="color: #999; font-size: 16px;">
+                {% if status_filter == 'pending' %}
+                    No pending admission recommendations.
+                {% elif status_filter == 'admitted' %}
+                    No patients admitted from recommendations.
+                {% else %}
+                    No admission recommendations yet.
+                {% endif %}
+            </p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .btn {
+        background-color: #667eea;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        transition: background-color 0.3s ease;
+        border: 1px solid #667eea;
+    }
+    
+    .btn:hover {
+        opacity: 0.9;
+    }
+    
+    .card {
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    h1, h3 {
+        color: #333;
+        margin: 0;
+    }
+    
+    .container {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    @media (max-width: 600px) {
+        [style*="grid-template-columns: repeat"] {
+            grid-template-columns: 1fr !important;
+        }
+        
+        [style*="display: flex; gap"] {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}

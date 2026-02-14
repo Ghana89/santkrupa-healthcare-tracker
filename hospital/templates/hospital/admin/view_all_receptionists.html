@@ -26,7 +26,7 @@
                     <td>{{ receptionist.email|default:"N/A" }}</td>
                     <td>{{ receptionist.created_at|date:"M d, Y" }}</td>
                     <td>
-                        <a href="{% url 'delete_receptionist' receptionist.id %}" class="btn-delete">Delete</a>
+                        <a href="{% url 'delete_receptionist' clinic.slug receptionist.id %}" class="btn-delete">Delete</a>
                     </td>
                 </tr>
                 {% endfor %}

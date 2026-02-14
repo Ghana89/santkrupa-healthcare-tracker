@@ -17,7 +17,7 @@
                 <p><strong>Specialization:</strong> {{ doctor.specialization }}</p>
                 <p><strong>License:</strong> {{ doctor.license_number }}</p>
                 <p style="margin-bottom: 10px;"><strong>Prescriptions:</strong> {{ doctor.prescriptions.all|length }}</p>
-                <a href="{% url 'delete_doctor' doctor.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em; background-color: #dc3545; text-decoration: none; border-radius: 4px; color: white; display: inline-block;">Delete</a>
+                <a href="{% url 'delete_doctor' clinic.slug doctor.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em; background-color: #dc3545; text-decoration: none; border-radius: 4px; color: white; display: inline-block;">Delete</a>
             </div>
             {% endfor %}
         </div>

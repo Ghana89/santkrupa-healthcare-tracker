@@ -1,0 +1,162 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Upload Medical Report - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 700px; margin: 0 auto; padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1>📄 Upload Medical Report</h1>
+        <a href="{% url 'admission_details' admission_id=admission.id clinic_slug=clinic.slug %}" class="btn" style="background-color: #666;">
+            ← Back
+        </a>
+    </div>
+
+    <div class="card" style="margin-bottom: 20px;">
+        <h3>Patient: {{ admission.patient.patient_name }} ({{ admission.patient.patient_id }})</h3>
+        <p style="color: #666; margin: 5px 0 0 0;">Admission: {{ admission.admission_date|date:"M d, Y H:i" }} | {{ admission.get_admission_type_display }}</p>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-{% if message.tags %}{{ message.tags }}{% else %}success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="card">
+        {% csrf_token %}
+        
+        <!-- Report Type -->
+        <div class="form-group">
+            <label for="report_type" style="display: block; font-weight: bold; margin-bottom: 8px;">*Report Type</label>
+            <select name="report_type" id="report_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                <option value="">-- Select Report Type --</option>
+                {% for value, label in report_types %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+            <label for="description" style="display: block; font-weight: bold; margin-bottom: 8px;">Description / Notes</label>
+            <textarea name="description" id="description" rows="3"
+                      placeholder="e.g., X-Ray findings, test results, observations..."
+                      style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box; font-family: inherit;"></textarea>
+        </div>
+
+        <!-- File Upload -->
+        <div class="form-group">
+            <label for="report_file" style="display: block; font-weight: bold; margin-bottom: 8px;">*Upload File</label>
+            <div style="padding: 20px; border: 2px dashed #ddd; border-radius: 4px; text-align: center; cursor: pointer; background-color: #f9f9f9; transition: all 0.3s;"
+                 onmouseover="this.style.borderColor='#2196f3'; this.style.backgroundColor='#f0f7ff';"
+                 onmouseout="this.style.borderColor='#ddd'; this.style.backgroundColor='#f9f9f9';"
+                 onclick="document.getElementById('report_file').click();">
+                <p style="margin: 0; color: #666; font-size: 14px;">
+                    📁 Click to select file or drag and drop
+                </p>
+                <p style="margin: 8px 0 0 0; color: #999; font-size: 12px;">
+                    Supported: PDF, JPG, PNG, DOC, DOCX (Max 10MB)
+                </p>
+            </div>
+            <input type="file" name="report_file" id="report_file" required 
+                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                   style="display: none;">
+            <small id="file_name" style="display: block; margin-top: 10px; color: #666;"></small>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="submit" class="btn" style="flex: 1;">✅ Upload Report</button>
+            <a href="{% url 'admission_details' admission_id=admission.id clinic_slug=clinic.slug %}" class="btn" style="flex: 1; text-align: center; background-color: #999;">Cancel</a>
+        </div>
+    </form>
+
+    <div class="card" style="margin-top: 20px; background-color: #f0f7ff; border-left: 4px solid #2196f3;">
+        <h4 style="margin-top: 0;">📋 Upload Guidelines</h4>
+        <ul style="margin: 10px 0; padding-left: 20px; color: #555;">
+            <li>Ensure files are clear and legible</li>
+            <li>Use proper file formats (PDF for documents, JPG/PNG for images)</li>
+            <li>Maximum file size: 10MB</li>
+            <li>Reports are linked to this patient admission</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    // Handle file input change
+    document.getElementById('report_file').addEventListener('change', function(e) {
+        const fileName = e.target.files[0]?.name || '';
+        document.getElementById('file_name').textContent = fileName ? '✓ Selected: ' + fileName : '';
+    });
+
+    // Handle drag and drop
+    const dropZone = document.querySelector('[onmouseover]');
+    
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#2196f3';
+        this.style.backgroundColor = '#f0f7ff';
+    });
+    
+    dropZone.addEventListener('dragleave', function(e) {
+        this.style.borderColor = '#ddd';
+        this.style.backgroundColor = '#f9f9f9';
+    });
+    
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#ddd';
+        this.style.backgroundColor = '#f9f9f9';
+        const files = e.dataTransfer.files;
+        if (files.length) {
+            document.getElementById('report_file').files = files;
+            document.getElementById('file_name').textContent = '✓ Selected: ' + files[0].name;
+        }
+    });
+</script>
+
+<style>
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .card {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .btn {
+        background-color: #2196f3;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        transition: background-color 0.3s;
+    }
+    .btn:hover {
+        background-color: #1976d2;
+    }
+    .alert-success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+        padding: 12px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+    }
+    .alert-error {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 12px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}

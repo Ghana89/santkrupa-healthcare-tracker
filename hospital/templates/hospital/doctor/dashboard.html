@@ -23,6 +23,12 @@
         <h3 style="color: #fff; margin-top: 0;">Total Patients</h3>
         <p style="color: #f0f0f0; font-size: 2em; margin: 10px 0;">{{ total_patients }}</p>
     </div>
+    
+    <div class="dashboard-item" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); cursor: pointer;" onclick="window.location='{% url 'admission_recommendations' clinic_slug=clinic.slug %}'">
+        <div class="icon">🏥</div>
+        <h3 style="color: #fff; margin-top: 0;">Admission Needed</h3>
+        <p style="color: #f0f0f0; font-size: 2em; margin: 10px 0;" id="admission_count">0</p>
+    </div>
 </div>
 
 <div class="card">
@@ -34,7 +40,37 @@
 <div class="card">
     <h2>📋 Select Patient to Create Prescription</h2>
     
+    {% if todays_consultations %}
+        <h3>Today's Check-ins</h3>
+        <form method="get" style="margin-bottom: 15px;">
+            <input type="text" name="checkin_search" placeholder="Search by patient name..." value="{{ checkin_search }}" 
+                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
+        </form>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin: 12px 0;">
+            {% for visit in todays_consultations %}
+            <div style="background: #fff8f0; padding: 12px; border-radius: 6px; border-left: 4px solid #ff9f43;">
+                <h4 style="margin: 0 0 6px 0;">{{ visit.patient.patient_name }}</h4>
+                <div style="font-size: 0.95em; color: #444; margin-bottom:6px;">
+                    <strong>ID:</strong> {{ visit.patient.patient_id }} &nbsp; • &nbsp; <strong>Time:</strong> {{ visit.check_in_date|date:"H:i" }}
+                </div>
+                {% if clinic %}
+                <a href="{% url 'create_prescription' clinic.slug visit.patient.id %}" class="btn" style="display:block; margin-bottom:6px;">Create Prescription</a>
+                <a href="{% url 'patient_history' clinic.slug visit.patient.id %}" class="btn" style="display:block; background:#6c757d;">View History</a>
+                {% else %}
+                <a href="#" class="btn" style="display:block; margin-bottom:6px;">Create Prescription</a>
+                <a href="#" class="btn" style="display:block; background:#6c757d;">View History</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     {% if patients %}
+        <h3 style="margin-top:18px;">All Patients</h3>
+        <form method="get" style="margin-bottom: 15px;">
+            <input type="text" name="search" placeholder="Search by patient name..." value="{{ search_query }}" 
+                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
+        </form>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin: 20px 0;">
             {% for patient in patients %}
             <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; border-left: 4px solid #2a5298;">
@@ -59,7 +95,16 @@
 </div>
 
 <div class="card">
+    <h2>🏥 Admissions & Hospitalization</h2>
+    <p style="color: #666; margin-bottom: 15px;">Manage patient admissions, track treatments, injections, saline infusions, and oxygen therapy.</p>
+    {% if clinic %}
+    <a href="{% url 'admissions_dashboard' clinic.slug %}" class="btn" style="display: block; text-align: center; background-color: #28a745; border-color: #28a745;">🏥 View Admissions Dashboard</a>
+    {% endif %}
+</div>
+
+<div class="card">
     <h2>📊 Your Prescriptions</h2>
+    <p style="color: #666; margin-bottom: 15px;">Track all prescriptions you've created. <a href="{% if clinic %}{% url 'doctor_prescription_tracking' clinic.slug %}{% else %}#{% endif %}" style="color: #007bff; text-decoration: none; font-weight: bold;">View Full Tracking Dashboard →</a></p>
     
     {% if prescriptions %}
         <table>
@@ -90,7 +135,11 @@
                     <td>{{ prescription.tests.count }}</td>
                     <td>{{ prescription.medicines.count }}</td>
                     <td>
+                        {% if clinic %}
+                        <a href="{% url 'add_prescription_details' clinic.slug prescription.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em;">Edit</a>
+                        {% else %}
                         <a href="{% url 'add_prescription_details' prescription.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em;">Edit</a>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -99,6 +148,64 @@
     {% else %}
         <div class="alert-info">No prescriptions created yet.</div>
     {% endif %}
+</div>
+
+<!-- How to Admit Patients Section -->
+<div class="card" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-left: 4px solid #2196f3;">
+    <h2 style="color: #1565c0; margin-top: 0;">How to Admit a Patient?</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+        <!-- Step 1 -->
+        <div style="background: white; padding: 15px; border-radius: 6px;">
+            <div style="background: #2196f3; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 10px;">1</div>
+            <h4 style="margin: 0 0 8px 0; color: #1565c0;">Create Prescription</h4>
+            <p style="margin: 0; color: #555; font-size: 13px;">From "All Patients" list, select a patient and click "Create Prescription" to start the consultation.</p>
+        </div>
+        
+        <!-- Step 2 -->
+        <div style="background: white; padding: 15px; border-radius: 6px;">
+            <div style="background: #2196f3; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 10px;">2</div>
+            <h4 style="margin: 0 0 8px 0; color: #1565c0;">Add Tests & Medicines</h4>
+            <p style="margin: 0; color: #555; font-size: 13px;">Add required tests and medicines to the prescription from the master templates.</p>
+        </div>
+        
+        <!-- Step 3 -->
+        <div style="background: white; padding: 15px; border-radius: 6px;">
+            <div style="background: #ff9800; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 10px;">3</div>
+            <h4 style="margin: 0 0 8px 0; color: #e65100;">Recommend Admission</h4>
+            <p style="margin: 0; color: #555; font-size: 13px;">If patient needs hospital admission, click "Recommend Admission" button with reason.</p>
+        </div>
+        
+        <!-- Step 4 -->
+        <div style="background: white; padding: 15px; border-radius: 6px;">
+            <div style="background: #4caf50; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 10px;">4</div>
+            <h4 style="margin: 0 0 8px 0; color: #2e7d32;">Admit Patient</h4>
+            <p style="margin: 0; color: #555; font-size: 13px;">Click "Proceed to Admit Patient" to fill admission details (bed, room, allergies, etc.).</p>
+        </div>
+        
+        <!-- Step 5 -->
+        <div style="background: white; padding: 15px; border-radius: 6px;">
+            <div style="background: #4caf50; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 10px;">5</div>
+            <h4 style="margin: 0 0 8px 0; color: #2e7d32;">Add Treatments</h4>
+            <p style="margin: 0; color: #555; font-size: 13px;">From admission details, add treatments: medicines, injections, saline, oxygen therapy, etc.</p>
+        </div>
+        
+        <!-- Step 6 -->
+        <div style="background: white; padding: 15px; border-radius: 6px;">
+            <div style="background: #4caf50; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 10px;">6</div>
+            <h4 style="margin: 0 0 8px 0; color: #2e7d32;">Discharge Patient</h4>
+            <p style="margin: 0; color: #555; font-size: 13px;">Update status to "Discharged" with discharge notes and follow-up instructions.</p>
+        </div>
+    </div>
+    
+    <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <a href="{% url 'admission_recommendations' clinic_slug=clinic.slug %}" class="btn" style="background-color: #ff9800; border-color: #ff9800;">
+            View Admission Recommendations
+        </a>
+        <a href="{% url 'admissions_dashboard' clinic_slug=clinic.slug %}" class="btn" style="background-color: #4caf50; border-color: #4caf50;">
+            View All Admissions
+        </a>
+    </div>
 </div>
 
 <div class="card" style="text-align: center;">

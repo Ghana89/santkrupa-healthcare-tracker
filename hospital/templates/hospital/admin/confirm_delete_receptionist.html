@@ -20,7 +20,7 @@
             {% csrf_token %}
             <button type="submit" class="btn btn-danger">Yes, Delete Receptionist</button>
         </form>
-        <a href="{% url 'view_all_receptionists' %}" class="btn btn-secondary">Cancel</a>
+        <a href="{% url 'view_all_receptionists' clinic.slug %}" class="btn btn-secondary">Cancel</a>
     </div>
 </div>
 
