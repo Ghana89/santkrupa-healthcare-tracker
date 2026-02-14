@@ -16,6 +16,7 @@ clinic_urlpatterns = [
     path('reception/patient-search/', views.patient_search, name='patient_search'),
     path('reception/checkin-dashboard/', views.checkin_dashboard, name='checkin_dashboard'),
     path('reception/patient/<int:patient_id>/', views.view_patient_details, name='patient_details'),
+    path('reception/patient/<int:patient_id>/upload-report/', views.receptionist_upload_medical_report, name='receptionist_upload_medical_report'),
     path('reception/patient-checkin/', views.patient_checkin, name='patient_checkin'),
     path('reception/patient/<int:patient_id>/delete/', views.delete_patient, name='delete_patient'),
     

@@ -5,6 +5,55 @@ from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
 from django.http import JsonResponse
+from .models import (Patient, MedicalReport, Prescription, Doctor, Test, Medicine, DoctorNotes, User, 
+                    PatientVisit, TestReport, Clinic, MasterMedicine, MasterTest, PatientAdmission, TreatmentLog)
+from .forms import (PatientRegistrationForm, PrescriptionForm, TestForm, MedicineForm,
+                    DoctorNotesForm, MedicalReportForm, DoctorUserCreationForm, 
+                    ReceptionistUserCreationForm, DoctorProfileForm, PatientVisitForm, TestReportForm, ClinicRegistrationForm)
+from django.utils.crypto import get_random_string
+
+@login_required(login_url='login')
+@require_http_methods(["GET", "POST"])
+def receptionist_upload_medical_report(request, clinic_slug, patient_id):
+    """Receptionist - Upload medical report for a patient"""
+    if request.user.role != 'receptionist':
+        return redirect('homepage')
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    patient = get_object_or_404(Patient, id=patient_id, clinic=clinic   )
+    if request.method == 'POST':
+        report_type = request.POST.get('report_type', 'Other')
+        description = request.POST.get('description', '')
+        if 'report_file' in request.FILES:
+            report = MedicalReport(
+                clinic=clinic,
+                patient=patient,
+                report_type=report_type,
+                description=description,
+                report_file=request.FILES['report_file']
+            )
+            report.save()
+            messages.success(request, f"{report_type} uploaded successfully!")
+            return redirect('patient_details', clinic_slug=clinic_slug, patient_id=patient.id)
+        else:
+            messages.error(request, "Please select a file to upload.")
+    context = {
+        'patient': patient,
+        'clinic': clinic,
+        'report_types': [
+            ('Lab Report', 'Lab Report'),
+            ('X-Ray', 'X-Ray'),
+            ('CT Scan', 'CT Scan'),
+            ('Ultrasound', 'Ultrasound'),
+            ('ECG', 'ECG'),
+            ('Blood Test', 'Blood Test'),
+            ('COVID Report', 'COVID Report'),
+            ('Discharge Summary', 'Discharge Summary'),
+            ('Other', 'Other'),
+        ]
+    }
+    return render(request, 'hospital/reception/upload_medical_report.html', context)
+    # ...existing code...
+from django.http import JsonResponse
 from django.template.loader import render_to_string
 from .models import (Patient, MedicalReport, Prescription, Doctor, Test, Medicine, DoctorNotes, User, 
                     PatientVisit, TestReport, Clinic, MasterMedicine, MasterTest, PatientAdmission, TreatmentLog)
@@ -392,7 +441,7 @@ def register_patient(request, clinic_slug=None):
 
 
 @login_required(login_url='login')
-def view_patient_details(request, patient_id, clinic_slug=None):
+def view_patient_details(request, clinic_slug, patient_id):
     """Reception/Admin - View patient details. Allow receptionist, admin, and super_admin."""
     if request.user.role not in ['receptionist', 'admin', 'super_admin']:
         return redirect('homepage')
@@ -400,7 +449,7 @@ def view_patient_details(request, patient_id, clinic_slug=None):
     # Resolve clinic context (URL slug -> middleware -> user's clinic)
     clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
 
-    patient = get_object_or_404(Patient, id=patient_id)
+    patient = get_object_or_404(Patient, id=patient_id, clinic=clinic )
     prescriptions = patient.prescriptions.all()
     medical_reports = patient.medical_reports.all()
     

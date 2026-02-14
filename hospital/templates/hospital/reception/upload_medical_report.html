@@ -1,0 +1,59 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Upload Medical Report - Reception{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 700px; margin: 0 auto; padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1>📄 Upload Medical Report</h1>
+        <a href="{% url 'patient_details' patient_id=patient.id clinic_slug=clinic.slug  %}" class="btn" style="background-color: #666;">
+            ← Back
+        </a>
+    </div>
+
+    <div class="card" style="margin-bottom: 20px;">
+        <h3>Patient: {{ patient.patient_name }} ({{ patient.patient_id }})</h3>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-{% if message.tags %}{{ message.tags }}{% else %}success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="card">
+        {% csrf_token %}
+        <!-- Report Type -->
+        <div class="form-group">
+            <label for="report_type" style="display: block; font-weight: bold; margin-bottom: 8px;">*Report Type</label>
+            <select name="report_type" id="report_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                <option value="">-- Select Report Type --</option>
+                {% for value, label in report_types %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <!-- Description -->
+        <div class="form-group">
+            <label for="description" style="display: block; font-weight: bold; margin-bottom: 8px;">Description / Notes</label>
+            <textarea name="description" id="description" rows="3"
+                      placeholder="e.g., X-Ray findings, test results, observations..."
+                      style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box; font-family: inherit;"></textarea>
+        </div>
+        <!-- File Upload -->
+        <div class="form-group">
+            <label for="report_file" style="display: block; font-weight: bold; margin-bottom: 8px;">*Upload File</label>
+            <input type="file" name="report_file" id="report_file" required 
+                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+            <small style="color: #666;">Supported: PDF, JPG, PNG, DOC, DOCX (Max 10MB)</small>
+        </div>
+        <!-- Submit Buttons -->
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="submit" class="btn" style="flex: 1;">✅ Upload Report</button>
+            <a href="{% url 'patient_details' patient_id=patient.id clinic_slug=clinic.slug  %}" class="btn" style="flex: 1; text-align: center; background-color: #999;">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

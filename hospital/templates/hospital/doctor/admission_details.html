@@ -198,6 +198,12 @@
                                 {% endif %}
                                 
                                 <div style="margin-top: 10px;">
+                                    {# Inline preview for images #}
+                                    {% if report.report_file.url|lower endswith ".jpg" or report.report_file.url|lower endswith ".jpeg" or report.report_file.url|lower endswith ".png" %}
+                                        <img src="{{ report.report_file.url }}" alt="Report Image" style="max-width: 300px; max-height: 200px; display: block; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                    {% elif report.report_file.url|lower endswith ".pdf" %}
+                                        <embed src="{{ report.report_file.url }}" type="application/pdf" width="100%" height="300px" style="border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px;" />
+                                    {% endif %}
                                     <a href="{{ report.report_file.url }}" target="_blank" download class="btn" style="background-color: #2196f3; border: none; padding: 6px 12px; font-size: 12px; display: inline-block;">
                                         📥 Download
                                     </a>
