@@ -158,8 +158,8 @@ class Prescription(models.Model):
     
     clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='prescriptions', null=True, blank=True)
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='prescriptions')
-    doctor = models.ForeignKey(Doctor, on_delete=models.SET_NULL, null=True, 
-                              related_name='prescriptions')
+    doctor = models.ForeignKey(Doctor, on_delete=models.SET_NULL, null=True, related_name='prescriptions')
+
     prescription_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     
@@ -175,6 +175,23 @@ class Prescription(models.Model):
     class Meta:
         ordering = ['-prescription_date']
 
+#Vitals model - to store patient's vitals during consultation or admission
+class Vitals(models.Model):
+    clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, null=True, blank=True)
+    prescription = models.OneToOneField(Prescription, on_delete=models.CASCADE, related_name='vitals')
+
+    bp = models.CharField(max_length=20, blank=True, null=True)
+    pulse = models.CharField(max_length=20, blank=True, null=True)
+    temp = models.CharField(max_length=20, blank=True, null=True)
+    spo2 = models.CharField(max_length=20, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = ClinicManager()
+
+    def __str__(self):
+        return f"Vitals for {self.prescription.patient.patient_name}"
+    
 # Test model
 class Test(models.Model):
     TEST_TYPES = [

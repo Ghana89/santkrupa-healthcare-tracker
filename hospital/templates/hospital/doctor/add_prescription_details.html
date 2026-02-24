@@ -345,6 +345,42 @@
     </form>
 </div>
 
+<!-- VITALS SECTION -->
+<div class="card">
+    <h2>❤️ Vitals</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_vitals">
+
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+            
+            <div class="form-group">
+                <label>BP</label>
+                <input type="text" name="bp" placeholder="120/80" value="{{ vitals.bp|default:'' }}">
+            </div>
+
+            <div class="form-group">
+                <label>Pulse</label>
+                <input type="text" name="pulse" placeholder="72" value="{{ vitals.pulse|default:'' }}">
+            </div>
+
+            <div class="form-group">
+                <label>Temp</label>
+                <input type="text" name="temp" placeholder="98.6°F" value="{{ vitals.temp|default:'' }}">
+            </div>
+
+            <div class="form-group">
+                <label>SpO2</label>
+                <input type="text" name="spo2" placeholder="98%" value="{{ vitals.spo2|default:'' }}">
+            </div>
+
+        </div>
+
+        <button type="submit" class="btn">💾 Save Vitals</button>
+    </form>
+</div>
+
 <!-- COMPLETE PRESCRIPTION -->
 <div class="card" style="text-align: center; background-color: #f0f7ff; border-left-color: #17a2b8;">
     <h3 style="color: #0c5460; margin-top: 0;">Ready to Complete?</h3>

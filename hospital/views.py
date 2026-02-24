@@ -6,7 +6,7 @@ from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
 from django.http import JsonResponse
 from .models import (Patient, MedicalReport, Prescription, Doctor, Test, Medicine, DoctorNotes, User, 
-                    PatientVisit, TestReport, Clinic, MasterMedicine, MasterTest, PatientAdmission, TreatmentLog)
+                    PatientVisit, TestReport, Clinic, MasterMedicine, MasterTest, PatientAdmission, TreatmentLog, Vitals)
 from .forms import (PatientRegistrationForm, PrescriptionForm, TestForm, MedicineForm,
                     DoctorNotesForm, MedicalReportForm, DoctorUserCreationForm, 
                     ReceptionistUserCreationForm, DoctorProfileForm, PatientVisitForm, TestReportForm, ClinicRegistrationForm)
@@ -480,6 +480,7 @@ def patient_checkin(request, clinic_slug=None):
                 visit = form.save(commit=False)
                 visit.patient = patient
                 visit.checked_in_by = request.user
+                visit.clinic = clinic
                 visit.save()
                 messages.success(request, f"Patient {patient.patient_name} checked in successfully!")
                 if clinic_slug:
@@ -683,18 +684,27 @@ def doctor_dashboard(request, clinic_slug=None):
     # Get today's consultations from PatientVisit (by clinic — PatientVisit has no doctor FK)
     from django.utils import timezone
     today = timezone.now().date()
+    print(f"Doctor Dashboard: Fetching today's consultations for doctor {doctor} in clinic {clinic} on {today}")
     if clinic:
-        todays_consultations = PatientVisit.objects.filter(check_in_date__date=today, clinic=clinic)
+        todays_consultations = PatientVisit.objects.filter(
+            check_in_date__date=today,
+            clinic=clinic,
+            status='checked_in'
+        )
     else:
-        todays_consultations = PatientVisit.objects.filter(check_in_date__date=today)
-    
+        todays_consultations = PatientVisit.objects.filter(
+            check_in_date__date=today,
+            status='checked_in'
+        )
+    print(f"Doctor Dashboard: Found {todays_consultations.count()} check-ins for today before filtering by doctor")
     # Search filter for today's check-ins
     checkin_search = request.GET.get('checkin_search', '').strip()
     if checkin_search:
         todays_consultations = todays_consultations.filter(patient__patient_name__icontains=checkin_search)
     
     # Get patients who already have prescriptions (hide from list)
-    patients_with_prescriptions = set(Prescription.objects.filter(doctor=doctor).values_list('patient_id', flat=True))
+    patients_with_prescriptions = set(Prescription.objects.filter(doctor=doctor, clinic=clinic, prescription_date=today).values_list('patient_id', flat=True))
+    print(f"Doctor Dashboard: Patients with prescriptions today: {patients_with_prescriptions}")
     available_patients = patients.exclude(id__in=patients_with_prescriptions)
     
     # Get today's check-ins without prescriptions
@@ -795,7 +805,8 @@ def add_prescription_details(request, prescription_id, clinic_slug=None):
 
     prescription = get_object_or_404(Prescription, id=prescription_id)
     doctor = Doctor.objects.get(user=request.user)
-    
+    vitals = getattr(prescription, 'vitals', None)
+
     if prescription.doctor != doctor:
         return redirect('doctor_dashboard')
     
@@ -816,7 +827,33 @@ def add_prescription_details(request, prescription_id, clinic_slug=None):
             if clinic_slug:
                 return redirect('add_prescription_details', clinic_slug=clinic_slug, prescription_id=prescription.id)
             return redirect('add_prescription_details', prescription_id=prescription.id)
-    
+        
+        elif action == 'save_vitals':
+            bp = request.POST.get('bp')
+            pulse = request.POST.get('pulse')
+            temp = request.POST.get('temp')
+            spo2 = request.POST.get('spo2')
+
+            vitals_obj, created = Vitals.objects.get_or_create(
+                prescription=prescription,
+                defaults={
+                    'clinic': prescription.clinic
+                }
+            )
+
+            vitals_obj.bp = bp
+            vitals_obj.pulse = pulse
+            vitals_obj.temp = temp
+            vitals_obj.spo2 = spo2
+            vitals_obj.save()
+
+            messages.success(request, "Vitals saved successfully!")
+
+            # 🔥 IMPORTANT: redirect after POST
+            if clinic_slug:
+                return redirect('add_prescription_details', clinic_slug=clinic_slug, prescription_id=prescription.id)
+            return redirect('add_prescription_details', prescription_id=prescription.id)
+            
         elif action == 'add_medicine':
             form = MedicineForm(request.POST)
             if form.is_valid():
@@ -842,6 +879,7 @@ def add_prescription_details(request, prescription_id, clinic_slug=None):
     test_form = TestForm()
     medicine_form = MedicineForm()
     notes_form = DoctorNotesForm(instance=doctor_notes) if doctor_notes else DoctorNotesForm()
+    vitals = Vitals.objects.filter(prescription=prescription).first()
     
     context = {
         'prescription': prescription,
@@ -852,6 +890,7 @@ def add_prescription_details(request, prescription_id, clinic_slug=None):
         'test_form': test_form,
         'medicine_form': medicine_form,
         'notes_form': notes_form,
+        'vitals': vitals,
     }
     return render(request, 'hospital/doctor/add_prescription_details.html', context)
 
@@ -871,6 +910,18 @@ def complete_prescription(request, prescription_id, clinic_slug=None):
     if request.method == 'POST':
         prescription.status = 'completed'
         prescription.save()
+        from django.utils import timezone
+        today = timezone.now().date()
+        patient_visit = PatientVisit.objects.filter(
+            patient=prescription.patient,
+            clinic=prescription.clinic,
+            check_in_date__date=today,
+            status='checked_in'
+        ).first()
+
+        if patient_visit:
+            patient_visit.status = 'completed'
+            patient_visit.save()
         messages.success(request, "Prescription completed!")
         if clinic_slug:
             return redirect('doctor_dashboard', clinic_slug=clinic_slug)
@@ -902,12 +953,14 @@ def print_prescription(request, prescription_id, clinic_slug=None):
     tests = prescription.tests.all()
     medicines = prescription.medicines.all()
     doctor_notes = prescription.doctor_notes if hasattr(prescription, 'doctor_notes') else None
-    
+    vitals = getattr(prescription, 'vitals', None)
+
     context = {
         'prescription': prescription,
         'tests': tests,
         'medicines': medicines,
         'doctor_notes': doctor_notes,
+        'vitals': vitals,
     }
     return render(request, 'hospital/print_prescription.html', context)
 

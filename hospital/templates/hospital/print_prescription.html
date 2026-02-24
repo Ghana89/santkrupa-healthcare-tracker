@@ -1,438 +1,270 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prescription - {{ prescription.patient.patient_name }}</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<title>Prescription</title>
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
-            padding: 20px;
-        }
+<style>
 
-        .print-container {
-            background: white;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            border-radius: 8px;
-        }
+@page {
+    size: A4;
+    margin: 10mm;
+}
 
-        /* Header */
-        .prescription-header {
-            border-bottom: 3px solid #2a5298;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+}
 
-        .hospital-name {
-            font-size: 28px;
-            font-weight: bold;
-            color: #1e3c72;
-            margin-bottom: 5px;
-        }
+.container {
+    width: 210mm;
+    min-height: 297mm;
+    margin: auto;
+    background: white;
+    padding: 10mm;
+    border: 2px solid #000;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
 
-        .hospital-subtitle {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
-        }
+/* HEADER */
+.header {
+    border-bottom: 2px solid black;
+    text-align: center;
+    padding-bottom: 5px;
+}
 
-        .prescription-title {
-            font-size: 20px;
-            font-weight: bold;
-            color: #2a5298;
-            margin-top: 10px;
-        }
+.header img {
+    width: 100%;
+    max-height: 90px;
+}
 
-        /* Patient Info */
-        .info-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-radius: 6px;
-        }
+/* DOCTOR INFO */
+.header-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-top: 5px;
+}
 
-        .info-group {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-        }
+/* PATIENT */
+.patient-row {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid black;
+    margin-top: 5px;
+    padding-bottom: 5px;
+    font-size: 14px;
+}
 
-        .info-label {
-            font-weight: bold;
-            color: #333;
-        }
+/* BODY */
+.rx-body {
+    flex-grow: 1;
+    display: flex;
+    margin-top: 10px;
+}
 
-        .info-value {
-            color: #666;
-        }
+/* LEFT */
+.left {
+    width: 50%;
+    border-right: 1px solid black;
+    padding-right: 10px;
+}
 
-        /* Prescription Details */
-        .details-section {
-            margin-bottom: 30px;
-        }
+/* RIGHT */
+.right {
+    width: 50%;
+    padding-left: 10px;
+}
 
-        .section-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: #1e3c72;
-            background-color: #e8f0f7;
-            padding: 10px 15px;
-            border-left: 4px solid #2a5298;
-            margin-bottom: 15px;
-            border-radius: 4px;
-        }
+/* SECTION */
+.section {
+    margin-bottom: 12px;
+    font-size: 14px;
+}
 
-        .tests-list, .medicines-list {
-            margin-bottom: 15px;
-        }
+.label {
+    font-weight: bold;
+    display: inline-block;
+    width: 60px;
+}
 
-        .test-item, .medicine-item {
-            background-color: #f9f9f9;
-            padding: 12px 15px;
-            margin-bottom: 10px;
-            border-left: 3px solid #2a5298;
-            border-radius: 4px;
-        }
+/* VITALS TABLE */
+.vitals-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 5px;
+}
 
-        .test-item strong, .medicine-item strong {
-            color: #1e3c72;
-            display: block;
-            margin-bottom: 5px;
-        }
+.vitals-table td {
+    border: 1px solid black;
+    padding: 6px;
+    text-align: center;
+}
 
-        .test-details {
-            color: #666;
-            font-size: 13px;
-            line-height: 1.6;
-        }
+/* TRIANGLE */
+.triangle {
+    font-size: 18px;
+    font-weight: bold;
+}
 
-        .medicine-details {
-            color: #666;
-            font-size: 13px;
-            line-height: 1.6;
-        }
+/* RX */
+.rx {
+    text-align: center;
+    font-size: 42px;
+    font-weight: bold;
+    margin: 10px 0;
+}
 
-        /* Doctor Notes */
-        .notes-section {
-            background-color: #fff8f0;
-            border: 1px solid #ffe0cc;
-            border-radius: 6px;
-            padding: 15px;
-            margin-bottom: 30px;
-        }
+/* MEDICINE */
+.medicine {
+    margin-bottom: 15px;
+    font-size: 14px;
+    line-height: 1.6;
+}
 
-        .notes-section h4 {
-            color: #d9534f;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
+/* SIGNATURE */
+.footer {
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+}
 
-        .notes-content {
-            color: #666;
-            line-height: 1.6;
-            font-size: 13px;
-        }
+.signature {
+    text-align: right;
+}
 
-        .notes-item {
-            margin-bottom: 12px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #ffe0cc;
-        }
+.sign-line {
+    width: 200px;
+    border-top: 1px solid black;
+    margin-bottom: 5px;
+}
 
-        .notes-item:last-child {
-            margin-bottom: 0;
-            border-bottom: none;
-        }
+@media print {
+    body {
+        background: none;
+    }
+}
 
-        /* Doctor Signature Area */
-        .signature-section {
-            margin-top: 40px;
-            padding-top: 30px;
-            border-top: 2px solid #ddd;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .signature-block {
-            text-align: center;
-        }
-
-        .signature-line {
-            border-top: 2px solid #333;
-            margin-bottom: 5px;
-            height: 50px;
-        }
-
-        .signature-label {
-            font-size: 12px;
-            color: #666;
-        }
-
-        /* Print Footer */
-        .print-footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
-            font-size: 12px;
-            color: #999;
-        }
-
-        /* Print Buttons */
-        .action-buttons {
-            text-align: center;
-            margin-bottom: 20px;
-            gap: 10px;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            text-decoration: none;
-            margin: 5px;
-        }
-
-        .btn-print {
-            background-color: #2a5298;
-            color: white;
-        }
-
-        .btn-print:hover {
-            background-color: #1e3c72;
-        }
-
-        .btn-back {
-            background-color: #999;
-            color: white;
-        }
-
-        .btn-back:hover {
-            background-color: #777;
-        }
-
-        /* Responsive for mobile */
-        @media (max-width: 600px) {
-            .info-section {
-                grid-template-columns: 1fr;
-            }
-
-            .signature-section {
-                grid-template-columns: 1fr;
-            }
-
-            .print-container {
-                padding: 20px;
-            }
-        }
-
-        /* Print styles */
-        @media print {
-            body {
-                background: white;
-                padding: 0;
-            }
-
-            .print-container {
-                box-shadow: none;
-                border-radius: 0;
-                padding: 0;
-            }
-
-            .action-buttons {
-                display: none;
-            }
-
-            .print-footer {
-                display: none;
-            }
-        }
-
-        .empty-message {
-            color: #999;
-            font-style: italic;
-            padding: 10px;
-            text-align: center;
-        }
-
-        .no-data {
-            background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 4px;
-            text-align: center;
-            color: #999;
-            margin-bottom: 15px;
-        }
-    </style>
+</style>
 </head>
+
 <body>
-    <div class="print-container">
-        <!-- Action Buttons -->
-        <div class="action-buttons">
-            <button class="btn btn-print" onclick="window.print()">🖨️ Print Prescription</button>
-            <a href="javascript:history.back()" class="btn btn-back">← Go Back</a>
-        </div>
 
-        <!-- Header -->
-        <div class="prescription-header">
-            <div class="hospital-name">🏥 SantKrupa Hospital</div>
-            <div class="hospital-subtitle">Your Health, Our Priority</div>
-            <div class="prescription-title">Medical Prescription</div>
-        </div>
+<div class="container">
 
-        <!-- Patient Information -->
-        <div class="info-section">
+    <!-- HEADER -->
+    <div class="header">
+        <img src="{% static 'images/header.png' %}">
+
+        <div class="header-info">
             <div>
-                <div class="info-group">
-                    <span class="info-label">Patient Name:</span>
-                    <span class="info-value">{{ prescription.patient.patient_name }}</span>
-                </div>
-                <div class="info-group">
-                    <span class="info-label">Patient ID:</span>
-                    <span class="info-value">{{ prescription.patient.patient_id }}</span>
-                </div>
-                <div class="info-group">
-                    <span class="info-label">Age:</span>
-                    <span class="info-value">{{ prescription.patient.age }} years</span>
-                </div>
+                <strong>Dr. {{ prescription.doctor.user.get_full_name }}</strong><br>
+                {{ prescription.doctor.specialization }}<br>
+                Reg: {{ prescription.doctor.registration_number }}
             </div>
-            <div>
-                <div class="info-group">
-                    <span class="info-label">Doctor:</span>
-                    <span class="info-value">Dr. {{ prescription.doctor.user.get_full_name }}</span>
-                </div>
-                <div class="info-group">
-                    <span class="info-label">Specialization:</span>
-                    <span class="info-value">{{ prescription.doctor.specialization }}</span>
-                </div>
-                <div class="info-group">
-                    <span class="info-label">Prescription Date:</span>
-                    <span class="info-value">{{ prescription.prescription_date|date:"d M, Y" }}</span>
-                </div>
+
+            <div style="text-align:right;">
+                {{ prescription.clinic.address }}<br>
+                Phone: {{ prescription.clinic.phone|default:"-" }}
             </div>
-        </div>
-
-        <!-- Tests Section -->
-        <div class="details-section">
-            <div class="section-title">🔬 Recommended Tests</div>
-            {% if tests %}
-                <div class="tests-list">
-                    {% for test in tests %}
-                    <div class="test-item">
-                        <strong>{{ test.test_name }}</strong>
-                        <div class="test-details">
-                            <p><strong>Type:</strong> {{ test.get_test_type_display }}</p>
-                            {% if test.description %}
-                            <p><strong>Description:</strong> {{ test.description }}</p>
-                            {% endif %}
-                            {% if test.test_date %}
-                            <p><strong>Test Date:</strong> {{ test.test_date|date:"d M, Y" }}</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="no-data">No tests prescribed</div>
-            {% endif %}
-        </div>
-
-        <!-- Medicines Section -->
-        <div class="details-section">
-            <div class="section-title">💊 Medicines</div>
-            {% if medicines %}
-                <div class="medicines-list">
-                    {% for medicine in medicines %}
-                    <div class="medicine-item">
-                        <strong>{{ medicine.medicine_name }}</strong>
-                        <div class="medicine-details">
-                            <p><strong>Dosage:</strong> {{ medicine.dosage }}</p>
-                            <p><strong>Frequency:</strong> {{ medicine.frequency }}</p>
-                            <p><strong>Duration:</strong> {{ medicine.duration }}</p>
-                            {% if medicine.instructions %}
-                            <p><strong>Instructions:</strong> {{ medicine.instructions }}</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="no-data">No medicines prescribed</div>
-            {% endif %}
-        </div>
-
-        <!-- Doctor Notes Section -->
-        {% if doctor_notes %}
-        <div class="details-section">
-            <div class="section-title">📋 Medical Notes</div>
-            <div class="notes-section">
-                {% if doctor_notes.observations %}
-                <div class="notes-item">
-                    <h4>Observations:</h4>
-                    <div class="notes-content">{{ doctor_notes.observations }}</div>
-                </div>
-                {% endif %}
-
-                {% if doctor_notes.diagnosis %}
-                <div class="notes-item">
-                    <h4>Diagnosis:</h4>
-                    <div class="notes-content">{{ doctor_notes.diagnosis }}</div>
-                </div>
-                {% endif %}
-
-                {% if doctor_notes.treatment_plan %}
-                <div class="notes-item">
-                    <h4>Treatment Plan:</h4>
-                    <div class="notes-content">{{ doctor_notes.treatment_plan }}</div>
-                </div>
-                {% endif %}
-
-                {% if doctor_notes.notes %}
-                <div class="notes-item">
-                    <h4>Additional Notes:</h4>
-                    <div class="notes-content">{{ doctor_notes.notes }}</div>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Signature Section -->
-        <div class="signature-section">
-            <div class="signature-block">
-                <div class="signature-line"></div>
-                <div class="signature-label">Doctor's Signature</div>
-            </div>
-            <div class="signature-block">
-                <div class="signature-line"></div>
-                <div class="signature-label">Date: {{ prescription.prescription_date|date:"d M, Y" }}</div>
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="print-footer">
-            <p>This is a digital prescription issued by SantKrupa Hospital Management System</p>
-            <p>Prescription ID: {{ prescription.id }} | Generated on: {% now "d M, Y H:i" %}</p>
-            <p>For more information, visit: www.santkrupahospital.com | Phone: +91-XXXX-XXXX-XX</p>
         </div>
     </div>
+
+    <!-- PATIENT -->
+    <div class="patient-row">
+        <div><b>Name:</b> {{ prescription.patient.patient_name }}</div>
+        <div><b>Age/Sex:</b> {{ prescription.patient.age }}/{{ prescription.patient.gender }}</div>
+        <div><b>Date:</b> {{ prescription.prescription_date|date:"d/m/Y" }}</div>
+    </div>
+
+    <!-- BODY -->
+    <div class="rx-body">
+
+        <!-- LEFT -->
+        <div class="left">
+
+            <div class="section">
+                <span class="label">C/O</span>: {{ doctor_notes.observations|default:"-" }}
+            </div>
+
+            <div class="section">
+                <span class="label">O/E</span>: {{ doctor_notes.treatment_plan|default:"-" }}
+            </div>
+
+            <div class="section">
+                <span class="label">Vitals</span>:
+                <table class="vitals-table">
+                    <tr>
+                        <td>BP</td>
+                        <td>Pulse</td>
+                        <td>Temp</td>
+                        <td>SpO2</td>
+                    </tr>
+                    <tr>
+                        <td>{{ vitals.bp|default:"-" }}</td>
+                        <td>{{ vitals.pulse|default:"-" }}</td>
+                        <td>{{ vitals.temp|default:"-" }}</td>
+                        <td>{{ vitals.spo2|default:"-" }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="section">
+                <span class="label">Advice</span>: {{ doctor_notes.notes|default:"-" }}
+            </div>
+
+            <div class="section">
+                <span class="label">Tests</span>:
+                {% for test in tests %}
+                    {{ test.test_name }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    -
+                {% endfor %}
+            </div>
+
+        </div>
+
+        <!-- RIGHT -->
+        <div class="right">
+
+            <div class="section">
+                <span class="triangle">△</span>
+                {{ doctor_notes.diagnosis|default:"-" }}
+            </div>
+
+            <div class="rx">℞</div>
+
+            {% for medicine in medicines %}
+                <div class="medicine">
+                    {{ forloop.counter }}. {{ medicine.medicine_name }}<br>
+                    {{ medicine.dosage }} |
+                    {{ medicine.frequency }} |
+                    {{ medicine.duration }}
+
+                    {% if medicine.instructions %}
+                        <br><em>{{ medicine.instructions }}</em>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <p>No medicines</p>
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+    <!-- FOOTER SIGNATURE -->
+    <div class="footer">
+        <div class="signature">
+            <div class="sign-line"></div>
+            Dr. {{ prescription.doctor.user.get_full_name }}
+        </div>
+    </div>
+
+</div>
+
 </body>
 </html>
