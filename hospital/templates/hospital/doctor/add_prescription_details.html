@@ -3,14 +3,26 @@
 {% block title %}Prescription Details - SantKrupa Hospital{% endblock %}
 
 {% block content %}
+
 <h1>💊 Prescription Details</h1>
 
-<div class="card" style="background: linear-gradient(135deg, #d1ecf1 0%, #b8e1ed 100%); border-left-color: #17a2b8;">
+<!-- PRINT BUTTON -->
+<div style="text-align:right; margin-bottom:15px;">
+    <!-- <button onclick="window.print()" class="btn btn-success">🖨️ Print Prescription</button> -->
+    <a href="{% url 'print_prescription' prescription_id=prescription.id clinic_slug=clinic.slug %}" class="btn btn-primary">🖨️ Print Prescription</a>
+</div>
+
+<!-- PATIENT INFO -->
+<div class="card" style="background: linear-gradient(135deg, #d1ecf1 0%, #b8e1ed 100%); border-left-color: #17a2b8; padding: 15px;">
     <h2 style="color: #0c5460; margin-top: 0;">{{ prescription.patient.patient_name }}</h2>
-    <p style="color: #0c5460; margin: 10px 0;"><strong>Patient ID:</strong> {{ prescription.patient.patient_id }}</p>
+    <p style="color: #0c5460; margin: 5px 0;"><strong>Gender:</strong> {{ prescription.patient.get_gender_display }}</p>
+    <p style="color: #0c5460; margin: 5px 0;"><strong>Age:</strong> {{ prescription.patient.age }} Years</p>
+    <p style="color: #0c5460; margin: 5px 0;"><strong>Weight:</strong> {{ prescription.patient.weight }} Kgs</p>
+    <p style="color: #0c5460; margin: 5px 0;"><strong>Patient ID:</strong> {{ prescription.patient.patient_id }}</p>
     <p style="color: #0c5460; margin: 0;"><strong>Date:</strong> {{ prescription.prescription_date|date:"M d, Y H:i" }}</p>
 </div>
 
+<!-- PRESCRIPTION INFO -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 20px 0;">
     <div class="card">
         <h3 style="margin-top: 0;">📋 Prescription Info</h3>
@@ -19,388 +31,413 @@
         <p><strong>Specialization:</strong> {{ prescription.doctor.specialization }}</p>
         <p><strong>Status:</strong> {{ prescription.get_status_display }}</p>
     </div>
-    
+
+    <!-- Admission Recommendation -->
     {% if not prescription.admission_recommended %}
-    <div class="card" style="background-color: #fff3cd; border-left-color: #ffc107;">
+    <div class="card" style="background-color: #fff3cd; border-left-color: #ffc107; padding: 15px;">
         <h3 style="margin-top: 0; color: #856404;">Recommend Admission?</h3>
-        <p style="margin: 10px 0; color: #856404;">If this patient needs hospital admission, you can recommend it here.</p>
-        <form method="post" action="{% url 'recommend_admission' prescription_id=prescription.id clinic_slug=clinic.slug %}" style="display: flex; flex-direction: column; gap: 10px;">
+        <form method="post" action="{% url 'recommend_admission' prescription_id=prescription.id clinic_slug=clinic.slug %}">
             {% csrf_token %}
-            <textarea name="admission_reason" placeholder="Reason for admission (optional)" rows="2" 
-                      style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit;"></textarea>
-            <button type="submit" class="btn" style="background-color: #ffc107; border-color: #ffc107; color: #333; font-weight: bold;">
-                Recommend Admission
-            </button>
+            <textarea name="admission_reason" placeholder="Reason for admission (optional)" rows="2" style="width:100%; padding:8px; margin-bottom:10px;"></textarea>
+            <button type="submit" class="btn" style="background-color:#ffc107; color:#333;">Recommend Admission</button>
         </form>
     </div>
     {% else %}
-    <div class="card" style="background-color: #d4edda; border-left-color: #28a745;">
-        <h3 style="margin-top: 0; color: #155724;">Admission Recommended</h3>
-        <p style="margin: 10px 0; color: #155724;"><strong>Status:</strong> Admission has been recommended for this patient.</p>
+    <div class="card" style="background-color: #d4edda; border-left-color: #28a745; padding: 15px;">
+        <h3 style="margin-top:0; color:#155724;">Admission Recommended</h3>
+        <p><strong>Status:</strong> Admission has been recommended.</p>
         {% if prescription.admission_reason %}
-        <p style="margin: 5px 0; color: #155724;"><strong>Reason:</strong> {{ prescription.admission_reason }}</p>
+        <p><strong>Reason:</strong> {{ prescription.admission_reason }}</p>
         {% endif %}
-        <a href="{% url 'admit_patient' patient_id=prescription.patient.id clinic_slug=clinic.slug %}" class="btn" style="background-color: #28a745; border-color: #28a745; display: inline-block;">
-            Proceed to Admit Patient
-        </a>
+        <a href="{% url 'admit_patient' patient_id=prescription.patient.id clinic_slug=clinic.slug %}" class="btn" style="background-color:#28a745; color:#fff;">Proceed to Admit Patient</a>
     </div>
     {% endif %}
 </div>
 
+<!-- VITALS -->
+<div class="card" style="padding:15px;">
+    <h2>❤️ Vitals</h2>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_vitals">
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px;">
+            <input type="text" name="bp" placeholder="BP" value="{{ vitals.bp|default:'' }}">
+            <input type="text" name="pulse" placeholder="Pulse" value="{{ vitals.pulse|default:'' }}">
+            <input type="text" name="temp" placeholder="Temp" value="{{ vitals.temp|default:'' }}">
+            <input type="text" name="spo2" placeholder="SpO2" value="{{ vitals.spo2|default:'' }}">
+        </div>
+        <button type="submit" class="btn btn-primary">💾 Save Vitals</button>
+    </form>
+</div>
+
+<!-- DOCTOR NOTES -->
+<div class="card" style="padding:15px;">
+    <h2>📝 Doctor's Notes</h2>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_notes">
+        {{ notes_form.as_p }}
+        <button type="submit" class="btn btn-primary">💾 Save Notes</button>
+    </form>
+</div>
+
 <!-- TESTS SECTION -->
-<div class="card">
+<div class="card" style="padding: 15px;">
     <h2>🧪 Tests Prescribed</h2>
-    
     {% if tests %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Test Name</th>
-                    <th>Type</th>
-                    <th>Test Date</th>
-                    <th>Completed</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for test in tests %}
-                <tr>
-                    <td><strong>{{ test.test_name }}</strong></td>
-                    <td>{{ test.get_test_type_display }}</td>
-                    <td>{{ test.test_date|date:"M d, Y"|default:"Not scheduled" }}</td>
-                    <td>
-                        {% if test.is_completed %}
-                            <span style="background: #d4edda; padding: 5px 10px; border-radius: 4px; color: #155724;">✓ Yes</span>
-                        {% else %}
-                            <span style="background: #fff3cd; padding: 5px 10px; border-radius: 4px; color: #856404;">Pending</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if clinic %}
-                        <a href="{% url 'delete_test' clinic.slug test.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em; background: #dc3545;" onclick="return confirm('Delete this test?');">Delete</a>
-                        {% else %}
-                        <a href="{% url 'delete_test' test.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em; background: #dc3545;" onclick="return confirm('Delete this test?');">Delete</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Completed</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for test in tests %}
+            <tr>
+                <td>{{ test.test_name }}</td>
+                <td>{{ test.get_test_type_display }}</td>
+                <td>{{ test.test_date|date:"M d, Y"|default:"Not scheduled" }}</td>
+                <td>{% if test.is_completed %}<span style="color:green;">Yes</span>{% else %}<span style="color:orange;">Pending</span>{% endif %}</td>
+                <td>
+                    <a href="{% url 'delete_test' clinic.slug test.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this test?')">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     {% else %}
-        <p class="alert-info">No tests prescribed yet.</p>
+    <p>No tests prescribed yet.</p>
     {% endif %}
-    
-    <h3>Add New Test</h3>
-    <form method="post" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+</div>
+
+<div class="card" style="padding:20px; border-radius:12px;">
+    <h3 style="margin-bottom:15px;">➕ Add New Test</h3>
+
+    <form method="post" class="test-form">
         {% csrf_token %}
         <input type="hidden" name="action" value="add_test">
-        
-        <div class="form-group">
-            <label>Test Type *</label>
-            {{ test_form.test_type }}
-        </div>
-        
-        <div class="form-group">
-            <label>Test Name * (Start typing to autocomplete from clinic templates)</label>
-            <input type="text" id="test_name_autocomplete" list="test_names_list" placeholder="Search test name..." 
-                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
-            <datalist id="test_names_list"></datalist>
-            {{ test_form.test_name }}
-        </div>
-        
-        <div class="form-group">
-            <label>Test Date</label>
-            {{ test_form.test_date }}
-        </div>
-        
-        <div style="grid-column: 1/-1;">
+
+        <div class="form-grid">
             <div class="form-group">
+                <label>Test Type</label>
+                {{ test_form.test_type }}
+            </div>
+
+            <div class="form-group">
+                <label>Search Test</label>
+                <input type="text" id="test_name_autocomplete" list="test_names_list"
+                       placeholder="Type to search test..."
+                       class="input-field">
+                <datalist id="test_names_list"></datalist>
+                {{ test_form.test_name }}
+            </div>
+
+            <div class="form-group">
+                <label>Test Date</label>
+                {{ test_form.test_date }}
+            </div>
+
+            <div class="form-group full-width">
                 <label>Description</label>
                 {{ test_form.description }}
             </div>
         </div>
-        
-        <div style="grid-column: 1/-1;">
-            <button type="submit" class="btn">+ Add Test</button>
+
+        <div style="text-align:right;">
+            <button type="submit" class="btn btn-primary">
+                ➕ Add Test
+            </button>
         </div>
     </form>
 </div>
 
 <!-- MEDICINES SECTION -->
-<div class="card">
+<div class="card" style="padding:15px;">
     <h2>💊 Medicines Prescribed</h2>
-    
     {% if medicines %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Medicine Name</th>
-                    <th>Dosage</th>
-                    <th>Frequency</th>
-                    <th>Duration</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for medicine in medicines %}
-                <tr>
-                    <td><strong>{{ medicine.medicine_name }}</strong></td>
-                    <td>{{ medicine.dosage }}</td>
-                    <td>{{ medicine.frequency }}</td>
-                    <td>{{ medicine.duration }}</td>
-                    <td>
-                        {% if clinic %}
-                        <a href="{% url 'delete_medicine' clinic.slug medicine.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em; background: #dc3545;" onclick="return confirm('Delete this medicine?');">Delete</a>
-                        {% else %}
-                        <a href="{% url 'delete_medicine' medicine.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em; background: #dc3545;" onclick="return confirm('Delete this medicine?');">Delete</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Dosage</th>
+                <th>Frequency</th>
+                <th>Duration</th>
+                <th>Schedule</th>
+                <th>Food Instruction</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for med in medicines %}
+            <tr>
+                <td>{{ med.medicine_name }}</td>
+                <td>{{ med.get_medicine_type_display }}</td>
+                <td>{{ med.dosage }}</td>
+                <td>{{ med.frequency }}</td>
+                <td>{{ med.duration }}</td>
+                <td>{{ med.schedule }}</td>
+                <td>{{ med.food_instruction }}</td>
+                <td>
+                    <a href="{% url 'delete_medicine' clinic.slug med.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this medicine?')">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     {% else %}
-        <p class="alert-info">No medicines prescribed yet.</p>
+    <p>No medicines prescribed yet.</p>
     {% endif %}
-    
-    <h3>Add New Medicine</h3>
-    <form method="post" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+</div>
+
+<div class="card" style="padding:20px; border-radius:12px;">
+    <h3 style="margin-bottom:15px;">💊 Add New Medicine</h3>
+
+    <form method="post" class="medicine-form">
         {% csrf_token %}
         <input type="hidden" name="action" value="add_medicine">
-        
-        <div class="form-group">
-            <label>Medicine Name * (Start typing to autocomplete from clinic templates)</label>
-            <input type="text" id="medicine_name_autocomplete" list="medicine_names_list" placeholder="Search medicine name..." 
-                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
-            <datalist id="medicine_names_list"></datalist>
-            {{ medicine_form.medicine_name }}
-        </div>
-        
-        <div class="form-group">
-            <label>Dosage (e.g., 500mg) * (Will auto-populate if you select a template)</label>
-            {{ medicine_form.dosage }}
-        </div>
-        
-        <div class="form-group">
-            <label>Frequency (e.g., Twice daily) * (Will auto-populate if you select a template)</label>
-            {{ medicine_form.frequency }}
-        </div>
-        
-        <div class="form-group">
-            <label>Duration (e.g., 7 days) * (Will auto-populate if you select a template)</label>
-            {{ medicine_form.duration }}
-        </div>
-        
-        <div style="grid-column: 1/-1;">
+
+        <div class="form-grid">
+
+            <!-- Medicine Search -->
             <div class="form-group">
+                <label>Search Medicine</label>
+                <input type="text" id="medicine_name_autocomplete"
+                       list="medicine_names_list"
+                       placeholder="Type medicine name..."
+                       class="input-field">
+                <datalist id="medicine_names_list"></datalist>
+
+                <!-- Hidden actual field -->
+                {{ medicine_form.medicine_name }}
+            </div>
+            <!-- Medicine Type -->
+            <div class="form-group">
+                <label>Medicine Type</label>
+                {{ medicine_form.medicine_type }}
+            </div>
+
+            <!-- Dosage -->
+            <div class="form-group">
+                <label>Dosage</label>
+                {{ medicine_form.dosage }}
+            </div>
+
+            <!-- Frequency -->
+            <div class="form-group">
+                <label>Frequency</label>
+                {{ medicine_form.frequency }}
+            </div>
+
+            <!-- Duration -->
+            <div class="form-group">
+                <label>Duration</label>
+                {{ medicine_form.duration }}
+            </div>
+
+            <!-- Schedule -->
+            <div class="form-group">
+                <label>Schedule</label>
+                {{ medicine_form.schedule }}
+            </div>
+
+            <!-- Food Instruction -->
+            <div class="form-group">
+                <label>Food Instruction</label>
+                {{ medicine_form.food_instruction }}
+            </div>
+
+            <!-- Special Instructions -->
+            <div class="form-group full-width">
                 <label>Special Instructions</label>
                 {{ medicine_form.instructions }}
             </div>
-        </div>
-        
-        <div style="grid-column: 1/-1;">
-            <button type="submit" class="btn">+ Add Medicine</button>
-        </div>
-    </form>
-
-    <script>
-        // Medicine autocomplete
-        let medicineSearchTimeout;
-        let medicinesCache = [];
-        
-        const medicineAutocompleteInput = document.getElementById('medicine_name_autocomplete');
-        const medicineNameField = document.querySelector('[name="medicine_name"]');
-        const medicineDosageField = document.querySelector('[name="dosage"]');
-        const medicineFrequencyField = document.querySelector('[name="frequency"]');
-        const medicineDurationField = document.querySelector('[name="duration"]');
-        const medicineNamesList = document.getElementById('medicine_names_list');
-        
-        medicineAutocompleteInput.addEventListener('input', function() {
-            clearTimeout(medicineSearchTimeout);
-            const query = this.value.trim();
-            
-            if (query.length < 1) {
-                medicineNamesList.innerHTML = '';
-                return;
-            }
-            
-            medicineSearchTimeout = setTimeout(() => {
-                const apiUrl = '{% if clinic %}{% url "api_master_medicines" clinic.slug %}{% else %}/api/master-medicines/{% endif %}?q=' + encodeURIComponent(query);
-                
-                fetch(apiUrl)
-                    .then(response => response.json())
-                    .then(data => {
-                        medicineNamesList.innerHTML = '';
-                        medicinesCache = data;
-                        data.forEach(medicine => {
-                            const option = document.createElement('option');
-                            option.value = medicine.medicine_name;
-                            option.dataset.id = medicine.id;
-                            option.dataset.dosageOptions = medicine.dosage_options;
-                            option.dataset.defaultFrequency = medicine.default_frequency;
-                            option.dataset.defaultDuration = medicine.default_duration;
-                            medicineNamesList.appendChild(option);
-                        });
-                    })
-                    .catch(error => console.error('Error fetching medicines:', error));
-            }, 300);
-        });
-        
-        // When input changes, check if it matches a medicine and auto-populate
-        medicineAutocompleteInput.addEventListener('blur', function() {
-            const selectedValue = this.value.trim();
-            const matchedMedicine = medicinesCache.find(m => m.medicine_name === selectedValue);
-            
-            if (matchedMedicine) {
-                medicineNameField.value = selectedValue;
-                if (matchedMedicine.default_frequency) {
-                    medicineFrequencyField.value = matchedMedicine.default_frequency;
-                }
-                if (matchedMedicine.default_duration) {
-                    medicineDurationField.value = matchedMedicine.default_duration;
-                }
-            }
-        });
-        
-        // Test autocomplete
-        let testSearchTimeout;
-        let testsCache = [];
-        
-        const testAutocompleteInput = document.getElementById('test_name_autocomplete');
-        const testNameField = document.querySelector('[name="test_name"]');
-        const testTypeField = document.querySelector('[name="test_type"]');
-        const testNamesList = document.getElementById('test_names_list');
-        
-        testAutocompleteInput.addEventListener('input', function() {
-            clearTimeout(testSearchTimeout);
-            const query = this.value.trim();
-            const testType = testTypeField.value;
-            
-            if (query.length < 1) {
-                testNamesList.innerHTML = '';
-                return;
-            }
-            
-            testSearchTimeout = setTimeout(() => {
-                const apiUrl = '{% if clinic %}{% url "api_master_tests" clinic.slug %}{% else %}/api/master-tests/{% endif %}?q=' + encodeURIComponent(query) + (testType ? '&test_type=' + encodeURIComponent(testType) : '');
-                
-                fetch(apiUrl)
-                    .then(response => response.json())
-                    .then(data => {
-                        testNamesList.innerHTML = '';
-                        testsCache = data;
-                        data.forEach(test => {
-                            const option = document.createElement('option');
-                            option.value = test.test_name;
-                            option.dataset.id = test.id;
-                            option.dataset.testType = test.test_type;
-                            testNamesList.appendChild(option);
-                        });
-                    })
-                    .catch(error => console.error('Error fetching tests:', error));
-            }, 300);
-        });
-        
-        // When test input changes, check if it matches a test
-        testAutocompleteInput.addEventListener('blur', function() {
-            const selectedValue = this.value.trim();
-            const matchedTest = testsCache.find(t => t.test_name === selectedValue);
-            
-            if (matchedTest) {
-                testNameField.value = selectedValue;
-            }
-        });
-    </script>
-</div>
-
-<!-- DOCTOR NOTES SECTION -->
-<div class="card">
-    <h2>📝 Doctor's Notes & Observations</h2>
-    
-    <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="save_notes">
-        
-        <div class="form-group">
-            <label>Observations *</label>
-            {{ notes_form.observations }}
-        </div>
-        
-        <div class="form-group">
-            <label>Diagnosis *</label>
-            {{ notes_form.diagnosis }}
-        </div>
-        
-        <div class="form-group">
-            <label>Treatment Plan *</label>
-            {{ notes_form.treatment_plan }}
-        </div>
-        
-        <div class="form-group">
-            <label>Additional Notes</label>
-            {{ notes_form.notes }}
-        </div>
-        
-        <button type="submit" class="btn">💾 Save Notes</button>
-    </form>
-</div>
-
-<!-- VITALS SECTION -->
-<div class="card">
-    <h2>❤️ Vitals</h2>
-
-    <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="save_vitals">
-
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
-            
-            <div class="form-group">
-                <label>BP</label>
-                <input type="text" name="bp" placeholder="120/80" value="{{ vitals.bp|default:'' }}">
-            </div>
-
-            <div class="form-group">
-                <label>Pulse</label>
-                <input type="text" name="pulse" placeholder="72" value="{{ vitals.pulse|default:'' }}">
-            </div>
-
-            <div class="form-group">
-                <label>Temp</label>
-                <input type="text" name="temp" placeholder="98.6°F" value="{{ vitals.temp|default:'' }}">
-            </div>
-
-            <div class="form-group">
-                <label>SpO2</label>
-                <input type="text" name="spo2" placeholder="98%" value="{{ vitals.spo2|default:'' }}">
-            </div>
 
         </div>
 
-        <button type="submit" class="btn">💾 Save Vitals</button>
+        <!-- Submit -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+            
+            <!-- UX Tip -->
+            <small style="color:#666;">
+                💡 Tip: Start typing to auto-fill dosage & schedule
+            </small>
+
+            <button type="submit" class="btn btn-primary">
+                ➕ Add Medicine
+            </button>
+        </div>
     </form>
 </div>
 
 <!-- COMPLETE PRESCRIPTION -->
-<div class="card" style="text-align: center; background-color: #f0f7ff; border-left-color: #17a2b8;">
-    <h3 style="color: #0c5460; margin-top: 0;">Ready to Complete?</h3>
-    <p style="color: #0c5460;">Once you complete the prescription, the patient will be able to view all tests, medicines, and your notes.</p>
-    
-    <form method="post" action="{% if clinic %}{% url 'complete_prescription' prescription_id=prescription.id clinic_slug=clinic.slug %}{% else %}{% url 'complete_prescription' prescription_id=prescription.id %}{% endif %}" style="display: inline;">
+<div class="card" style="padding:15px; text-align:center; background-color:#f0f7ff; border-left-color:#17a2b8;">
+    <h3>Ready to Complete?</h3>
+    <form method="post" action="{% url 'complete_prescription' prescription_id=prescription.id clinic_slug=clinic.slug %}" style="display:inline;">
         {% csrf_token %}
-        <button type="submit" class="btn" style="background: #28a745; margin-right: 10px;">✓ Complete Prescription</button>
+        <button type="submit" class="btn btn-success">✓ Complete Prescription</button>
     </form>
-
-    {% if clinic %}
-    <a href="{% url 'print_prescription' prescription_id=prescription.id clinic_slug=clinic.slug %}" class="btn" style="background: #007bff; margin-right: 10px;">Print Prescription</a>
-    {% else %}
-    <a href="{% url 'print_prescription' prescription.id %}" class="btn" style="background: #007bff; margin-right: 10px;">🖨️ Print Prescription</a>
-    {% endif %}
-    
-    {% if clinic %}
+    <a href="{% url 'print_prescription' prescription_id=prescription.id clinic_slug=clinic.slug %}" class="btn btn-primary">🖨️ Print Prescription</a>
     <a href="{% url 'doctor_dashboard' clinic.slug %}" class="btn btn-secondary">← Back to Dashboard</a>
-    {% else %}
-    <a href="{% url 'homepage' %}" class="btn btn-secondary">← Back to Dashboard</a>
-    {% endif %}
 </div>
+
+<!-- JS AUTOCOMPLETE FOR MEDICINES AND TESTS -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    // ---------- MEDICINE AUTOCOMPLETE ----------
+    const medicineInput = document.getElementById("medicine_name_autocomplete");
+    const medicineList = document.getElementById("medicine_names_list");
+
+    const medicineNameField = document.querySelector('[name="medicine_name"]');
+    const dosageField = document.querySelector('[name="dosage"]');
+    const frequencyField = document.querySelector('[name="frequency"]');
+    const durationField = document.querySelector('[name="duration"]');
+    const scheduleField = document.querySelector('[name="schedule"]');
+    const foodInstructionField = document.querySelector('[name="food_instruction"]');
+
+    let medicinesCache = [];
+
+    medicineInput.addEventListener("input", function() {
+        const q = this.value.trim();
+        if (!q) {
+            medicineList.innerHTML = "";
+            medicinesCache = [];
+            return;
+        }
+
+        fetch(`{% if clinic %}{% url "api_master_medicines" clinic.slug %}{% else %}/api/master-medicines/{% endif %}?q=${encodeURIComponent(q)}`)
+        .then(r => r.json())
+        .then(data => {
+            medicinesCache = data;
+            medicineList.innerHTML = "";
+            data.forEach(m => {
+                const option = document.createElement("option");
+                option.value = m.medicine_name;
+                option.dataset.dosage = m.default_dosage;
+                option.dataset.frequency = m.default_schedule; // maps to frequency
+                option.dataset.duration = m.default_duration;
+                option.dataset.schedule = m.default_schedule;
+                option.dataset.food = m.food_instruction;
+                medicineList.appendChild(option);
+            });
+        })
+        .catch(err => console.error(err));
+    });
+
+    medicineInput.addEventListener("change", function() {
+        const selected = medicinesCache.find(m => m.medicine_name === this.value);
+        if (selected) {
+            if (dosageField) dosageField.value = selected.default_dosage || "";
+            if (frequencyField) frequencyField.value = selected.default_schedule || "";
+            if (durationField) durationField.value = selected.default_duration || "";
+            if (scheduleField) scheduleField.value = selected.default_schedule || "";
+            if (foodInstructionField) foodInstructionField.value = selected.food_instruction || "";
+        }
+    });
+
+    // ---------- TEST AUTOCOMPLETE ----------
+    const testInput = document.getElementById("test_name_autocomplete");
+    const testList = document.getElementById("test_names_list");
+    const testNameField = document.querySelector('[name="test_name"]');
+    let testsCache = [];
+
+    testInput.addEventListener(
+        "input", function() {
+        const q = this.value.trim();
+        console.log("value entered" , q)
+        const testType = document.querySelector('[name="test_type"]').value;
+        console.log("type selected", testType)
+        // if (!q) {
+        //     testList.innerHTML = "";
+        //     testsCache = [];
+        //     return;
+        // }
+
+        fetch(`{% if clinic %}{% url "api_master_tests" clinic.slug %}{% else %}/api/master-tests/{% endif %}?q=${encodeURIComponent(q)}&test_type=${encodeURIComponent(testType)}`)
+        .then(r => r.json())
+        .then(data => {
+            testsCache = data;
+            testList.innerHTML = "";
+            data.forEach(t => {
+                const option = document.createElement("option");
+                option.value = t.test_name;
+                testList.appendChild(option);
+            });
+        })
+        .catch(err => console.error(err));
+    });
+
+    testInput.addEventListener("change", function() {
+        const selected = testsCache.find(t => t.test_name === this.value);
+        if (selected && testNameField) {
+            testNameField.value = selected.test_name;
+        }
+    });
+
+});
+</script>
+<style>
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #444;
+}
+
+.input-field,
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+.full-width {
+    grid-column: span 2;
+}
+.medicine-form .form-group input,
+.medicine-form .form-group select,
+.medicine-form .form-group textarea {
+    background: #f9fbfd;
+    transition: all 0.2s ease;
+}
+
+.medicine-form .form-group input:focus,
+.medicine-form .form-group select:focus,
+.medicine-form .form-group textarea:focus {
+    border-color: #007bff;
+    background: #fff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.1);
+}
+
+/* Better spacing for large text */
+textarea {
+    min-height: 60px;
+}
+
+/* Mobile improvement */
+@media (max-width: 600px) {
+    .full-width {
+        grid-column: span 1;
+    }
+}
+</style>
+
 {% endblock %}

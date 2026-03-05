@@ -8,11 +8,12 @@ from django.utils.text import slugify
 class ClinicRegistrationForm(forms.ModelForm):
     class Meta:
         model = Clinic
-        fields = ['name', 'slug', 'address', 'city', 'state', 'zip_code', 'phone_number', 'email', 'website', 'registration_number']
+        fields = ['name', 'slug', 'address','logo',  'city', 'state', 'zip_code', 'phone_number', 'email', 'website', 'registration_number']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Clinic name'}),
             'slug': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'clinic-slug (URL friendly)'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'logo': forms.FileInput(attrs={'class': 'form-control'}),
             'city': forms.TextInput(attrs={'class': 'form-control'}),
             'state': forms.TextInput(attrs={'class': 'form-control'}),
             'zip_code': forms.TextInput(attrs={'class': 'form-control'}),
@@ -45,11 +46,22 @@ class ClinicRegistrationForm(forms.ModelForm):
 class PatientRegistrationForm(forms.ModelForm):
     class Meta:
         model = Patient
-        fields = ['patient_name', 'age', 'address', 'phone_number']
+        fields = ['patient_name', 'gender', 'date_of_birth', 'weight', 'age', 'address', 'phone_number']
         widgets = {
             'patient_name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Enter patient name'
+            }),
+            'gender': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'date_of_birth': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'weight': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter weight in kg'
             }),
             'age': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -108,8 +120,28 @@ class TestForm(forms.ModelForm):
 class MedicineForm(forms.ModelForm):
     class Meta:
         model = Medicine
-        fields = ['medicine_name', 'dosage', 'frequency', 'duration', 'instructions']
+        fields = [
+            "medicine_type",
+            'medicine_name',
+            'dosage',
+            'frequency',
+            'duration',
+            'schedule',
+            'food_instruction',
+            'instructions'
+        ]
+        MEDICINE_TYPE_CHOICES = [
+            ('tablet', 'Tablet'),
+            ('capsule', 'Capsule'),
+            ('syrup', 'Syrup'),
+            ('injection', 'Injection'),
+            ('ointment', 'Ointment'),
+            ('drops', 'Drops'),
+        ]
         widgets = {
+            'medicine_type': forms.Select(choices=MEDICINE_TYPE_CHOICES, attrs={
+                'class': 'form-control'
+            }),
             'medicine_name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Enter medicine name'
@@ -126,13 +158,23 @@ class MedicineForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'e.g., 7 days'
             }),
+
+            # ✅ ADD THIS
+            'schedule': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+
+            # ✅ ADD THIS
+            'food_instruction': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+
             'instructions': forms.Textarea(attrs={
                 'class': 'form-control',
                 'placeholder': 'Special instructions',
                 'rows': 3
             }),
         }
-
 
 # Doctor - Doctor Notes/Thoughts Form
 class DoctorNotesForm(forms.ModelForm):
@@ -192,7 +234,7 @@ class DoctorUserCreationForm(UserCreationForm):
     
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2')
+        fields = ('username', 'first_name', 'last_name', 'email','mobile_number', 'password1', 'password2')
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'form-control',

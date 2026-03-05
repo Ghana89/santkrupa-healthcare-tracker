@@ -8,99 +8,134 @@
 <div class="dashboard-grid">
     <div class="dashboard-item">
         <div class="icon">📝</div>
-        <h3 style="color: #fff; margin-top: 0;">Register New Patient</h3>
-        <p style="color: #f0f0f0;">Add a new patient to the system</p>
+        <h3 style="color: #fff;">Register New Patient</h3>
+        <p style="color: #f0f0f0;">Add a new patient</p>
         {% if clinic %}
-        <a href="{% url 'register_patient' clinic.slug %}" class="btn" style="background: #fff; color: #2a5298;">Register Now</a>
+        <a href="{% url 'register_patient' clinic.slug %}" class="btn" style="background:#fff; color:#2a5298;">Register</a>
         {% else %}
-        <a href="{% url 'register' %}" class="btn" style="background: #fff; color: #2a5298;">Register Now</a>
+        <a href="{% url 'register' %}" class="btn" style="background:#fff; color:#2a5298;">Register</a>
         {% endif %}
     </div>
-    
+
     <div class="dashboard-item">
         <div class="icon">✅</div>
-        <h3 style="color: #fff; margin-top: 0;">Patient Check-In</h3>
-        <p style="color: #f0f0f0;">Check in existing patient</p>
+        <h3 style="color: #fff;">Patient Check-In</h3>
+        <p style="color: #f0f0f0;">Check in patient</p>
         {% if clinic %}
-        <a href="{% url 'patient_checkin' clinic.slug %}" class="btn" style="background: #fff; color: #2a5298;">Check In</a>
+        <a href="{% url 'patient_checkin' clinic.slug %}" class="btn" style="background:#fff; color:#2a5298;">Check In</a>
         {% else %}
-        <a href="{% url 'homepage' %}" class="btn" style="background: #fff; color: #2a5298;">Check In</a>
+        <a href="{% url 'homepage' %}" class="btn" style="background:#fff; color:#2a5298;">Check In</a>
         {% endif %}
     </div>
-    
+
     <div class="dashboard-item">
         <div class="icon">👥</div>
-        <h3 style="color: #fff; margin-top: 0;">Total Patients</h3>
-        <p style="color: #f0f0f0; font-size: 2em; margin: 10px 0;">{{ total_patients }}</p>
-        <a href="#patients" class="btn" style="background: #fff; color: #2a5298;">View All</a>
+        <h3 style="color: #fff;">Total Patients</h3>
+        <p style="color: #f0f0f0; font-size: 2em;">{{ total_patients }}</p>
+        <a href="#patients" class="btn" style="background:#fff; color:#2a5298;">View</a>
     </div>
-    
+
     <div class="dashboard-item">
         <div class="icon">📋</div>
-        <h3 style="color: #fff; margin-top: 0;">Patient Records</h3>
-        <p style="color: #f0f0f0;">View and manage patient information</p>
-        <a href="#patients" class="btn" style="background: #fff; color: #2a5298;">Access Records</a>
+        <h3 style="color: #fff;">Patient Records</h3>
+        <p style="color: #f0f0f0;">Manage records</p>
+        <a href="#patients" class="btn" style="background:#fff; color:#2a5298;">Open</a>
     </div>
 </div>
 
-<div class="card">
+<!-- ================= PATIENT TABLE ================= -->
+<div class="card" id="patients">
     <h2>📊 All Registered Patients</h2>
-    
+
+    <!-- 🔍 Search -->
+    <div style="margin-bottom: 15px;">
+        <input 
+            type="text" 
+            id="patientSearch" 
+            placeholder="🔍 Search by Name / Phone / Patient ID..."
+            class="form-control"
+            style="width:100%; padding:10px;"
+        >
+    </div>
+
     {% if patients %}
-        <div style="overflow-x: auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Patient ID</th>
-                        <th>Name</th>
-                        <th>Age</th>
-                        <th>Phone</th>
-                        <th>Status</th>
-                        <th>Registered On</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for patient in patients %}
-                    <tr>
-                        <td><strong>{{ patient.patient_id }}</strong></td>
-                        <td>{{ patient.patient_name }}</td>
-                        <td>{{ patient.age }} years</td>
-                        <td>{{ patient.phone_number }}</td>
-                        <td>
-                            <span style="background: 
-                                {% if patient.status == 'registered' %}#d4edda
-                                {% elif patient.status == 'in_diagnosis' %}#fff3cd
-                                {% elif patient.status == 'treatment_started' %}#d1ecf1
-                                {% else %}#d4edda{% endif %};
-                                padding: 5px 10px; border-radius: 4px;">
-                                {{ patient.get_status_display }}
-                            </span>
-                        </td>
-                        <td>{{ patient.registration_date }}</td>
-                        <td>
-                            {% if clinic %}
-                            <a href="{% url 'patient_details' clinic.slug patient.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em;">View</a>
-                            <a href="{% url 'delete_patient' clinic.slug patient.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em; background-color: #dc3545; margin-left: 5px;">Delete</a>
-                            {% else %}
-                            <a href="#" class="btn" style="padding: 6px 12px; font-size: 0.9em;">View</a>
-                            <a href="#" class="btn" style="padding: 6px 12px; font-size: 0.9em; background-color: #dc3545; margin-left: 5px;">Delete</a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <div style="max-height: 400px; overflow-y: auto; overflow-x: auto; border:1px solid #ddd;">
+        <table style="width:100%; border-collapse: collapse;">
+            
+            <!-- Sticky Header -->
+            <thead style="position: sticky; top: 0; background: #f8f9fa; z-index: 1;">
+                <tr>
+                    <th>Patient ID</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                    <th>Registered</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="patientTable">
+                {% for patient in patients %}
+                <tr>
+                    <td><strong>{{ patient.patient_id }}</strong></td>
+                    <td>{{ patient.patient_name }}</td>
+                    <td>{{ patient.age }} yrs</td>
+                    <td>{{ patient.phone_number }}</td>
+                    <td>
+                        <span style="
+                            background:
+                            {% if patient.status == 'registered' %}#d4edda
+                            {% elif patient.status == 'in_diagnosis' %}#fff3cd
+                            {% elif patient.status == 'treatment_started' %}#d1ecf1
+                            {% else %}#d4edda{% endif %};
+                            padding:5px 10px;
+                            border-radius:4px;
+                        ">
+                            {{ patient.get_status_display }}
+                        </span>
+                    </td>
+                    <td>{{ patient.registration_date }}</td>
+                    <td>
+                        {% if clinic %}
+                        <a href="{% url 'patient_details' clinic.slug patient.id %}" class="btn" style="padding:5px 10px;">View</a>
+                        <a href="{% url 'delete_patient' clinic.slug patient.id %}" class="btn" style="background:#dc3545; padding:5px 10px;">Delete</a>
+                        {% else %}
+                        <a href="#" class="btn">View</a>
+                        <a href="#" class="btn" style="background:#dc3545;">Delete</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
     {% else %}
-        <div class="alert-info">
-            No patients registered yet.
-        </div>
+        <div class="alert-info">No patients registered yet.</div>
     {% endif %}
 </div>
 
-<div class="card" style="text-align: center;">
-    <p>Need help? Contact admin or refer to the system guidelines.</p>
-    <a href="{% url 'homepage' %}" class="btn btn-secondary">← Back to Home</a>
+<div class="card" style="text-align:center;">
+    <p>Need help? Contact admin.</p>
+    <a href="{% url 'homepage' %}" class="btn btn-secondary">← Back</a>
 </div>
+
+<!-- ================= JS SEARCH ================= -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("patientSearch");
+    const rows = document.querySelectorAll("#patientTable tr");
+
+    searchInput.addEventListener("keyup", function () {
+        const filter = this.value.toLowerCase();
+
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(filter) ? "" : "none";
+        });
+    });
+});
+</script>
+
 {% endblock %}

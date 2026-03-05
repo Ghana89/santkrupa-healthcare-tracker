@@ -15,6 +15,7 @@
     <div class="card">
         <h3 style="margin-top: 0;">👤 Personal Information</h3>
         <p><strong>Age:</strong> {{ patient.age }} years</p>
+        <p><strong>Gender:</strong> {{ patient.get_gender_display }}</p>
         <p><strong>Phone:</strong> {{ patient.phone_number }}</p>
         <p><strong>Address:</strong> {{ patient.address }}</p>
         <p><strong>Registered On:</strong> {{ patient.registration_date }}</p>

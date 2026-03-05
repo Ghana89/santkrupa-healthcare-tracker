@@ -8,69 +8,164 @@
 <div class="card">
     <p>Please fill in the patient details to register them in the system. A default login credential will be auto-generated.</p>
     
+    <!-- ✅ Messages -->
     {% if messages %}
         {% for message in messages %}
             <div class="alert-{% if message.tags %}{{ message.tags }}{% else %}success{% endif %}">
-                <strong>Success!</strong> {{ message }}
+                <strong>Info:</strong> {{ message }}
             </div>
         {% endfor %}
     {% endif %}
+
+    <!-- 🚨 Existing Patients Warning -->
+    {% if existing_patients %}
+    <div class="card" style="background-color: #fff3cd; border-left: 5px solid #ffc107; margin-bottom: 20px;">
+        <h3>⚠️ Patients already exist with this phone number</h3>
+
+        <table style="width:100%; margin-top:10px; border-collapse: collapse;">
+            <tr style="background:#f8d7da;">
+                <th style="padding:8px;">Name</th>
+                <th style="padding:8px;">Patient ID</th>
+                <th style="padding:8px;">Age</th>
+            </tr>
+
+            {% for p in existing_patients %}
+            <tr>
+                <td style="padding:8px;">{{ p.patient_name }}</td>
+                <td style="padding:8px;">{{ p.patient_id }}</td>
+                <td style="padding:8px;">{{ p.age }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <p style="margin-top:10px;">
+            👉 This number is already used. Please confirm if this is a new family member.
+        </p>
+    </div>
+
+    <!-- Optional Popup -->
+    <script>
+        alert("This phone number is already registered. Please verify patient details.");
+    </script>
+    {% endif %}
     
+    <!-- ✅ FORM START -->
     <form method="post">
         {% csrf_token %}
         
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            
+            <!-- Name -->
             <div class="form-group">
                 <label>Patient Name *</label>
                 {{ form.patient_name }}
                 {% if form.patient_name.errors %}
-                    <div class="alert-danger" style="margin-top: 8px;">{{ form.patient_name.errors }}</div>
+                    <div class="alert-danger">{{ form.patient_name.errors }}</div>
                 {% endif %}
             </div>
-            
+
+            <!-- Gender -->
+            <div class="form-group">
+                <label>Gender</label>
+                {{ form.gender }}
+                {% if form.gender.errors %}
+                    <div class="alert-danger">{{ form.gender.errors }}</div>
+                {% endif %}
+            </div>
+
+            <!-- DOB -->
+            <div class="form-group">
+                <label>Date of Birth</label>
+                {{ form.date_of_birth }}
+                {% if form.date_of_birth.errors %}
+                    <div class="alert-danger">{{ form.date_of_birth.errors }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Weight -->
+            <div class="form-group">
+                <label>Weight (kg)</label>
+                {{ form.weight }}
+                {% if form.weight.errors %}
+                    <div class="alert-danger">{{ form.weight.errors }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Age -->
             <div class="form-group">
                 <label>Age *</label>
                 {{ form.age }}
                 {% if form.age.errors %}
-                    <div class="alert-danger" style="margin-top: 8px;">{{ form.age.errors }}</div>
+                    <div class="alert-danger">{{ form.age.errors }}</div>
                 {% endif %}
             </div>
-            
+
+            <!-- Phone -->
             <div class="form-group">
                 <label>Mobile Number *</label>
                 {{ form.phone_number }}
                 {% if form.phone_number.errors %}
-                    <div class="alert-danger" style="margin-top: 8px;">{{ form.phone_number.errors }}</div>
+                    <div class="alert-danger">{{ form.phone_number.errors }}</div>
                 {% endif %}
             </div>
         </div>
         
+        <!-- Address -->
         <div class="form-group">
             <label>Address *</label>
             {{ form.address }}
             {% if form.address.errors %}
-                <div class="alert-danger" style="margin-top: 8px;">{{ form.address.errors }}</div>
+                <div class="alert-danger">{{ form.address.errors }}</div>
             {% endif %}
         </div>
         
+        <!-- Info Box -->
         <div class="card" style="background-color: #f0f7ff; border-left-color: #17a2b8; margin: 20px 0;">
-            <h3 style="color: #0c5460; margin-top: 0;">📌 Auto-Generated Credentials</h3>
-            <p style="color: #0c5460;">
-                Once registered, the system will automatically generate:
-            </p>
-            <ul style="color: #0c5460; margin-left: 20px;">
-                <li><strong>Patient ID:</strong> Unique identifier (PT + Year + 5 digits)</li>
-                <li><strong>Default Password:</strong> Auto-generated secure password (8 characters)</li>
+            <h3 style="color: #0c5460;">📌 Auto-Generated Credentials</h3>
+            <ul style="color: #0c5460;">
+                <li><strong>Patient ID:</strong> Unique identifier (PT + Year + digits)</li>
+                <li><strong>Password:</strong> Auto-generated (8 characters)</li>
             </ul>
-            <p style="color: #0c5460; margin-bottom: 0;">
-                <strong>⚠️ Important:</strong> Share these credentials with the patient immediately after registration.
+            <p style="color: #0c5460;">
+                <strong>⚠️ Important:</strong> Share credentials with patient.
             </p>
         </div>
         
+        <!-- Buttons -->
         <div style="margin-top: 30px;">
-            <button type="submit" class="btn">✓ Register Patient</button>
-            <a href="{% if clinic %}{% url 'reception_dashboard' clinic.slug %}{% else %}{% url 'homepage' %}{% endif %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" name="confirm_new" value="yes" class="btn">
+                ✓ Register Patient
+            </button>
+
+            <a href="{% if clinic %}{% url 'reception_dashboard' clinic.slug %}{% else %}{% url 'homepage' %}{% endif %}" 
+               class="btn btn-secondary">
+               Cancel
+            </a>
         </div>
     </form>
 </div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const dobInput = document.querySelector("input[name='date_of_birth']");
+        const ageInput = document.querySelector("input[name='age']");
+
+        if (dobInput && ageInput) {
+            dobInput.addEventListener("change", function () {
+                const dob = new Date(this.value);
+                const today = new Date();
+
+                if (!isNaN(dob)) {
+                    let age = today.getFullYear() - dob.getFullYear();
+
+                    const m = today.getMonth() - dob.getMonth();
+                    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                        age--;
+                    }
+
+                    ageInput.value = age;
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

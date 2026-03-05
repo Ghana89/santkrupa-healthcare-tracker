@@ -53,6 +53,15 @@
                     <div class="alert-danger" style="margin-top: 8px;">{{ user_form.email.errors }}</div>
                 {% endif %}
             </div>
+            <div class="form-group">
+                <label>Mobile Number *</label>
+                {{ user_form.mobile_number }}
+                {% if user_form.mobile_number.errors %}
+                    <div class="alert-danger" style="margin-top: 8px;">
+                        {{ user_form.mobile_number.errors }}
+                    </div>
+                {% endif %}
+            </div>
         </div>
         
         <h2>🔐 Password</h2>

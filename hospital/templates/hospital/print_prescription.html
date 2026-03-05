@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 {% load static %}
+{% load custom_filters %}
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -7,16 +8,19 @@
 
 <style>
 
+/* PAGE DEFAULT */
 @page {
     size: A4;
     margin: 10mm;
 }
 
+/* BODY */
 body {
     font-family: Arial, sans-serif;
     background: #f5f5f5;
 }
 
+/* CONTAINER */
 .container {
     width: 210mm;
     min-height: 297mm;
@@ -29,11 +33,24 @@ body {
     flex-direction: column;
 }
 
+/* A5 */
+.a5 {
+    width: 148mm !important;
+    min-height: 210mm !important;
+}
+
+/* A8 */
+.a8 {
+    width: 52mm !important;
+    min-height: 74mm !important;
+    padding: 5mm !important;
+    font-size: 10px !important;
+}
+
 /* HEADER */
 .header {
     border-bottom: 2px solid black;
     text-align: center;
-    padding-bottom: 5px;
 }
 
 .header img {
@@ -41,12 +58,34 @@ body {
     max-height: 90px;
 }
 
-/* DOCTOR INFO */
+/* HEADER INFO */
 .header-info {
     display: flex;
     justify-content: space-between;
-    font-size: 12px;
     margin-top: 5px;
+    font-size: 12px;
+}
+
+/* DOCTOR GRID */
+.doctor-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    width: 65%;
+}
+
+.doctor-item {
+    line-height: 1.3;
+}
+
+.doc-meta {
+    font-size: 11px;
+}
+
+/* CLINIC */
+.clinic-info {
+    text-align: right;
+    width: 35%;
 }
 
 /* PATIENT */
@@ -54,8 +93,7 @@ body {
     display: flex;
     justify-content: space-between;
     border-bottom: 1px solid black;
-    margin-top: 5px;
-    padding-bottom: 5px;
+    padding: 5px 0;
     font-size: 14px;
 }
 
@@ -68,27 +106,24 @@ body {
 
 /* LEFT */
 .left {
-    width: 50%;
+    width: 30%;
     border-right: 1px solid black;
     padding-right: 10px;
 }
 
 /* RIGHT */
 .right {
-    width: 50%;
+    width: 70%;
     padding-left: 10px;
 }
 
 /* SECTION */
 .section {
     margin-bottom: 12px;
-    font-size: 14px;
 }
 
 .label {
     font-weight: bold;
-    display: inline-block;
-    width: 60px;
 }
 
 /* VITALS TABLE */
@@ -101,84 +136,236 @@ body {
 .vitals-table td {
     border: 1px solid black;
     padding: 6px;
-    text-align: center;
+}
+
+.vitals-label {
+    font-weight: bold;
 }
 
 /* TRIANGLE */
 .triangle {
-    font-size: 18px;
+    font-size: 26px;
     font-weight: bold;
 }
 
 /* RX */
 .rx {
-    text-align: center;
-    font-size: 42px;
+    text-align: left;
+    font-size: 48px;
     font-weight: bold;
-    margin: 10px 0;
+    margin: 5px 0;
 }
 
 /* MEDICINE */
 .medicine {
-    margin-bottom: 15px;
+    margin-bottom: 12px;
     font-size: 14px;
-    line-height: 1.6;
 }
 
-/* SIGNATURE */
 .footer {
     margin-top: auto;
+    border-top: 1px solid #000;
+    padding-top: 10px;
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    gap: 10px;
 }
 
-.signature {
+/* LEFT */
+.footer-left {
+    width: 60%;
+    font-size: 12px;
+}
+
+.footer-note {
+    margin-bottom: 6px;
+}
+
+.footer-note.small {
+    font-size: 10px;
+    color: #444;
+}
+
+/* RIGHT */
+.footer-right {
+    width: 40%;
     text-align: right;
+}
+
+/* SIGN */
+.sign-box {
+    margin-bottom: 8px;
 }
 
 .sign-line {
     width: 200px;
     border-top: 1px solid black;
-    margin-bottom: 5px;
+    margin-left: auto;
 }
 
+.sign-name {
+    font-size: 13px;
+    margin-top: 3px;
+}
+
+/* CLINIC */
+.clinic-info {
+    font-size: 11px;
+}
+.clinic-address-bar {
+    width: 100%;
+    text-align: center;
+    font-size: 12px;
+    margin-top: 6px;
+    padding: 6px 0;
+    border-bottom: 1px solid black;
+}
+.sign-line {
+    width: 200px;
+    border-top: 1px solid black;
+}
+
+/* PRINT CONTROLS */
+.print-controls {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.print-controls button {
+    padding: 6px 12px;
+    margin: 5px;
+    cursor: pointer;
+}
+
+/* A8 ADJUSTMENTS */
+.a8 .header img { max-height: 40px; }
+.a8 .rx { font-size: 22px; }
+.a8 .triangle { font-size: 18px; }
+.a8 .medicine { font-size: 10px; }
+.a8 .patient-row { flex-direction: column; font-size: 10px; }
+.a8 .header-info { flex-direction: column; font-size: 10px; }
+.a8 .doctor-grid { grid-template-columns: 1fr; }
+.a8 .rx-body { flex-direction: column; }
+.a8 .left, .a8 .right { width: 100%; border: none; padding: 0; }
+.a8 .sign-line { width: 100px; }
+
+/* PRINT */
 @media print {
-    body {
-        background: none;
-    }
+    body { background: none; }
+    .print-controls { display: none; }
 }
 
 </style>
+
+<script>
+function setA4() {
+    let c = document.querySelector('.container');
+    c.classList.remove('a5','a8');
+}
+function setA5() {
+    let c = document.querySelector('.container');
+    c.classList.remove('a8');
+    c.classList.add('a5');
+}
+function setA8() {
+    let c = document.querySelector('.container');
+    c.classList.remove('a5');
+    c.classList.add('a8');
+}
+</script>
+
 </head>
 
 <body>
+
+<!-- BUTTONS -->
+<div class="print-controls">
+    <button onclick="setA4()">A4</button>
+    <button onclick="setA5()">A5</button>
+    <button onclick="setA8()">A8</button>
+    <button onclick="window.print()">Print</button>
+</div>
 
 <div class="container">
 
     <!-- HEADER -->
     <div class="header">
-        <img src="{% static 'images/header.png' %}">
+        {% if prescription.clinic.logo %}
+            <img src="{{ prescription.clinic.logo.url }}" alt="Clinic Logo">
+        {% else %}
+            <img src="{% static 'images/header.png' %}" alt="Default Logo">
+        {% endif %}
 
         <div class="header-info">
-            <div>
-                <strong>Dr. {{ prescription.doctor.user.get_full_name }}</strong><br>
-                {{ prescription.doctor.specialization }}<br>
-                Reg: {{ prescription.doctor.registration_number }}
+
+            <!-- DOCTORS -->
+            <div class="doctor-grid">
+                {% for doc in doctors %}
+                <div class="doctor-item">
+                    <strong>
+                        Dr. {{ doc.user.get_full_name }}
+                        {% if doc == prescription.doctor %}
+                            (Consulting)
+                        {% endif %}
+                    </strong><br>
+
+                    <span class="doc-meta">
+                        {{ doc.specialization }}
+                        {% if doc.license_number %}
+                            | Reg: {{ doc.license_number }}
+                        {% endif %}
+                    </span>
+                </div>
+                {% endfor %}
             </div>
 
-            <div style="text-align:right;">
-                {{ prescription.clinic.address }}<br>
-                Phone: {{ prescription.clinic.phone|default:"-" }}
-            </div>
+
+
         </div>
     </div>
-
-    <!-- PATIENT -->
-    <div class="patient-row">
-        <div><b>Name:</b> {{ prescription.patient.patient_name }}</div>
-        <div><b>Age/Sex:</b> {{ prescription.patient.age }}/{{ prescription.patient.gender }}</div>
-        <div><b>Date:</b> {{ prescription.prescription_date|date:"d/m/Y" }}</div>
+    <div class="clinic-address-bar">
+        {{ prescription.clinic.address }}<br>
+        Phone: {{ prescription.clinic.phone_number|default:"-" }}
     </div>
+    <!-- PATIENT -->
+    <div class="patient-row" style="flex-wrap: wrap; gap:10px;">
+
+        <div><b>Patient ID:</b> {{ prescription.patient.patient_id }}</div>
+
+        <div><b>Name:</b> {{ prescription.patient.patient_name }}</div>
+
+        <div>
+            <b>Age/Gender:</b> 
+            {{ prescription.patient.age }}/
+            {{ prescription.patient.get_gender_display|default:"-" }}
+        </div>
+
+        <div><b>DOB:</b> 
+            {% if prescription.patient.date_of_birth %}
+                {{ prescription.patient.date_of_birth|date:"d/m/Y" }}
+            {% else %}
+                -
+            {% endif %}
+        </div>
+
+        <div><b>Weight:</b> 
+            {% if prescription.patient.weight %}
+                {{ prescription.patient.weight }} kg
+            {% else %}
+                -
+            {% endif %}
+        </div>
+
+        <div><b>Mobile:</b> {{ prescription.patient.phone_number|default:"-" }}</div>
+
+        <div><b>Date:</b> {{ prescription.prescription_date|date:"d/m/Y" }}</div>
+        <div style="font-size:12px; margin-top:5px;">
+            <b>Address:</b> {{ prescription.patient.address|default:"-" }}
+        </div>
+
+    </div>
+
+    <!-- ADDRESS (optional but useful for print) -->
 
     <!-- BODY -->
     <div class="rx-body">
@@ -186,83 +373,144 @@ body {
         <!-- LEFT -->
         <div class="left">
 
+            {% if doctor_notes.observations %}
             <div class="section">
-                <span class="label">C/O</span>: {{ doctor_notes.observations|default:"-" }}
+                <span class="label">C/O:</span> {{ doctor_notes.observations }}
             </div>
+            {% endif %}
 
+            {% if doctor_notes.treatment_plan %}
             <div class="section">
-                <span class="label">O/E</span>: {{ doctor_notes.treatment_plan|default:"-" }}
+                <span class="label">O/E:</span> {{ doctor_notes.treatment_plan }}
             </div>
+            {% endif %}
 
+            {% if vitals %}
             <div class="section">
-                <span class="label">Vitals</span>:
+                <span class="label">Vitals:</span>
                 <table class="vitals-table">
-                    <tr>
-                        <td>BP</td>
-                        <td>Pulse</td>
-                        <td>Temp</td>
-                        <td>SpO2</td>
-                    </tr>
-                    <tr>
-                        <td>{{ vitals.bp|default:"-" }}</td>
-                        <td>{{ vitals.pulse|default:"-" }}</td>
-                        <td>{{ vitals.temp|default:"-" }}</td>
-                        <td>{{ vitals.spo2|default:"-" }}</td>
-                    </tr>
+
+                    {% if vitals.bp %}
+                    <tr><td class="vitals-label">BP</td><td>{{ vitals.bp }}</td></tr>
+                    {% endif %}
+
+                    {% if vitals.pulse %}
+                    <tr><td class="vitals-label">Pulse</td><td>{{ vitals.pulse }}</td></tr>
+                    {% endif %}
+
+                    {% if vitals.temp %}
+                    <tr><td class="vitals-label">Temp</td><td>{{ vitals.temp }}</td></tr>
+                    {% endif %}
+
+                    {% if vitals.spo2 %}
+                    <tr><td class="vitals-label">SpO2</td><td>{{ vitals.spo2 }}</td></tr>
+                    {% endif %}
+
                 </table>
             </div>
+            {% endif %}
 
+            {% if doctor_notes.notes %}
             <div class="section">
-                <span class="label">Advice</span>: {{ doctor_notes.notes|default:"-" }}
+                <span class="label">Advice:</span> {{ doctor_notes.notes }}
             </div>
+            {% endif %}
+            {% if tests %}
+            <div class="section">
+                <span class="label">Suggested Tests:</span>
 
-            <div class="section">
-                <span class="label">Tests</span>:
-                {% for test in tests %}
-                    {{ test.test_name }}{% if not forloop.last %}, {% endif %}
-                {% empty %}
-                    -
-                {% endfor %}
+                <table class="vitals-table" style="margin-top:5px;">
+                    <thead>
+                        <tr>
+                            <td><b>#</b></td>
+                            <td><b>Test Name</b></td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for test in tests %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ test.test_name }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+            {% endif %}
 
         </div>
 
         <!-- RIGHT -->
         <div class="right">
+        {% for medicine in medicines %}
 
-            <div class="section">
-                <span class="triangle">△</span>
-                {{ doctor_notes.diagnosis|default:"-" }}
+        <div class="medicine" style="border-bottom:1px dashed #ccc; padding-bottom:8px; margin-bottom:10px;">
+
+            <!-- Line 1: Medicine Name -->
+            <div>
+                <strong>
+                    {{ forloop.counter }}. {{ medicine.get_medicine_type_display }} {{ medicine.medicine_name }}
+                </strong>
+                — {{ medicine.dosage }}
             </div>
 
-            <div class="rx">℞</div>
+            <!-- Line 2: Dose Pattern (Doctor Style) -->
+            <div style="font-family: monospace; margin-top:3px;">
+                {{ medicine.dose_pattern }} 
+                <span style="color:#555;">
+                    (Morning - Afternoon- Night)
+                </span>
+            </div>
 
-            {% for medicine in medicines %}
-                <div class="medicine">
-                    {{ forloop.counter }}. {{ medicine.medicine_name }}<br>
-                    {{ medicine.dosage }} |
-                    {{ medicine.frequency }} |
-                    {{ medicine.duration }}
+            <!-- Line 4: Food Instruction -->
+            <div style="font-size:13px;">
+                {{ medicine.food_instruction }} Food
+            </div>
 
-                    {% if medicine.instructions %}
-                        <br><em>{{ medicine.instructions }}</em>
-                    {% endif %}
-                </div>
-            {% empty %}
-                <p>No medicines</p>
-            {% endfor %}
+        </div>
 
+        {% empty %}
+        <p>No medicines prescribed</p>
+        {% endfor %}
         </div>
 
     </div>
 
-    <!-- FOOTER SIGNATURE -->
-    <div class="footer">
-        <div class="signature">
+    <!-- SIGN -->
+<!-- FOOTER -->
+<div class="footer">
+
+    <!-- LEFT SIDE: NOTES -->
+    <div class="footer-left">
+
+        <div class="footer-note">
+            <strong>Notes:</strong><br>
+            • Medicines should be taken as prescribed<br>
+            • Do not skip doses<br>
+            • Follow-up after 5 days or as advised
+        </div>
+
+        <div class="footer-note small">
+            This is a computer generated prescription. 
+            Not valid without doctor's signature.
+        </div>
+
+    </div>
+
+    <!-- RIGHT SIDE: SIGNATURE -->
+    <div class="footer-right">
+        <div class="sign-box">
             <div class="sign-line"></div>
-            Dr. {{ prescription.doctor.user.get_full_name }}
+            <div class="sign-name">
+                <!-- Dr. {{ prescription.doctor.user.get_full_name }} -->
+                 Dr. Signature
+            </div>
         </div>
+
+
     </div>
+
+</div>
 
 </div>
 

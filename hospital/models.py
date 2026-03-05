@@ -26,7 +26,7 @@ class Clinic(models.Model):
     email = models.EmailField()
     website = models.URLField(null=True, blank=True)
     registration_number = models.CharField(max_length=100, unique=True)
-    
+
     subscription_status = models.CharField(
         max_length=20,
         choices=[
@@ -70,6 +70,7 @@ class User(AbstractUser):
     ]
     clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='users', null=True, blank=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='patient')
+    mobile_number = models.CharField(max_length=15, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -87,13 +88,22 @@ class Patient(models.Model):
         ('discharged', 'Discharged'),
     ]
     
+    GENDER_CHOICES = [
+        ('male', 'Male'),
+        ('female', 'Female'),
+        ('other', 'Other'),
+    ]
+
     clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='patients', null=True, blank=True)
     patient_id = models.CharField(max_length=20, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     patient_name = models.CharField(max_length=100)
     age = models.IntegerField()
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True)
     address = models.TextField()
     phone_number = models.CharField(max_length=15)
+    date_of_birth = models.DateField(null=True, blank=True)
+    weight = models.FloatField(null=True, blank=True) 
     registration_date = models.DateField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='registered')
     default_password = models.CharField(max_length=20, blank=True)
@@ -219,20 +229,6 @@ class Test(models.Model):
     def __str__(self):
         return f"{self.test_name} for {self.prescription.patient.patient_name}"
 
-# Medicine model
-class Medicine(models.Model):
-    clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='medicines', null=True, blank=True)
-    prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, related_name='medicines')
-    medicine_name = models.CharField(max_length=200)
-    dosage = models.CharField(max_length=100)
-    frequency = models.CharField(max_length=100)  # e.g., "Twice a day", "Once daily"
-    duration = models.CharField(max_length=100)   # e.g., "7 days", "2 weeks"
-    instructions = models.TextField(blank=True)
-    
-    objects = ClinicManager()
-    
-    def __str__(self):
-        return f"{self.medicine_name} - {self.dosage}"
 
 # Doctor Thoughts/Notes
 class DoctorNotes(models.Model):
@@ -331,33 +327,101 @@ class TestReport(models.Model):
 # ============================================================================
 # MASTER DATA MODELS - Medicine & Test Templates
 # ============================================================================
-
 class MasterMedicine(models.Model):
-    """
-    Master template for medicines per clinic.
-    Doctors select from these when creating prescriptions.
-    """
-    clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='master_medicines', null=True, blank=True)
+
+    # ✅ Type of medicine (simple for doctor)
+    MEDICINE_TYPE_CHOICES = [
+        ('tablet', 'Tablet'),
+        ('capsule', 'Capsule'),
+        ('syrup', 'Syrup'),
+        ('injection', 'Injection'),
+        ('ointment', 'Ointment'),
+        ('drops', 'Drops'),
+    ]
+
+    # ✅ Easy schedule (doctor-friendly)
+    SCHEDULE_CHOICES = [
+        ('morning', 'Morning'),
+        ('afternoon', 'Afternoon'),
+        ('evening', 'Evening'),
+        ('night', 'Night'),
+
+        ('morning_evening', 'Morning & Evening'),
+        ('morning_night', 'Morning & Night'),
+        ('afternoon_night', 'Afternoon & Night'),
+
+        ('morning_afternoon_night', 'Morning, Afternoon & Night'),
+
+        ('sos', 'SOS (If Needed)'),
+    ]
+
+    # 🔗 Clinic (multi-tenant support)
+    clinic = models.ForeignKey(
+        'Clinic',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='master_medicines'
+    )
+
+    # 🧾 Basic Info
     medicine_name = models.CharField(max_length=200)
-    dosage_options = models.TextField(help_text="Comma-separated list: e.g., '500mg, 1000mg, 2000mg'")
-    frequency_options = models.TextField(help_text="Comma-separated list: e.g., 'Once daily, Twice daily, Thrice daily'")
-    default_frequency = models.CharField(max_length=100, blank=True, help_text="Default frequency suggestion")
-    default_duration = models.CharField(max_length=100, blank=True, help_text="Default duration suggestion: e.g., '7 days'")
-    category = models.CharField(max_length=100, blank=True, help_text="e.g., 'Antibiotic, Pain Reliever, etc.'")
+    medicine_type = models.CharField(
+        max_length=20,
+        choices=MEDICINE_TYPE_CHOICES,
+        default='tablet'   # ✅ add this
+    )
+
+    # 💊 Dosage (simple text for flexibility)
+    common_dosages = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Example: 250mg, 500mg OR 5ml, 10ml"
+    )
+    default_dosage = models.CharField(max_length=50, blank=True)
+
+    # ⏰ Schedule (NEW)
+    default_schedule = models.CharField(
+        max_length=50,
+        choices=SCHEDULE_CHOICES,
+        blank=True,
+        default='morning'
+    )
+
+    # 📅 Duration
+    default_duration = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Example: 5 days, 1 week"
+    )
+
+    # 🍽 Food instruction
+    FOOD_CHOICES = [
+        ('before', 'Before Food'),
+        ('after', 'After Food'),
+        ('anytime', 'Anytime'),
+    ]
+
+    food_instruction = models.CharField(
+        max_length=20,
+        choices=FOOD_CHOICES,
+        blank=True
+    )
+
+    # 📝 Notes
     description = models.TextField(blank=True)
+
+    # ✅ Status
+    is_active = models.BooleanField(default=True)
+
+    # 📌 Audit
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_active = models.BooleanField(default=True)
-    
-    objects = ClinicManager()
-    
-    class Meta:
-        ordering = ['medicine_name']
-        unique_together = [['clinic', 'medicine_name']]
-    
-    def __str__(self):
-        return f"{self.medicine_name} - {self.clinic.name}"
 
+    # 🔍 String representation
+    def __str__(self):
+        return f"{self.medicine_name} ({self.medicine_type})"
+    
 
 class MasterTest(models.Model):
     """
@@ -393,6 +457,39 @@ class MasterTest(models.Model):
     def __str__(self):
         return f"{self.test_name} ({self.get_test_type_display()}) - {self.clinic.name}"
 
+# Medicine model
+class Medicine(models.Model):
+    clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='medicines', null=True, blank=True)
+    prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, related_name='medicines')
+
+    medicine_name = models.CharField(max_length=200)
+    dosage = models.CharField(max_length=100)
+    frequency = models.CharField(max_length=100)
+    duration = models.CharField(max_length=100)
+    medicine_type = models.CharField(
+        max_length=20,
+        choices=MasterMedicine.MEDICINE_TYPE_CHOICES,
+        default='tablet'   # ✅ add this
+    )
+    # ✅ ADD THIS
+    schedule = models.CharField(
+        max_length=50,
+        choices=MasterMedicine.SCHEDULE_CHOICES,
+        blank=True
+    )
+
+    instructions = models.TextField(blank=True)
+
+    food_instruction = models.CharField(
+        max_length=20,
+        choices=MasterMedicine.FOOD_CHOICES,
+        blank=True
+    )
+
+    objects = ClinicManager()
+
+    def __str__(self):
+        return f"{self.medicine_name} - {self.dosage}"
 
 # ============================================================================
 # ADMISSION & HOSPITALIZATION MODELS

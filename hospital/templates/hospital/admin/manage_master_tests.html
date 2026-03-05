@@ -91,11 +91,21 @@
                                 {{ test.description|default:"—" }}
                             </td>
                             <td style="padding: 12px; text-align: center;">
+                                <!-- Edit Button -->
+                                <a href="{% url 'edit_master_test' clinic.slug test.id %}" 
+                                class="btn" 
+                                style="padding: 6px 12px; font-size: 0.9em; background: #ffc107; color: black;">
+                                    Edit
+                                </a>
+
+                                <!-- Delete Button -->
                                 <form method="post" action="{% url 'delete_master_test' clinic.slug test.id %}" 
-                                      style="display: inline;"
-                                      onsubmit="return confirm('Delete {{ test.test_name }}?');">
+                                    style="display: inline;"
+                                    onsubmit="return confirm('Delete {{ test.test_name }}?');">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn" style="padding: 6px 12px; font-size: 0.9em; background: #dc3545;">Delete</button>
+                                    <button type="submit" class="btn" style="padding: 6px 12px; font-size: 0.9em; background: #dc3545;">
+                                        Delete
+                                    </button>
                                 </form>
                             </td>
                         </tr>

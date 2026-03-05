@@ -79,9 +79,19 @@
                                 </div>
                             </td>
                             <td style="padding: 12px; text-align: center;">
-                                <a href="{% url 'delete_clinic' clinic.id %}" style="background-color: #dc3545; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: 600; display: inline-block; transition: background-color 0.2s;">
-                                    Delete
-                                </a>
+                                <div style="display:flex; gap:8px; justify-content:center;">
+                                    <a href="{% url 'superadmin_edit_clinic' clinic.id %}" 
+                                    style="background-color:#007bff; color:white; padding:6px 12px; border-radius:4px;">
+                                        ✏️ Edit
+                                    </a>
+                                    <a href="{% url 'delete_clinic' clinic.id %}" 
+                                    style="background-color:#dc3545; color:white; padding:6px 12px; border-radius:4px; text-decoration:none; font-size:13px;">
+                                        🗑 Delete
+                                    </a>
+                                    <a href="{% url 'superadmin_reset_password' clinic.id %}">
+                                        🔑 Reset Password
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}

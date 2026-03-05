@@ -55,6 +55,11 @@
                 </div>
                 {% if clinic %}
                 <a href="{% url 'create_prescription' clinic.slug visit.patient.id %}" class="btn" style="display:block; margin-bottom:6px;">Create Prescription</a>
+                <a href="{% url 'admit_patient' clinic.slug visit.patient.id %}" 
+                class="btn" 
+                style="background:#dc3545;">
+                🏥 Admit Patient
+                </a>
                 <a href="{% url 'patient_history' clinic.slug visit.patient.id %}" class="btn" style="display:block; background:#6c757d;">View History</a>
                 {% else %}
                 <a href="#" class="btn" style="display:block; margin-bottom:6px;">Create Prescription</a>
@@ -94,18 +99,10 @@
     {% endif %}
 </div>
 
-<div class="card">
-    <h2>🏥 Admissions & Hospitalization</h2>
-    <p style="color: #666; margin-bottom: 15px;">Manage patient admissions, track treatments, injections, saline infusions, and oxygen therapy.</p>
-    {% if clinic %}
-    <a href="{% url 'admissions_dashboard' clinic.slug %}" class="btn" style="display: block; text-align: center; background-color: #28a745; border-color: #28a745;">🏥 View Admissions Dashboard</a>
-    {% endif %}
-</div>
 
 <div class="card">
     <h2>📊 Your Prescriptions</h2>
-    <p style="color: #666; margin-bottom: 15px;">Track all prescriptions you've created. <a href="{% if clinic %}{% url 'doctor_prescription_tracking' clinic.slug %}{% else %}#{% endif %}" style="color: #007bff; text-decoration: none; font-weight: bold;">View Full Tracking Dashboard →</a></p>
-    
+
     {% if prescriptions %}
         <table>
             <thead>
@@ -120,7 +117,7 @@
             </thead>
             <tbody>
                 {% for prescription in prescriptions %}
-                <tr>
+                <tr id="row-{{ prescription.id }}">
                     <td>{{ prescription.patient.patient_name }}</td>
                     <td>{{ prescription.prescription_date|date:"M d, Y" }}</td>
                     <td>
@@ -134,11 +131,22 @@
                     </td>
                     <td>{{ prescription.tests.count }}</td>
                     <td>{{ prescription.medicines.count }}</td>
-                    <td>
+                    <td style="display:flex; gap:6px;">
                         {% if clinic %}
-                        <a href="{% url 'add_prescription_details' clinic.slug prescription.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em;">Edit</a>
+                            <a href="{% url 'add_prescription_details' clinic.slug prescription.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em;">Edit</a>
+
+                            <a href="{% url 'print_prescription' clinic.slug prescription.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em; background:#17a2b8;">🖨️ Print</a>
+
+                            <!-- ✅ AJAX DELETE -->
+                            <button 
+                                onclick="deletePrescription('{{ clinic.slug }}', {{ prescription.id }})"
+                                style="background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:4px;">
+                                🗑 Delete
+                            </button>
                         {% else %}
-                        <a href="{% url 'add_prescription_details' prescription.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em;">Edit</a>
+                            <a href="{% url 'add_prescription_details' prescription.id %}" class="btn" style="padding: 6px 12px;">Edit</a>
+
+                            <a href="{% url 'print_prescription' prescription.id %}" class="btn" style="padding: 6px 12px; background:#17a2b8;">🖨️ Print</a>
                         {% endif %}
                     </td>
                 </tr>
@@ -149,66 +157,72 @@
         <div class="alert-info">No prescriptions created yet.</div>
     {% endif %}
 </div>
+<!-- ✅ TOP ACTION BAR -->
+<div class="card" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
 
-<!-- How to Admit Patients Section -->
-<div class="card" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-left: 4px solid #2196f3;">
-    <h2 style="color: #1565c0; margin-top: 0;">How to Admit a Patient?</h2>
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-        <!-- Step 1 -->
-        <div style="background: white; padding: 15px; border-radius: 6px;">
-            <div style="background: #2196f3; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 10px;">1</div>
-            <h4 style="margin: 0 0 8px 0; color: #1565c0;">Create Prescription</h4>
-            <p style="margin: 0; color: #555; font-size: 13px;">From "All Patients" list, select a patient and click "Create Prescription" to start the consultation.</p>
-        </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
         
-        <!-- Step 2 -->
-        <div style="background: white; padding: 15px; border-radius: 6px;">
-            <div style="background: #2196f3; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 10px;">2</div>
-            <h4 style="margin: 0 0 8px 0; color: #1565c0;">Add Tests & Medicines</h4>
-            <p style="margin: 0; color: #555; font-size: 13px;">Add required tests and medicines to the prescription from the master templates.</p>
-        </div>
+        {% if clinic %}
+        <a href="{% url 'doctor_dashboard' clinic.slug %}" class="btn" style="background:#007bff;">🏠 Dashboard</a>
+
         
-        <!-- Step 3 -->
-        <div style="background: white; padding: 15px; border-radius: 6px;">
-            <div style="background: #ff9800; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 10px;">3</div>
-            <h4 style="margin: 0 0 8px 0; color: #e65100;">Recommend Admission</h4>
-            <p style="margin: 0; color: #555; font-size: 13px;">If patient needs hospital admission, click "Recommend Admission" button with reason.</p>
-        </div>
-        
-        <!-- Step 4 -->
-        <div style="background: white; padding: 15px; border-radius: 6px;">
-            <div style="background: #4caf50; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 10px;">4</div>
-            <h4 style="margin: 0 0 8px 0; color: #2e7d32;">Admit Patient</h4>
-            <p style="margin: 0; color: #555; font-size: 13px;">Click "Proceed to Admit Patient" to fill admission details (bed, room, allergies, etc.).</p>
-        </div>
-        
-        <!-- Step 5 -->
-        <div style="background: white; padding: 15px; border-radius: 6px;">
-            <div style="background: #4caf50; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 10px;">5</div>
-            <h4 style="margin: 0 0 8px 0; color: #2e7d32;">Add Treatments</h4>
-            <p style="margin: 0; color: #555; font-size: 13px;">From admission details, add treatments: medicines, injections, saline, oxygen therapy, etc.</p>
-        </div>
-        
-        <!-- Step 6 -->
-        <div style="background: white; padding: 15px; border-radius: 6px;">
-            <div style="background: #4caf50; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 10px;">6</div>
-            <h4 style="margin: 0 0 8px 0; color: #2e7d32;">Discharge Patient</h4>
-            <p style="margin: 0; color: #555; font-size: 13px;">Update status to "Discharged" with discharge notes and follow-up instructions.</p>
-        </div>
-    </div>
-    
-    <div style="margin-top: 15px; display: flex; gap: 10px;">
-        <a href="{% url 'admission_recommendations' clinic_slug=clinic.slug %}" class="btn" style="background-color: #ff9800; border-color: #ff9800;">
-            View Admission Recommendations
+
+        <a href="{% url 'admissions_dashboard' clinic.slug %}" class="btn" style="background:#28a745;">🏥 Admissions</a>
+
+        <!-- Medicines -->
+        <a href="{% url 'manage_master_medicines' clinic.slug %}" 
+           class="btn" 
+           style="background:#007bff;">
+           💊 Manage Medicines
         </a>
-        <a href="{% url 'admissions_dashboard' clinic_slug=clinic.slug %}" class="btn" style="background-color: #4caf50; border-color: #4caf50;">
-            View All Admissions
+
+        <!-- Tests -->
+        <a href="{% url 'manage_master_tests' clinic.slug %}" 
+           class="btn" 
+           style="background:#6f42c1;">
+           🧪 Manage Tests
         </a>
+
+        <a href="{% url 'doctor_prescription_tracking' clinic.slug %}" class="btn" style="background:#6f42c1;">📊 Prescription Tracking</a>
+
+
+        {% endif %}
     </div>
+
 </div>
 
-<div class="card" style="text-align: center;">
-    <a href="{% url 'homepage' %}" class="btn btn-secondary">← Back to Home</a>
-</div>
+<!-- ✅ AJAX SCRIPT -->
+<script>
+function getCSRFToken() {
+    return document.cookie.split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+}
+
+function deletePrescription(clinicSlug, prescriptionId) {
+
+    if (!confirm("Delete this prescription?")) return;
+
+    fetch(`/clinic/${clinicSlug}/doctor/prescription/${prescriptionId}/delete/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCSRFToken(),
+            "Content-Type": "application/json"
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById(`row-${prescriptionId}`).remove();
+        } else {
+            alert(data.error || "Delete failed");
+        }
+    })
+    .catch(error => {
+        console.error(error);
+        alert("Something went wrong");
+    });
+}
+</script>
+
 {% endblock %}

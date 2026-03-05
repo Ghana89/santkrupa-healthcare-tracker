@@ -30,7 +30,11 @@ clinic_urlpatterns = [
     path('doctor/test/<int:test_id>/delete/', views.delete_test, name='delete_test'),
     path('doctor/medicine/<int:medicine_id>/delete/', views.delete_medicine, name='delete_medicine'),
     path('doctor/patient-history/<int:patient_id>/', views.patient_history, name='patient_history'),
-    
+    path(
+        'doctor/prescription/<int:prescription_id>/delete/',
+        views.delete_prescription,
+        name='delete_prescription'
+    ),
     # Admissions & Hospitalization
     path('doctor/admit-patient/<int:patient_id>/', views.admit_patient, name='admit_patient'),
     path('doctor/admission/<int:admission_id>/', views.admission_details, name='admission_details'),
@@ -67,6 +71,11 @@ clinic_urlpatterns = [
     path('admin-dashboard/delete-test/<int:test_id>/', views.delete_master_test, name='delete_master_test'),
     path('api/master-medicines/', views.api_master_medicines, name='api_master_medicines'),
     path('api/master-tests/', views.api_master_tests, name='api_master_tests'),
+    path(
+        'tests/edit/<int:test_id>/',
+        views.edit_master_test,
+        name='edit_master_test'
+    ),
 ]
 
 urlpatterns = [
@@ -88,7 +97,16 @@ urlpatterns = [
     path('superadmin/clinic/<int:clinic_id>/patients/', views.superadmin_clinic_patients, name='superadmin_clinic_patients'),
     path('superadmin/clinic/<int:clinic_id>/doctors/', views.superadmin_clinic_doctors, name='superadmin_clinic_doctors'),
     path('superadmin/clinic/<int:clinic_id>/prescriptions/', views.superadmin_clinic_prescriptions, name='superadmin_clinic_prescriptions'),
-    
+    path(
+        'superadmin/clinic/<int:clinic_id>/edit/',
+        views.edit_clinic,
+        name='superadmin_edit_clinic'
+    ),
+    path(
+        'superadmin/clinic/<int:clinic_id>/reset-password/',
+        views.reset_clinic_admin_password,
+        name='superadmin_reset_password'
+    ),
     # Public pages (Global)
     path('', views.homepage, name='homepage'),
     

@@ -1,0 +1,40 @@
+{% extends "hospital/base.html" %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <h2>✏️ Edit Test</h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div style="margin-bottom: 15px;">
+            <label>Test Name *</label>
+            <input type="text" name="test_name" value="{{ test.test_name }}" required class="form-control">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label>Test Type *</label>
+            <select name="test_type" required class="form-control">
+                {% for value, label in test_types %}
+                    <option value="{{ value }}" {% if test.test_type == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label>Category</label>
+            <input type="text" name="category" value="{{ test.category }}" class="form-control">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label>Description</label>
+            <textarea name="description" class="form-control">{{ test.description }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-success">Update</button>
+        <a href="{% url 'manage_master_tests' clinic.slug %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

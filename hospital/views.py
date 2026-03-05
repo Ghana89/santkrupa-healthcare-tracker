@@ -180,6 +180,7 @@ def logout_view(request):
     messages.success(request, 'You have been logged out successfully.')
     return redirect('homepage')
 
+
 def homepage(request):
     """Homepage - Direct to appropriate role dashboard"""
     if request.user.is_authenticated:
@@ -330,7 +331,7 @@ def superadmin_clinic_prescriptions(request, clinic_id):
 def register_clinic(request):
     """Public clinic registration"""
     if request.method == 'POST':
-        form = ClinicRegistrationForm(request.POST)
+        form = ClinicRegistrationForm(request.POST, request.FILES)
         if form.is_valid():
             clinic = form.save(commit=False)
             clinic.is_active = True
@@ -366,6 +367,50 @@ def register_clinic(request):
     return render(request, 'hospital/register_clinic.html', {'form': form})
 
 
+@login_required(login_url='login')
+def edit_clinic(request, clinic_id):
+    if not request.user.is_superuser:
+        return redirect('homepage')
+
+    clinic = get_object_or_404(Clinic, id=clinic_id)
+
+    if request.method == 'POST':
+        form = ClinicRegistrationForm(request.POST, request.FILES, instance=clinic)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Clinic updated successfully")
+            return redirect('superadmin_dashboard')
+    else:
+        form = ClinicRegistrationForm(instance=clinic)
+
+    return render(request, 'hospital/superadmin/edit_clinic.html', {
+        'form': form,
+        'clinic': clinic
+    })
+
+
+from django.contrib.auth.hashers import make_password
+from django.utils.crypto import get_random_string
+@login_required(login_url='login')
+def reset_clinic_admin_password(request, clinic_id):
+    if not request.user.is_superuser:
+        return redirect('homepage')
+
+    clinic = get_object_or_404(Clinic, id=clinic_id)
+
+    admin_user = User.objects.filter(clinic=clinic, role='admin').first()
+
+    if admin_user:
+        new_password = get_random_string(10)
+        admin_user.set_password(new_password)
+        admin_user.save()
+
+        messages.success(
+            request,
+            f"New password for {admin_user.username}: {new_password}"
+        )
+
+    return redirect('superadmin_dashboard')
 # ==================== RECEPTION VIEWS ====================
 
 @login_required(login_url='login')
@@ -410,33 +455,59 @@ def reception_dashboard(request, clinic_slug=None):
 @require_http_methods(["GET", "POST"])
 def register_patient(request, clinic_slug=None):
     """Reception - Register new patient"""
+
     if request.user.role != 'receptionist':
         return redirect('homepage')
-    
-    # Get clinic context
+
     clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
-    
+
+    existing_patients = None  # default
+
     if request.method == 'POST':
         form = PatientRegistrationForm(request.POST)
+
         if form.is_valid():
+            phone = form.cleaned_data.get('phone_number')
+
+            # 🔍 Check existing patients with same phone
+            existing_patients = Patient.objects.filter(
+                phone_number=phone,
+                clinic=clinic
+            )
+
+            # 👉 If NOT confirmed yet, show existing patients
+            if existing_patients.exists() and not request.POST.get('confirm_new'):
+                return render(request, 'hospital/reception/register_patient.html', {
+                    'form': form,
+                    'clinic': clinic,
+                    'existing_patients': existing_patients
+                })
+
+            # ✅ Save patient
             patient = form.save(commit=False)
             patient.registered_by = request.user
             if clinic:
                 patient.clinic = clinic
             patient.save()
-            
+
             messages.success(
                 request,
                 f"Patient {patient.patient_name} registered successfully! "
                 f"Patient ID: {patient.patient_id}, Password: {patient.default_password}"
             )
+
             if clinic_slug:
                 return redirect('reception_dashboard', clinic_slug=clinic_slug)
             return redirect('reception_dashboard')
+
     else:
         form = PatientRegistrationForm()
-    
-    context = {'form': form, 'clinic': clinic}
+
+    context = {
+        'form': form,
+        'clinic': clinic,
+        'existing_patients': existing_patients
+    }
     return render(request, 'hospital/reception/register_patient.html', context)
 
 
@@ -859,12 +930,36 @@ def add_prescription_details(request, prescription_id, clinic_slug=None):
             if form.is_valid():
                 medicine = form.save(commit=False)
                 medicine.prescription = prescription
+                medicine.clinic = prescription.clinic  # ensure medicine is linked to the same clinic
                 medicine.save()
                 messages.success(request, "Medicine added successfully!")
+
+                # -----------------------------
+                # 🔹 Auto-add to MasterMedicine
+                # -----------------------------
+                med_name = form.cleaned_data.get('medicine_name').strip()
+                dosage = form.cleaned_data.get('dosage')
+                frequency = form.cleaned_data.get('frequency')
+                duration = form.cleaned_data.get('duration')
+                schedule = form.cleaned_data.get('schedule')
+                food_instruction = form.cleaned_data.get('food_instruction')
+
+                if not MasterMedicine.objects.filter(clinic=clinic, medicine_name__iexact=med_name).exists():
+                    MasterMedicine.objects.create(
+                        clinic=clinic,
+                        medicine_name=med_name,
+                        default_dosage=dosage,
+                        default_frequency=frequency,
+                        default_duration=duration,
+                        default_schedule=schedule,
+                        food_instruction=food_instruction
+                    )
+
+            # Redirect after POST
             if clinic_slug:
                 return redirect('add_prescription_details', clinic_slug=clinic_slug, prescription_id=prescription.id)
             return redirect('add_prescription_details', prescription_id=prescription.id)
-    
+
         elif action == 'save_notes':
             notes_form = DoctorNotesForm(request.POST, instance=doctor_notes)
             if notes_form.is_valid():
@@ -880,7 +975,7 @@ def add_prescription_details(request, prescription_id, clinic_slug=None):
     medicine_form = MedicineForm()
     notes_form = DoctorNotesForm(instance=doctor_notes) if doctor_notes else DoctorNotesForm()
     vitals = Vitals.objects.filter(prescription=prescription).first()
-    
+
     context = {
         'prescription': prescription,
         'tests': tests,
@@ -893,6 +988,33 @@ def add_prescription_details(request, prescription_id, clinic_slug=None):
         'vitals': vitals,
     }
     return render(request, 'hospital/doctor/add_prescription_details.html', context)
+
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from django.views.decorators.http import require_POST
+
+
+from django.http import JsonResponse
+
+@require_POST
+def delete_prescription(request, clinic_slug, prescription_id):
+    if request.user.role != 'doctor':
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    prescription = get_object_or_404(Prescription, id=prescription_id)
+
+    # ✅ Tenant safety (VERY IMPORTANT)
+    if prescription.clinic.slug != clinic_slug:
+        return JsonResponse({"error": "Invalid clinic"}, status=400)
+
+    # ✅ Doctor ownership safety
+    if prescription.doctor.user != request.user:
+        return JsonResponse({"error": "Not allowed"}, status=403)
+
+    prescription.delete()
+
+    return JsonResponse({"success": True})
 
 
 @login_required(login_url='login')
@@ -934,7 +1056,13 @@ def complete_prescription(request, prescription_id, clinic_slug=None):
 @login_required(login_url='login')
 def print_prescription(request, prescription_id, clinic_slug=None):
     """Print prescription as PDF/printable format"""
-    prescription = get_object_or_404(Prescription, id=prescription_id)
+    # prescription = get_object_or_404(Prescription, id=prescription_id)
+    prescription = get_object_or_404(
+        Prescription.objects.select_related(
+            'patient', 'doctor__user', 'clinic'
+        ).prefetch_related('medicines', 'tests'),
+        id=prescription_id
+    )
     
     # Check if user is the doctor who created it or the patient
     if request.user.role == 'doctor':
@@ -954,13 +1082,41 @@ def print_prescription(request, prescription_id, clinic_slug=None):
     medicines = prescription.medicines.all()
     doctor_notes = prescription.doctor_notes if hasattr(prescription, 'doctor_notes') else None
     vitals = getattr(prescription, 'vitals', None)
+    all_doctors = Doctor.objects.filter(clinic=prescription.clinic)
 
+    schedule_map = {
+        "morning": (1, 0, 0),
+        "afternoon": (0, 1, 0),
+        "night": (0, 0, 1),
+        "morning_evening": (1, 0, 1),
+        "morning_night": (1, 0, 1),
+        "afternoon_night": (0, 1, 1),
+        "morning_afternoon_night": (1, 1, 1),
+        "sos": (0, 0, 0),
+    }
+
+    for med in medicines:
+        # ✅ Core fix
+        med.schedule_counts = schedule_map.get(med.schedule, (0, 0, 0))
+
+        # ✅ Display helpers
+        med.frequency_display = (med.frequency or "").replace("_", " ").title()
+        med.food_instruction = (med.food_instruction or "-").title()
+
+        # ✅ Doctor-friendly format (1-0-1)
+        med.dose_pattern = f"{med.schedule_counts[0]}-{med.schedule_counts[1]}-{med.schedule_counts[2]}"
+
+        # ✅ Duration safe handling
+        med.duration_display = med.duration or "-"
+        
+    
     context = {
         'prescription': prescription,
         'tests': tests,
         'medicines': medicines,
         'doctor_notes': doctor_notes,
         'vitals': vitals,
+        'doctors': all_doctors,
     }
     return render(request, 'hospital/print_prescription.html', context)
 
@@ -1184,62 +1340,83 @@ def view_test_reports(request):
 @login_required(login_url='login')
 @require_http_methods(["GET", "POST"])
 def manage_master_medicines(request, clinic_slug=None):
-    """Admin/Doctor - Register and manage master medicines"""
     if request.user.role not in ['admin', 'doctor', 'super_admin']:
         return redirect('homepage')
     
-    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
-    if not clinic:
-        clinic = request.user.clinic
-    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request) or request.user.clinic
+
     if not clinic:
         messages.error(request, "Clinic not found!")
         return redirect('homepage')
-    
+
+    from .models import MasterMedicine
+
+    # CREATE / UPDATE
     if request.method == 'POST':
-        from .models import MasterMedicine
-        medicine_name = request.POST.get('medicine_name', '').strip()
-        dosage_options = request.POST.get('dosage_options', '').strip()
-        frequency_options = request.POST.get('frequency_options', '').strip()
-        default_frequency = request.POST.get('default_frequency', '').strip()
-        default_duration = request.POST.get('default_duration', '').strip()
-        category = request.POST.get('category', '').strip()
-        description = request.POST.get('description', '').strip()
-        
-        if not medicine_name or not dosage_options or not frequency_options:
-            messages.error(request, "Medicine name, dosage options, and frequency options are required!")
+        medicine_id = request.POST.get('medicine_id')  # hidden field for edit
+
+        data = {
+            "medicine_name": request.POST.get('medicine_name', '').strip(),
+            "medicine_type": request.POST.get('medicine_type'),
+            "common_dosages": request.POST.get('common_dosages'),
+            "default_dosage": request.POST.get('default_dosage'),
+            "default_schedule": request.POST.get('default_schedule'),
+            "default_duration": request.POST.get('default_duration'),
+            "food_instruction": request.POST.get('food_instruction'),
+            "description": request.POST.get('description'),
+        }
+
+        if not data["medicine_name"] or not data["medicine_type"]:
+            messages.error(request, "Medicine name and type required!")
         else:
             try:
-                existing = MasterMedicine.objects.filter(clinic=clinic, medicine_name__iexact=medicine_name).exists()
-                if existing:
-                    messages.warning(request, f"Medicine '{medicine_name}' already exists!")
+                if medicine_id:
+                    # UPDATE
+                    medicine = MasterMedicine.objects.get(id=medicine_id, clinic=clinic)
+                    for key, value in data.items():
+                        setattr(medicine, key, value)
+                    medicine.save()
+                    messages.success(request, "Medicine updated successfully!")
                 else:
+                    # CREATE
                     MasterMedicine.objects.create(
                         clinic=clinic,
-                        medicine_name=medicine_name,
-                        dosage_options=dosage_options,
-                        frequency_options=frequency_options,
-                        default_frequency=default_frequency,
-                        default_duration=default_duration,
-                        category=category,
-                        description=description,
+                        **data,
                         is_active=True
                     )
-                    messages.success(request, f"Medicine '{medicine_name}' registered successfully!")
+                    messages.success(request, "Medicine added successfully!")
+
             except Exception as e:
-                messages.error(request, f"Error registering medicine: {str(e)}")
-        
+                messages.error(request, str(e))
+
         return redirect('manage_master_medicines', clinic_slug=clinic.slug)
-    
-    from .models import MasterMedicine
-    medicines = MasterMedicine.objects.filter(clinic=clinic, is_active=True).order_by('medicine_name')
-    
+
+    medicines = MasterMedicine.objects.filter(clinic=clinic, is_active=True)
+
     context = {
-        'clinic': clinic,
-        'medicines': medicines,
+        "clinic": clinic,
+        "medicines": medicines,
+        "medicine_types": MasterMedicine.MEDICINE_TYPE_CHOICES,
+        "schedules": MasterMedicine.SCHEDULE_CHOICES,
+        "food_choices": MasterMedicine.FOOD_CHOICES,
     }
+
     return render(request, 'hospital/admin/manage_master_medicines.html', context)
 
+
+@login_required
+def delete_master_medicine(request, clinic_slug, medicine_id):
+    from .models import MasterMedicine
+
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+
+    medicine = MasterMedicine.objects.filter(id=medicine_id, clinic=clinic).first()
+
+    if medicine:
+        medicine.delete()
+        messages.success(request, "Medicine deleted!")
+
+    return redirect('manage_master_medicines', clinic_slug=clinic.slug)
 
 @login_required(login_url='login')
 @require_http_methods(["POST"])
@@ -1336,74 +1513,129 @@ def delete_master_test(request, test_id, clinic_slug=None):
     
     return redirect('manage_master_tests', clinic_slug=clinic.slug)
 
-
 @login_required(login_url='login')
+@require_http_methods(["GET", "POST"])
+def edit_master_test(request, clinic_slug, test_id):
+    from .models import MasterTest
+
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    test = get_object_or_404(MasterTest, id=test_id, clinic=clinic)
+
+    if request.method == 'POST':
+        test_name = request.POST.get('test_name', '').strip()
+        test_type = request.POST.get('test_type', '').strip()
+        category = request.POST.get('category', '').strip()
+        description = request.POST.get('description', '').strip()
+
+        if not test_name or not test_type:
+            messages.error(request, "Test name and test type are required!")
+        else:
+            # Prevent duplicate names (excluding current test)
+            exists = MasterTest.objects.filter(
+                clinic=clinic,
+                test_name__iexact=test_name
+            ).exclude(id=test.id).exists()
+
+            if exists:
+                messages.warning(request, f"Test '{test_name}' already exists!")
+            else:
+                test.test_name = test_name
+                test.test_type = test_type
+                test.category = category
+                test.description = description
+                test.save()
+
+                messages.success(request, "Test updated successfully!")
+                return redirect('manage_master_tests', clinic_slug=clinic.slug)
+
+    context = {
+        'clinic': clinic,
+        'test': test,
+        'test_types': MasterTest.TEST_TYPES
+    }
+
+    return render(request, 'hospital/admin/edit_master_test.html', context)
+
+
+# ---------------------------- #
+# Medicine API
+# ---------------------------- #
+@login_required
 @require_http_methods(["GET"])
 def api_master_medicines(request, clinic_slug=None):
-    """AJAX API - Get master medicines by category or search"""
-    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    """
+    AJAX API - Get medicines for autocomplete
+    """
+    # Resolve clinic
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request) or getattr(request.user, 'clinic', None)
     if not clinic:
-        clinic = request.user.clinic
-    
-    from .models import MasterMedicine
+        return JsonResponse({'error': 'Clinic not found'}, status=400)
+
+    # Search query
     q = request.GET.get('q', '').strip()
-    category = request.GET.get('category', '').strip()
-    
+
+    # Query medicines
     medicines = MasterMedicine.objects.filter(clinic=clinic, is_active=True)
-    
     if q:
         medicines = medicines.filter(medicine_name__icontains=q)
-    
-    if category:
-        medicines = medicines.filter(category=category)
-    
+
+    # Prepare JSON
     data = [
         {
             'id': m.id,
             'medicine_name': m.medicine_name,
-            'category': m.category,
-            'dosage_options': m.dosage_options,
-            'frequency_options': m.frequency_options,
-            'default_frequency': m.default_frequency,
-            'default_duration': m.default_duration,
+            'default_dosage': m.default_dosage or "",
+            'default_schedule': m.default_schedule or "",  # Use schedule as frequency
+            'default_duration': m.default_duration or "",
+            'food_instruction': m.food_instruction or "",
+            'display_name': f"{m.medicine_name} ({m.default_dosage or ''})"
         }
-        for m in medicines[:20]
+        for m in medicines[:50]
     ]
+    print("MEDICINE DATA:" , data)
+
     return JsonResponse(data, safe=False)
 
-
+# ---------------------------- #
+# Test API
+# ---------------------------- #
 @login_required(login_url='login')
 @require_http_methods(["GET"])
 def api_master_tests(request, clinic_slug=None):
-    """AJAX API - Get master tests by type or search"""
-    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    """
+    AJAX API - Get master tests by type or search
+    """
+    # Resolve clinic
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request) or getattr(request.user, 'clinic', None)
     if not clinic:
-        clinic = request.user.clinic
+        return JsonResponse({'error': 'Clinic not found'}, status=400)
     
-    from .models import MasterTest
+    # Get query parameters
     q = request.GET.get('q', '').strip()
-    test_type = request.GET.get('test_type', '').strip()
-    
+    test_type = request.GET.get('test_type', '').strip()  # Optional
+    print("API TRIGGERED....",  q, test_type)
+    # Query tests
     tests = MasterTest.objects.filter(clinic=clinic, is_active=True)
-    
     if q:
         tests = tests.filter(test_name__icontains=q)
+        print("TEST DATA...", tests )
+    # if test_type:
+    #     tests = tests.filter(test_type=test_type)
+    print("TEST DATA...", tests )
     
-    if test_type:
-        tests = tests.filter(test_type=test_type)
-    
+    # Prepare JSON
     data = [
         {
             'id': t.id,
             'test_name': t.test_name,
-            'test_type': t.test_type,
-            'category': t.category,
+            'test_type': t.test_type,  # e.g., "Lab", "Radiology"
+            'category': t.category or "",
+            'display_name': f"{t.test_name} ({t.get_test_type_display()})"
         }
-        for t in tests[:20]
+        for t in tests[:50]
     ]
+    print("############", data)
     return JsonResponse(data, safe=False)
-
-
 # ==================== ADMIN VIEWS ====================
 
 @login_required(login_url='login')
@@ -1487,6 +1719,7 @@ def create_doctor(request, clinic_slug=None):
                 user = user_form.save(commit=False)
                 user.role = 'doctor'
                 user.clinic = clinic
+                user.mobile_number = user_form.cleaned_data['mobile_number']
                 user.save()
                 
                 # Create doctor profile manually with form data
@@ -1538,6 +1771,7 @@ def create_receptionist(request, clinic_slug=None):
         if form.is_valid():
             user = form.save(commit=False)
             user.role = 'receptionist'
+            user.mobile_number = form.cleaned_data['mobile_number']
             user.clinic = clinic
             user.save()
             messages.success(request, f"Receptionist {user.first_name} {user.last_name} created successfully!")

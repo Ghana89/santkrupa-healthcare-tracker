@@ -55,6 +55,14 @@
                 <p><strong>Date:</strong> {{ prescription.prescription_date|date:"M d, Y" }}</p>
                 <p><strong>Tests:</strong> {{ prescription.tests.count }}</p>
                 <p><strong>Medicines:</strong> {{ prescription.medicines.count }}</p>
+
+                <div style="margin-top: 10px;">
+                <a href="{% url 'print_prescription' clinic.slug prescription.id %}" 
+                target="_blank" 
+                class="btn-small">
+                    🖨️ View / Print Prescription
+                </a>
+                </div>
             </div>
             {% endfor %}
         </div>
