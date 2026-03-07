@@ -323,7 +323,6 @@ class PatientVisit(models.Model):
     class Meta:
         ordering = ['-check_in_date']
 
-
 # Test Report model - for uploading lab/test reports
 class TestReport(models.Model):
     clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='test_reports', null=True, blank=True)
@@ -408,6 +407,11 @@ class MasterMedicine(models.Model):
         default='morning'
     )
 
+    frequency_per_day = models.PositiveIntegerField(
+        default=1,
+        help_text="Example: 1=Once daily, 2=Twice daily, 3=Thrice daily"
+    )
+
     # 📅 Duration
     default_duration = models.CharField(
         max_length=50,
@@ -484,13 +488,17 @@ class Medicine(models.Model):
 
     medicine_name = models.CharField(max_length=200)
     dosage = models.CharField(max_length=100)
-    frequency = models.CharField(max_length=100)
+    frequency_per_day = models.PositiveIntegerField(
+        default=1,
+        help_text="Example: 1=Once daily, 2=Twice daily, 3=Thrice daily"
+    )
     duration = models.CharField(max_length=100)
     medicine_type = models.CharField(
         max_length=20,
         choices=MasterMedicine.MEDICINE_TYPE_CHOICES,
         default='tablet'   # ✅ add this
     )
+    qty = models.PositiveIntegerField(default=1) 
     # ✅ ADD THIS
     schedule = models.CharField(
         max_length=50,

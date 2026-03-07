@@ -58,7 +58,7 @@ class TestAdmin(admin.ModelAdmin):
 
 @admin.register(Medicine)
 class MedicineAdmin(admin.ModelAdmin):
-    list_display = ['medicine_name', 'dosage', 'frequency', 'prescription']
+    list_display = ['medicine_name', 'dosage', 'frequency_per_day', 'prescription']
     search_fields = ['medicine_name', 'prescription__patient__patient_name']
 
 

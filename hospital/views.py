@@ -922,130 +922,146 @@ def create_prescription(request, patient_id, clinic_slug=None):
     context = {'patient': patient, 'clinic': clinic}
     return render(request, 'hospital/doctor/create_prescription.html', context)
 
+from django.http import JsonResponse
 
 @login_required(login_url='login')
 @require_http_methods(["GET", "POST"])
 def add_prescription_details(request, prescription_id, clinic_slug=None):
-    """Doctor - Add tests, medicines, and notes to prescription"""
+
     if request.user.role != 'doctor':
         return redirect('homepage')
-    # Resolve clinic context for clinic-aware URL reversing
-    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
 
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
     prescription = get_object_or_404(Prescription, id=prescription_id)
     doctor = Doctor.objects.get(user=request.user)
-    vitals = getattr(prescription, 'vitals', None)
 
     if prescription.doctor != doctor:
         return redirect('doctor_dashboard')
-    
+
     tests = prescription.tests.all()
     medicines = prescription.medicines.all()
-    doctor_notes = prescription.doctor_notes if hasattr(prescription, 'doctor_notes') else None
-    
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        
-        if action == 'add_test':
+    doctor_notes = getattr(prescription, "doctor_notes", None)
+    vitals = Vitals.objects.filter(prescription=prescription).first()
+
+    if request.method == "POST":
+
+        action = request.POST.get("action")
+
+        # ---------------- ADD MEDICINE (AJAX)
+        if action == "add_medicine":
+
+            form = MedicineForm(request.POST)
+
+            if form.is_valid():
+                med = form.save(commit=False)
+                med.prescription = prescription
+                med.clinic = prescription.clinic
+                med.save()
+
+                # ✅ ADD THIS BLOCK
+                MasterMedicine.objects.get_or_create(
+                    clinic=clinic,
+                    medicine_name=med.medicine_name,
+                    defaults={
+                        "medicine_type": med.medicine_type,
+                        "default_dosage": med.dosage,
+                        "default_schedule": med.schedule,
+                        "default_duration": med.duration,
+                        "food_instruction": med.food_instruction,
+                        "common_dosages": med.dosage,
+                    }
+                )
+                return JsonResponse({
+                    "success": True,
+                    "medicine": {
+                        "id": med.id,
+                        "name": med.medicine_name,
+                        "type": med.get_medicine_type_display(),
+                        "dosage": med.dosage,
+                        "frequency_per_day": med.frequency_per_day,
+                        "duration": med.duration,
+                        "qty": med.qty,
+                        "schedule": med.schedule,
+                        "food_instruction": med.food_instruction,
+                    }
+                })
+
+            return JsonResponse({"success": False, "errors": form.errors})
+
+
+        # ---------------- ADD TEST (AJAX)
+        elif action == "add_test":
             form = TestForm(request.POST)
             if form.is_valid():
                 test = form.save(commit=False)
                 test.prescription = prescription
+                test.clinic = clinic
                 test.save()
-                messages.success(request, "Test added successfully!")
-            if clinic_slug:
-                return redirect('add_prescription_details', clinic_slug=clinic_slug, prescription_id=prescription.id)
-            return redirect('add_prescription_details', prescription_id=prescription.id)
-        
-        elif action == 'save_vitals':
-            bp = request.POST.get('bp')
-            pulse = request.POST.get('pulse')
-            temp = request.POST.get('temp')
-            spo2 = request.POST.get('spo2')
 
-            vitals_obj, created = Vitals.objects.get_or_create(
-                prescription=prescription,
-                defaults={
-                    'clinic': prescription.clinic
-                }
-            )
+                # Auto-create master test if not exist
+                master_test = MasterTest.objects.filter(
+                    clinic=clinic,
+                    test_name__iexact=test.test_name
+                ).first()
 
-            vitals_obj.bp = bp
-            vitals_obj.pulse = pulse
-            vitals_obj.temp = temp
-            vitals_obj.spo2 = spo2
-            vitals_obj.save()
-
-            messages.success(request, "Vitals saved successfully!")
-
-            # 🔥 IMPORTANT: redirect after POST
-            if clinic_slug:
-                return redirect('add_prescription_details', clinic_slug=clinic_slug, prescription_id=prescription.id)
-            return redirect('add_prescription_details', prescription_id=prescription.id)
-            
-        elif action == 'add_medicine':
-            form = MedicineForm(request.POST)
-            if form.is_valid():
-                medicine = form.save(commit=False)
-                medicine.prescription = prescription
-                medicine.clinic = prescription.clinic  # ensure medicine is linked to the same clinic
-                medicine.save()
-                messages.success(request, "Medicine added successfully!")
-
-                # -----------------------------
-                # 🔹 Auto-add to MasterMedicine
-                # -----------------------------
-                med_name = form.cleaned_data.get('medicine_name').strip()
-                dosage = form.cleaned_data.get('dosage')
-                frequency = form.cleaned_data.get('frequency')
-                duration = form.cleaned_data.get('duration')
-                schedule = form.cleaned_data.get('schedule')
-                food_instruction = form.cleaned_data.get('food_instruction')
-
-                if not MasterMedicine.objects.filter(clinic=clinic, medicine_name__iexact=med_name).exists():
-                    MasterMedicine.objects.create(
+                if not master_test:
+                    master_test = MasterTest.objects.create(
                         clinic=clinic,
-                        medicine_name=med_name,
-                        default_dosage=dosage,
-                        default_frequency=frequency,
-                        default_duration=duration,
-                        default_schedule=schedule,
-                        food_instruction=food_instruction
+                        test_name=test.test_name,
+                        test_type=test.test_type,
+                        is_active=True
                     )
 
-            # Redirect after POST
-            if clinic_slug:
-                return redirect('add_prescription_details', clinic_slug=clinic_slug, prescription_id=prescription.id)
-            return redirect('add_prescription_details', prescription_id=prescription.id)
+                return JsonResponse({
+                    "success": True,
+                    "test": {
+                        "id": test.id,
+                        "name": test.test_name,
+                        "type": test.get_test_type_display(),
+                        "date": test.test_date.strftime("%Y-%m-%d") if test.test_date else "",
+                        "completed": test.is_completed
+                    }
+                })
 
-        elif action == 'save_notes':
-            notes_form = DoctorNotesForm(request.POST, instance=doctor_notes)
+            return JsonResponse({"success": False, "errors": form.errors})
+
+        # ---------------- ADD THIS BLOCK IN POST HANDLER ----------------
+        elif action == "save_notes":
+
+            # If notes already exist, update them; else create new
+            doctor_notes_instance = getattr(prescription, "doctor_notes", None)
+
+            notes_form = DoctorNotesForm(request.POST, instance=doctor_notes_instance)
+
             if notes_form.is_valid():
                 notes = notes_form.save(commit=False)
                 notes.prescription = prescription
+                notes.clinic = clinic
                 notes.save()
-                messages.success(request, "Notes saved successfully!")
-            if clinic_slug:
-                return redirect('add_prescription_details', clinic_slug=clinic_slug, prescription_id=prescription.id)
-            return redirect('add_prescription_details', prescription_id=prescription.id)
+
+                messages.success(request, "Doctor's notes saved successfully!")
+                return redirect(request.path)  # reload page to reflect changes
+            else:
+                messages.error(request, "Please fix errors in the notes form.")
+    # ---------------- GET REQUEST (PAGE LOAD)
 
     test_form = TestForm()
     medicine_form = MedicineForm()
     notes_form = DoctorNotesForm(instance=doctor_notes) if doctor_notes else DoctorNotesForm()
-    vitals = Vitals.objects.filter(prescription=prescription).first()
 
     context = {
-        'prescription': prescription,
-        'tests': tests,
-        'medicines': medicines,
-        'doctor_notes': doctor_notes,
-        'clinic': clinic,
-        'test_form': test_form,
-        'medicine_form': medicine_form,
-        'notes_form': notes_form,
-        'vitals': vitals,
+        "prescription": prescription,
+        "clinic": clinic,
+        "tests": tests,
+        "medicines": medicines,
+        "doctor_notes": doctor_notes,
+        "test_form": test_form,
+        "medicine_form": medicine_form,
+        "notes_form": notes_form,
+        "vitals": vitals,
     }
-    return render(request, 'hospital/doctor/add_prescription_details.html', context)
+
+    return render(request, "hospital/doctor/add_prescription_details.html", context)
 
 
 from django.shortcuts import get_object_or_404, redirect
@@ -1162,7 +1178,7 @@ def print_prescription(request, prescription_id, clinic_slug=None):
         med.schedule_counts = schedule_map.get(med.schedule, (0, 0, 0))
 
         # ✅ Display helpers
-        med.frequency_display = (med.frequency or "").replace("_", " ").title()
+        med.frequency_display = (med.frequency_per_day or "")
         med.food_instruction = (med.food_instruction or "-").title()
 
         # ✅ Doctor-friendly format (1-0-1)
@@ -1183,34 +1199,58 @@ def print_prescription(request, prescription_id, clinic_slug=None):
     }
     return render(request, 'hospital/print_prescription.html', context)
 
-
-def delete_test(request, test_id, clinic_slug=None):
-    """Doctor - Delete test from prescription"""
-    if request.user.role != 'doctor':
-        return redirect('homepage')
-    
-    test = get_object_or_404(Test, id=test_id)
-    prescription_id = test.prescription.id
-    test.delete()
-    messages.success(request, "Test deleted!")
-    if clinic_slug:
-        return redirect('add_prescription_details', clinic_slug=clinic_slug, prescription_id=prescription_id)
-    return redirect('add_prescription_details', prescription_id=prescription_id)
-
+from django.http import JsonResponse
 
 @login_required(login_url='login')
 def delete_medicine(request, medicine_id, clinic_slug=None):
-    """Doctor - Delete medicine from prescription"""
+
     if request.user.role != 'doctor':
-        return redirect('homepage')
-    
+        return JsonResponse({"success": False})
+
     medicine = get_object_or_404(Medicine, id=medicine_id)
-    prescription_id = medicine.prescription.id
     medicine.delete()
-    messages.success(request, "Medicine deleted!")
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({
+            "success": True,
+            "medicine_id": medicine_id
+        })
+
+    # fallback normal redirect
+    prescription_id = medicine.prescription.id
     if clinic_slug:
-        return redirect('add_prescription_details', clinic_slug=clinic_slug, prescription_id=prescription_id)
-    return redirect('add_prescription_details', prescription_id=prescription_id)
+        return redirect('add_prescription_details',
+                        clinic_slug=clinic_slug,
+                        prescription_id=prescription_id)
+
+    return redirect('add_prescription_details',
+                    prescription_id=prescription_id)
+
+
+@login_required(login_url='login')
+def delete_test(request, test_id, clinic_slug=None):
+
+    if request.user.role != 'doctor':
+        return JsonResponse({"success": False})
+
+    test = get_object_or_404(Test, id=test_id)
+    test.delete()
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({
+            "success": True,
+            "test_id": test_id
+        })
+
+    prescription_id = test.prescription.id
+
+    if clinic_slug:
+        return redirect('add_prescription_details',
+                        clinic_slug=clinic_slug,
+                        prescription_id=prescription_id)
+
+    return redirect('add_prescription_details',
+                    prescription_id=prescription_id)
 
 
 @login_required(login_url='login')
@@ -1423,6 +1463,7 @@ def manage_master_medicines(request, clinic_slug=None):
             "medicine_type": request.POST.get('medicine_type'),
             "common_dosages": request.POST.get('common_dosages'),
             "default_dosage": request.POST.get('default_dosage'),
+            "frequency_per_day": request.POST.get('frequency_per_day'),
             "default_schedule": request.POST.get('default_schedule'),
             "default_duration": request.POST.get('default_duration'),
             "food_instruction": request.POST.get('food_instruction'),
@@ -1466,20 +1507,6 @@ def manage_master_medicines(request, clinic_slug=None):
 
     return render(request, 'hospital/admin/manage_master_medicines.html', context)
 
-
-@login_required
-def delete_master_medicine(request, clinic_slug, medicine_id):
-    from .models import MasterMedicine
-
-    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
-
-    medicine = MasterMedicine.objects.filter(id=medicine_id, clinic=clinic).first()
-
-    if medicine:
-        medicine.delete()
-        messages.success(request, "Medicine deleted!")
-
-    return redirect('manage_master_medicines', clinic_slug=clinic.slug)
 
 @login_required(login_url='login')
 @require_http_methods(["POST"])
@@ -1555,6 +1582,37 @@ def manage_master_tests(request, clinic_slug=None):
         'test_types': test_types,
     }
     return render(request, 'hospital/admin/manage_master_tests.html', context)
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .models import MasterTest, Clinic
+
+@csrf_exempt
+def add_master_test(request, clinic_slug):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        test_name = data.get("test_name")
+        test_type = data.get("test_type")
+
+        if not test_name or not test_type:
+            return JsonResponse({"success": False, "error": "Missing test name or type"})
+
+        clinic = Clinic.objects.get(slug=clinic_slug)
+
+        # Check if test already exists
+        if MasterTest.objects.filter(clinic=clinic, test_name=test_name).exists():
+            return JsonResponse({"success": False, "error": "Test already exists"})
+
+        test = MasterTest.objects.create(
+            clinic=clinic,
+            test_name=test_name,
+            test_type=test_type
+        )
+
+        return JsonResponse({"success": True, "test_name": test.test_name})
+
+    return JsonResponse({"success": False, "error": "Invalid request"})
 
 
 @login_required(login_url='login')
@@ -1645,15 +1703,17 @@ def api_master_medicines(request, clinic_slug=None):
     # Prepare JSON
     data = [
         {
-            'id': m.id,
-            'medicine_name': m.medicine_name,
-            'default_dosage': m.default_dosage or "",
-            'default_schedule': m.default_schedule or "",  # Use schedule as frequency
-            'default_duration': m.default_duration or "",
-            'food_instruction': m.food_instruction or "",
-            'display_name': f"{m.medicine_name} ({m.default_dosage or ''})"
+            "id": m.id,
+            "name": m.medicine_name,
+            "type": m.medicine_type,
+            "default_dosage": m.default_dosage,
+            "frequency_per_day": m.frequency_per_day,
+            "default_schedule": m.default_schedule,
+            "default_duration": m.default_duration,
+            "food_instruction": m.food_instruction,
+            "display": f"{m.medicine_name} ({m.default_dosage}) - {m.medicine_type}"
         }
-        for m in medicines[:50]
+        for m in medicines[:20]
     ]
     print("MEDICINE DATA:" , data)
 
@@ -1662,42 +1722,42 @@ def api_master_medicines(request, clinic_slug=None):
 # ---------------------------- #
 # Test API
 # ---------------------------- #
-@login_required(login_url='login')
+from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse
+
 @require_http_methods(["GET"])
 def api_master_tests(request, clinic_slug=None):
-    """
-    AJAX API - Get master tests by type or search
-    """
-    # Resolve clinic
+
     clinic = get_clinic_from_slug_or_middleware(clinic_slug, request) or getattr(request.user, 'clinic', None)
+
     if not clinic:
-        return JsonResponse({'error': 'Clinic not found'}, status=400)
-    
-    # Get query parameters
-    q = request.GET.get('q', '').strip()
-    test_type = request.GET.get('test_type', '').strip()  # Optional
-    print("API TRIGGERED....",  q, test_type)
-    # Query tests
-    tests = MasterTest.objects.filter(clinic=clinic, is_active=True)
-    if q:
-        tests = tests.filter(test_name__icontains=q)
-        print("TEST DATA...", tests )
-    # if test_type:
-    #     tests = tests.filter(test_type=test_type)
-    print("TEST DATA...", tests )
-    
-    # Prepare JSON
+        return JsonResponse({"error": "Clinic not found"}, status=400)
+
+    test_type = request.GET.get("test_type")
+
+    tests = MasterTest.objects.filter(
+        clinic=clinic,
+        is_active=True
+    )
+
+    if test_type:
+        tests = tests.filter(test_type=test_type)
+        print(f"Filtering tests by type: {test_type}")
+
+
+    tests = tests.order_by("test_name")[:50]
+
     data = [
         {
-            'id': t.id,
-            'test_name': t.test_name,
-            'test_type': t.test_type,  # e.g., "Lab", "Radiology"
-            'category': t.category or "",
-            'display_name': f"{t.test_name} ({t.get_test_type_display()})"
+            "id": t.id,
+            "test_name": t.test_name,
+            "test_type": t.get_test_type_display(),
         }
-        for t in tests[:50]
+        for t in tests
     ]
-    print("############", data)
+
+    print("TEST DATA:", data)
+
     return JsonResponse(data, safe=False)
 # ==================== ADMIN VIEWS ====================
 

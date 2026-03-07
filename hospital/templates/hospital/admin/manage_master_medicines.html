@@ -61,6 +61,17 @@
                                class="form-control" placeholder="500mg">
                     </div>
 
+                    <!-- FREQUENCY PER DAY -->
+                    <div class="col-md-4 mb-3">
+                        <label>Frequency Per Day</label>
+                        <input type="number"
+                            name="frequency_per_day"
+                            id="frequency_per_day"
+                            class="form-control"
+                            min="1"
+                            max="10"
+                            placeholder="Times per day">
+                    </div>
                     <!-- SCHEDULE -->
                     <div class="col-md-4 mb-3">
                         <label>Schedule</label>
@@ -128,6 +139,7 @@
                             <th>Name</th>
                             <th>Type</th>
                             <th>Dosage</th>
+                            <th>Freq/Day</th>
                             <th>Schedule</th>
                             <th>Duration</th>
                             <th>Food</th>
@@ -141,6 +153,7 @@
                             <td>{{ med.medicine_name }}</td>
                             <td>{{ med.get_medicine_type_display }}</td>
                             <td>{{ med.default_dosage|default:"-" }}</td>
+                            <td>{{ med.frequency_per_day|default:"-" }}</td>
                             <td>{{ med.get_default_schedule_display|default:"-" }}</td>
                             <td>{{ med.default_duration|default:"-" }}</td>
                             <td>{{ med.get_food_instruction_display|default:"-" }}</td>
@@ -154,6 +167,7 @@
                                         '{{ med.medicine_type }}',
                                         '{{ med.common_dosages|escapejs }}',
                                         '{{ med.default_dosage|escapejs }}',
+                                        '{{ med.frequency_per_day }}',
                                         '{{ med.default_schedule }}',
                                         '{{ med.default_duration|escapejs }}',
                                         '{{ med.food_instruction }}',
@@ -204,7 +218,7 @@ document.getElementById("searchInput").addEventListener("keyup", function () {
 })
 
 // ✏️ EDIT
-function editMedicine(id, name, type, dosages, dosage, schedule, duration, food, desc) {
+function editMedicine(id, name, type, dosages, dosage, freq, schedule, duration, food, desc) {
 
     document.getElementById("form-title").innerText = "Edit Medicine"
 
@@ -213,6 +227,7 @@ function editMedicine(id, name, type, dosages, dosage, schedule, duration, food,
     document.getElementById("medicine_type").value = type
     document.getElementById("common_dosages").value = dosages
     document.getElementById("default_dosage").value = dosage
+    document.getElementById("frequency_per_day").value = freq
     document.getElementById("default_schedule").value = schedule
     document.getElementById("default_duration").value = duration
     document.getElementById("food_instruction").value = food

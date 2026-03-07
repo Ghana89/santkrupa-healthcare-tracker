@@ -78,19 +78,19 @@
 
                     <div style="display: flex; gap: 10px;">
                         {% if not rec.is_admitted %}
-                            <a href="{% url 'admit_patient' rec.patient.id clinic_slug=clinic.slug %}" class="btn" style="flex: 1;">
+                            <a href="{% url 'admit_patient' clinic_slug=clinic.slug patient_id=rec.patient.id %}" class="btn" style="flex: 1;">
                                 Admit Patient Now
                             </a>
                         {% else %}
-                            <a href="{% url 'admission_details' rec.current_admission_id clinic_slug=clinic.slug %}" 
+                            <a href="{% url 'admission_details' clinic_slug=clinic.slug admission_id=rec.current_admission_id %}" 
                                class="btn" style="flex: 1; background-color: #4caf50;">
                                 View Current Admission
                             </a>
                         {% endif %}
-                        <a href="{% url 'add_prescription_details' rec.id clinic_slug=clinic.slug %}" class="btn" style="flex: 1; background-color: #666;">
+                        <a href="{% url 'add_prescription_details' clinic_slug=clinic.slug prescription_id=rec.id %}" class="btn" style="flex: 1; background-color: #666;">
                             View Prescription
                         </a>
-                        <a href="{% url 'patient_history' rec.patient.id clinic_slug=clinic.slug %}" class="btn" style="flex: 1; background-color: #999;">
+                        <a href="{% url 'patient_history' clinic_slug=clinic.slug patient_id=rec.patient.id%}" class="btn" style="flex: 1; background-color: #999;">
                             View History
                         </a>
                     </div>

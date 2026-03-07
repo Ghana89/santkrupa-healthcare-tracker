@@ -141,7 +141,8 @@ class TestForm(forms.ModelForm):
         fields = ['test_type', 'test_name', 'description', 'test_date']
         widgets = {
             'test_type': forms.Select(attrs={
-                'class': 'form-control'
+                'class': 'form-control',
+                'id': 'test_type_field'  # ADD THIS
             }),
             'test_name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -167,9 +168,10 @@ class MedicineForm(forms.ModelForm):
             "medicine_type",
             'medicine_name',
             'dosage',
-            'frequency',
+            'frequency_per_day',
             'duration',
             'schedule',
+             "qty", 
             'food_instruction',
             'instructions'
         ]
@@ -193,9 +195,11 @@ class MedicineForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'e.g., 500mg'
             }),
-            'frequency': forms.TextInput(attrs={
+            'frequency_per_day': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'e.g., Twice a day'
+                'min': 1,
+                'max': 10,
+                'placeholder': 'Times per day'
             }),
             'duration': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -207,6 +211,11 @@ class MedicineForm(forms.ModelForm):
                 'class': 'form-control'
             }),
 
+            "qty": forms.NumberInput(attrs={
+                "class": "form-control",
+                "min": 1,
+                "value": 1
+            }),
             # ✅ ADD THIS
             'food_instruction': forms.Select(attrs={
                 'class': 'form-control'

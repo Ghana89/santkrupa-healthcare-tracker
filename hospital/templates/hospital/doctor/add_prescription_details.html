@@ -81,119 +81,8 @@
     </form>
 </div>
 
-<!-- TESTS SECTION -->
-<div class="card" style="padding: 15px;">
-    <h2>🧪 Tests Prescribed</h2>
-    {% if tests %}
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Date</th>
-                <th>Completed</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for test in tests %}
-            <tr>
-                <td>{{ test.test_name }}</td>
-                <td>{{ test.get_test_type_display }}</td>
-                <td>{{ test.test_date|date:"M d, Y"|default:"Not scheduled" }}</td>
-                <td>{% if test.is_completed %}<span style="color:green;">Yes</span>{% else %}<span style="color:orange;">Pending</span>{% endif %}</td>
-                <td>
-                    <a href="{% url 'delete_test' clinic.slug test.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this test?')">Delete</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>No tests prescribed yet.</p>
-    {% endif %}
-</div>
-
-<div class="card" style="padding:20px; border-radius:12px;">
-    <h3 style="margin-bottom:15px;">➕ Add New Test</h3>
-
-    <form method="post" class="test-form">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="add_test">
-
-        <div class="form-grid">
-            <div class="form-group">
-                <label>Test Type</label>
-                {{ test_form.test_type }}
-            </div>
-
-            <div class="form-group">
-                <label>Search Test</label>
-                <input type="text" id="test_name_autocomplete" list="test_names_list"
-                       placeholder="Type to search test..."
-                       class="input-field">
-                <datalist id="test_names_list"></datalist>
-                {{ test_form.test_name }}
-            </div>
-
-            <div class="form-group">
-                <label>Test Date</label>
-                {{ test_form.test_date }}
-            </div>
-
-            <div class="form-group full-width">
-                <label>Description</label>
-                {{ test_form.description }}
-            </div>
-        </div>
-
-        <div style="text-align:right;">
-            <button type="submit" class="btn btn-primary">
-                ➕ Add Test
-            </button>
-        </div>
-    </form>
-</div>
 
 <!-- MEDICINES SECTION -->
-<div class="card" style="padding:15px;">
-    <h2>💊 Medicines Prescribed</h2>
-    {% if medicines %}
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Dosage</th>
-                <th>Frequency</th>
-                <th>Duration</th>
-                <th>Schedule</th>
-                <th>Food Instruction</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for med in medicines %}
-            <tr>
-                <td>{{ med.medicine_name }}</td>
-                <td>{{ med.get_medicine_type_display }}</td>
-                <td>{{ med.dosage }}</td>
-                <td>{{ med.frequency }}</td>
-                <td>{{ med.duration }}</td>
-                <td>{{ med.schedule }}</td>
-                <td>{{ med.food_instruction }}</td>
-                <td>
-                    <a href="{% url 'delete_medicine' clinic.slug med.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this medicine?')">Delete</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>No medicines prescribed yet.</p>
-    {% endif %}
-</div>
-
 <div class="card" style="padding:20px; border-radius:12px;">
     <h3 style="margin-bottom:15px;">💊 Add New Medicine</h3>
 
@@ -213,7 +102,7 @@
                 <datalist id="medicine_names_list"></datalist>
 
                 <!-- Hidden actual field -->
-                {{ medicine_form.medicine_name }}
+                {{ medicine_form.medicine_name.as_hidden }}
             </div>
             <!-- Medicine Type -->
             <div class="form-group">
@@ -229,8 +118,8 @@
 
             <!-- Frequency -->
             <div class="form-group">
-                <label>Frequency</label>
-                {{ medicine_form.frequency }}
+                <label>Frequency (Med/day)</label>
+                {{ medicine_form.frequency_per_day }}
             </div>
 
             <!-- Duration -->
@@ -257,6 +146,11 @@
                 {{ medicine_form.instructions }}
             </div>
 
+            <div class="form-group">
+                <label>Quantity</label>
+                {{ medicine_form.qty }}
+            </div>
+
         </div>
 
         <!-- Submit -->
@@ -273,6 +167,132 @@
         </div>
     </form>
 </div>
+
+<div class="card" style="padding:15px;">
+    <h2>💊 Medicines Prescribed</h2>
+    {% if medicines %}
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Dosage</th>
+                <th>Frequency (Med/day)</th>
+                <th>Duration</th>
+                <th>Qty</th>
+                <th>Schedule</th>
+                <th>Food Instruction</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+            <tbody id="medicine-table-body">
+            {% for med in medicines %}
+            <tr id="medicine-row-{{ med.id }}">
+                <td>{{ med.medicine_name }}</td>
+                <td>{{ med.get_medicine_type_display }}</td>
+                <td>{{ med.dosage }}</td>
+                <td>{{ med.frequency_per_day }}</td>
+                <td>{{ med.duration }}</td>
+                <td>{{ med.qty }}</td>
+                <td>{{ med.schedule }}</td>
+                <td>{{ med.food_instruction }}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger delete-btn"
+                            data-id="{{ med.id }}"
+                            data-type="medicine">
+                    Delete
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+    </table>
+    {% else %}
+    <p>No medicines prescribed yet.</p>
+    {% endif %}
+</div>
+
+<!-- TESTS SECTION -->
+<div class="card" style="padding:20px; border-radius:12px;">
+    <h3 style="margin-bottom:15px;">➕ Add New Test</h3>
+
+    <form method="post" class="test-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_test">
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Test Type</label>
+                {{ test_form.test_type }} <!-- Make sure it has id="test_type_field" in forms.py -->
+            </div>
+
+            <div class="form-group">
+                <label>Test Name</label>
+                <select id="test_name_dropdown" class="input-field" style="display:none;">
+                    <option value="">Select Test</option>
+                </select>
+                <input type="hidden" name="test_name" id="test_name_field">
+            </div>
+
+            <div class="form-group">
+                <label>Or Add New Test</label>
+                <input type="text" id="new_test_input" class="input-field" placeholder="Enter new test name...">
+            </div>
+
+            <div class="form-group">
+                <label>Test Date</label>
+                {{ test_form.test_date }}
+            </div>
+
+            <div class="form-group full-width">
+                <label>Description</label>
+                {{ test_form.description }}
+            </div>
+        </div>
+
+        <div style="text-align:right;">
+            <button type="submit" class="btn btn-primary">
+                ➕ Add Test
+            </button>
+        </div>
+    </form>
+</div>
+<div class="card" style="padding: 15px;">
+    <h2>🧪 Tests Prescribed</h2>
+    {% if tests %}
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Completed</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="test-table-body">
+            {% for test in tests %}
+            <tr id="test-row-{{ test.id }}">
+                <td>{{ test.test_name }}</td>
+                <td>{{ test.get_test_type_display }}</td>
+                <td>{{ test.test_date }}</td>
+                <td>{% if test.is_completed %}Yes{% else %}Pending{% endif %}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger delete-btn"
+                            data-id="{{ test.id }}"
+                            data-type="test">
+                    Delete
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No tests prescribed yet.</p>
+    {% endif %}
+</div>
+
 
 <!-- COMPLETE PRESCRIPTION -->
 <div class="card" style="padding:15px; text-align:center; background-color:#f0f7ff; border-left-color:#17a2b8;">
@@ -295,15 +315,18 @@ document.addEventListener("DOMContentLoaded", function() {
 
     const medicineNameField = document.querySelector('[name="medicine_name"]');
     const dosageField = document.querySelector('[name="dosage"]');
-    const frequencyField = document.querySelector('[name="frequency"]');
+    const frequencyField = document.querySelector('[name="frequency_per_day"]');
     const durationField = document.querySelector('[name="duration"]');
     const scheduleField = document.querySelector('[name="schedule"]');
     const foodInstructionField = document.querySelector('[name="food_instruction"]');
+    const medicineTypeField = document.querySelector('[name="medicine_type"]');
 
     let medicinesCache = [];
-
+        
     medicineInput.addEventListener("input", function() {
+
         const q = this.value.trim();
+
         if (!q) {
             medicineList.innerHTML = "";
             medicinesCache = [];
@@ -313,74 +336,369 @@ document.addEventListener("DOMContentLoaded", function() {
         fetch(`{% if clinic %}{% url "api_master_medicines" clinic.slug %}{% else %}/api/master-medicines/{% endif %}?q=${encodeURIComponent(q)}`)
         .then(r => r.json())
         .then(data => {
+
             medicinesCache = data;
             medicineList.innerHTML = "";
+
             data.forEach(m => {
+
                 const option = document.createElement("option");
-                option.value = m.medicine_name;
+
+                option.value = m.display;
+
                 option.dataset.dosage = m.default_dosage;
-                option.dataset.frequency = m.default_schedule; // maps to frequency
+                option.dataset.frequency_per_day = m.frequency_per_day;
                 option.dataset.duration = m.default_duration;
                 option.dataset.schedule = m.default_schedule;
                 option.dataset.food = m.food_instruction;
+
                 medicineList.appendChild(option);
+
             });
-        })
-        .catch(err => console.error(err));
+
+        });
+
     });
 
     medicineInput.addEventListener("change", function() {
-        const selected = medicinesCache.find(m => m.medicine_name === this.value);
+
+        medicineNameField.value = this.value;
+
+        const selected = medicinesCache.find(m => m.display === this.value);
+
         if (selected) {
-            if (dosageField) dosageField.value = selected.default_dosage || "";
-            if (frequencyField) frequencyField.value = selected.default_schedule || "";
-            if (durationField) durationField.value = selected.default_duration || "";
-            if (scheduleField) scheduleField.value = selected.default_schedule || "";
-            if (foodInstructionField) foodInstructionField.value = selected.food_instruction || "";
+
+            dosageField.value = selected.default_dosage || "";
+            frequencyField.value = selected.frequency_per_day || "";
+            medicineTypeField.value = selected.type || "tablet";
+            durationField.value = selected.default_duration || "";
+            scheduleField.value = selected.default_schedule || "";
+            foodInstructionField.value = selected.food_instruction || "";
+
         }
+
+    });
+        // ---------- ADD MEDICINE AJAX ----------
+        document.querySelector(".medicine-form").addEventListener("submit", function(e) {
+
+            e.preventDefault();
+
+            const form = this;
+            const formData = new FormData(form);
+
+            fetch("", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+
+                if(data.success){
+
+                    const med = data.medicine;
+
+                    const row = `
+                    <tr id="medicine-row-${med.id}">
+                        <td>${med.name}</td>
+                        <td>${med.type}</td>
+                        <td>${med.dosage}</td>
+                        <td>${med.frequency_per_day}</td>
+                        <td>${med.duration}</td>
+                        <td>${med.qty}</td>
+                        <td>${med.schedule}</td>
+                        <td>${med.food_instruction}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger delete-btn"
+                                    data-id="${med.id}"
+                                    data-type="medicine">
+                            Delete
+                            </button>
+                        </td>
+                    </tr>
+                    `;
+
+                    document
+                        .getElementById("medicine-table-body")
+                        .insertAdjacentHTML("beforeend", row);
+
+                    form.reset();
+
+                } else {
+
+                    alert("Error adding medicine");
+
+                }
+
+            });
+
+        });
+
+
+    // // ---------- ADD TEST AJAX ----------
+    // document.querySelector(".test-form").addEventListener("submit", function(e) {
+
+    //     e.preventDefault();
+
+    //     const form = this;
+    //     const formData = new FormData(form);
+
+    //     fetch("", {
+    //         method: "POST",
+    //         headers: {
+    //             "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+    //         },
+    //         body: formData
+    //     })
+    //     .then(res => res.json())
+    //     .then(data => {
+
+    //         if(data.success){
+
+    //             const test = data.test;
+
+    //             const row = `
+    //             <tr id="test-row-${test.id}">
+    //                 <td>${test.name}</td>
+    //                 <td>${test.type}</td>
+    //                 <td>${test.date}</td>
+    //                 <td>${test.completed ? "Yes" : "Pending"}</td>
+    //                 <td>
+    //                     <button class="btn btn-sm btn-danger delete-btn"
+    //                             data-id="${test.id}"
+    //                             data-type="test">
+    //                     Delete
+    //                     </button>
+    //                 </td>
+    //             </tr>
+    //             `;
+
+    //             document
+    //                 .getElementById("test-table-body")
+    //                 .insertAdjacentHTML("beforeend", row);
+
+    //             form.reset();
+
+    //         } else {
+
+    //             alert("Error adding test");
+
+    //         }
+
+    //     });
+
+    // });
+
+
+    // ---------- DELETE MEDICINE / TEST ----------
+    document.addEventListener("click", function(e){
+
+        const btn = e.target.closest(".delete-btn");
+
+        if(!btn) return;
+
+        const id = btn.dataset.id;
+        const type = btn.dataset.type;
+
+        let url = "";
+
+        if(type === "medicine"){
+            url = `/clinic/{{clinic.slug}}/doctor/medicine/${id}/delete/`;
+        }
+
+        if(type === "test"){
+            url = `/clinic/{{clinic.slug}}/doctor/test/${id}/delete/`;
+        }
+
+        if(!confirm("Are you sure you want to delete?")) return;
+
+        fetch(url, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value,
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(res => {
+            if(!res.ok){
+                throw new Error("Request failed");
+            }
+            return res.json();
+        })
+        .then(data => {
+
+            if(data.success){
+
+                if(type === "medicine"){
+                    const row = document.getElementById(`medicine-row-${id}`);
+                    if(row) row.remove();
+                }
+
+                if(type === "test"){
+                    const row = document.getElementById(`test-row-${id}`);
+                    if(row) row.remove();
+                }
+
+            } else {
+
+                alert("Delete failed");
+
+            }
+
+        })
+        .catch(err => {
+
+            console.error(err);
+            alert("Server error");
+
+        });
+
     });
 
-    // ---------- TEST AUTOCOMPLETE ----------
-    const testInput = document.getElementById("test_name_autocomplete");
-    const testList = document.getElementById("test_names_list");
-    const testNameField = document.querySelector('[name="test_name"]');
-    let testsCache = [];
+// ---------- TEST AUTOCOMPLETE ----------
+// ---------- TEST DROPDOWN ----------
+const testDropdown = document.getElementById("test_name_dropdown");
+// const testTypeField = document.querySelector('select[name="test_type"]');
+// const testNameField = document.querySelector('input[name="test_name"]');
+const testNameField = document.getElementById("test_name_field");
+const testTypeField = document.getElementById("test_type_field");
 
-    testInput.addEventListener(
-        "input", function() {
-        const q = this.value.trim();
-        console.log("value entered" , q)
-        const testType = document.querySelector('[name="test_type"]').value;
-        console.log("type selected", testType)
-        // if (!q) {
-        //     testList.innerHTML = "";
-        //     testsCache = [];
-        //     return;
-        // }
+let testsCache = [];
 
-        fetch(`{% if clinic %}{% url "api_master_tests" clinic.slug %}{% else %}/api/master-tests/{% endif %}?q=${encodeURIComponent(q)}&test_type=${encodeURIComponent(testType)}`)
-        .then(r => r.json())
+if (testTypeField) {
+
+    testTypeField.addEventListener("change", function() {
+        const testType = this.value;
+        testDropdown.style.display = testType ? "block" : "none";
+        testDropdown.innerHTML = '<option value="">Select Test</option>';
+        testNameField.value = "";
+        if (!testType) return;
+
+        fetch(`/clinic/{{clinic.slug}}/api/master-tests/?test_type=${encodeURIComponent(testType)}`)
+        .then(res => res.json())
         .then(data => {
             testsCache = data;
-            testList.innerHTML = "";
             data.forEach(t => {
                 const option = document.createElement("option");
-                option.value = t.test_name;
-                testList.appendChild(option);
+                option.value = t.test_name;  // DB value
+                option.textContent = t.test_name;  // Display name
+                testDropdown.appendChild(option);
             });
-        })
-        .catch(err => console.error(err));
+        });
     });
+}
 
-    testInput.addEventListener("change", function() {
-        const selected = testsCache.find(t => t.test_name === this.value);
-        if (selected && testNameField) {
-            testNameField.value = selected.test_name;
-        }
-    });
+// store selected test in hidden field
+testDropdown.addEventListener("change", function(){
+
+    if(testNameField){
+        testNameField.value = this.value;
+    }
 
 });
+
+// ---------- ADD NEW TEST TO MASTER ----------
+document.querySelector(".test-form").addEventListener("submit", function(e) {
+    e.preventDefault(); // prevent normal form submit
+
+    const form = this;
+    const testTypeField = document.getElementById("test_type_field");
+    const testDropdown = document.getElementById("test_name_dropdown");
+    const testNameField = document.getElementById("test_name_field");
+    const newTestInput = document.getElementById("new_test_input");
+
+    const testType = testTypeField.value;
+    let testName = testNameField.value.trim();
+
+    if(!testName && newTestInput){
+        testName = newTestInput.value.trim();
+    }
+
+    if(!testName){
+        alert("Please select or enter a test name.");
+        return;
+    }
+
+    const submitPrescriptionTest = (finalTestName) => {
+        testNameField.value = finalTestName;
+
+        fetch("", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: new FormData(form)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success){
+                const test = data.test;
+                const row = `
+                <tr id="test-row-${test.id}">
+                    <td>${test.name}</td>
+                    <td>${test.type}</td>
+                    <td>${test.date}</td>
+                    <td>${test.completed ? "Yes" : "Pending"}</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger delete-btn"
+                                data-id="${test.id}"
+                                data-type="test">
+                        Delete
+                        </button>
+                    </td>
+                </tr>`;
+                document.getElementById("test-table-body").insertAdjacentHTML("beforeend", row);
+
+                form.reset();
+                if(newTestInput) newTestInput.value = "";
+
+                alert("Test added successfully!");
+            } else {
+                alert("Failed to add test to prescription.");
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Server error while adding test.");
+        });
+    };
+
+    // Check if test exists in dropdown
+    const testExists = Array.from(testDropdown.options)
+                            .some(opt => opt.value === testName);
+
+    if(testExists){
+        submitPrescriptionTest(testName);
+    } else {
+        // add new test to master first
+        fetch(`/clinic/{{clinic.slug}}/api/master-tests/add/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                test_name: testName,
+                test_type: testType
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(!data.success) throw new Error(data.error || "Failed to add test to master.");
+            submitPrescriptionTest(data.test_name);
+        })
+        .catch(err => {
+            console.error(err);
+            alert(err.message);
+        });
+    }
+});
+});
+
 </script>
+
 <style>
 .form-grid {
     display: grid;

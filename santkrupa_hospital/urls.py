@@ -70,12 +70,18 @@ clinic_urlpatterns = [
     path('admin-dashboard/manage-tests/', views.manage_master_tests, name='manage_master_tests'),
     path('admin-dashboard/delete-test/<int:test_id>/', views.delete_master_test, name='delete_master_test'),
     path('api/master-medicines/', views.api_master_medicines, name='api_master_medicines'),
-    path('api/master-tests/', views.api_master_tests, name='api_master_tests'),
+    # path('api/master-tests/', views.api_master_tests, name='api_master_tests'),
+    path(
+        "api/master-tests/",
+        views.api_master_tests,
+        name="api_master_tests"
+    ),
     path(
         'tests/edit/<int:test_id>/',
         views.edit_master_test,
         name='edit_master_test'
     ),
+    path('api/master-tests/add/', views.add_master_test, name='add_master_test')
 ]
 
 urlpatterns = [
