@@ -6,6 +6,38 @@ from django.utils.text import slugify
 
 # Clinic registration form
 class ClinicRegistrationForm(forms.ModelForm):
+    """
+    Form to register a clinic along with optional associated medical store
+    """
+
+    # 🔹 Extra fields (NOT part of Clinic model)
+    medical_name = forms.CharField(
+        required=False,
+        label="Medical Store Name",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter medical store name'
+        })
+    )
+
+    medical_address = forms.CharField(
+        required=False,
+        label="Medical Store Address",
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 2,
+            'placeholder': 'Enter medical store address'
+        })
+    )
+
+    medical_phone = forms.CharField(
+        required=False,
+        label="Medical Store Phone",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter phone number'
+        })
+    )
     class Meta:
         model = Clinic
         fields = ['name', 'slug', 'address','logo',  'city', 'state', 'zip_code', 'phone_number', 'email', 'website', 'registration_number']
@@ -41,7 +73,18 @@ class ClinicRegistrationForm(forms.ModelForm):
             raise forms.ValidationError('Invalid slug after normalization. Use letters, numbers, hyphens or underscores.')
         return normalized
 
+    def clean(self):
+        cleaned_data = super().clean()
 
+        medical_name = cleaned_data.get('medical_name')
+        medical_address = cleaned_data.get('medical_address')
+
+        # If user enters medical name, address should be required
+        if medical_name and not medical_address:
+            self.add_error('medical_address', 'Address is required when medical name is provided.')
+
+        return cleaned_data
+    
 # Reception - Patient Registration Form
 class PatientRegistrationForm(forms.ModelForm):
     class Meta:

@@ -8,46 +8,78 @@
 
 <style>
 
-/* PAGE DEFAULT */
+/* =========================
+   PAGE DEFAULT
+========================= */
 @page {
     size: A4;
     margin: 10mm;
 }
 
-/* BODY */
+/* =========================
+   ROOT SCALE SYSTEM
+========================= */
+:root {
+    --scale: 1;
+    --base-font: 14px;
+}
+
+/* =========================
+   GLOBAL
+========================= */
+* {
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+html, body {
+    height: 100%;
+}
+
+/* =========================
+   BODY
+========================= */
 body {
     font-family: Arial, sans-serif;
     background: #f5f5f5;
+    font-size: calc(var(--base-font) * var(--scale));
 }
 
-/* CONTAINER */
+/* =========================
+   CONTAINER
+========================= */
 .container {
     width: 210mm;
-    min-height: 297mm;
     margin: auto;
     background: white;
-    padding: 10mm;
+    padding: calc(10mm * var(--scale));
     border: 2px solid #000;
-    box-sizing: border-box;
     display: flex;
     flex-direction: column;
+
+    --scale: 1;
 }
 
-/* A5 */
+/* =========================
+   PAPER SIZES
+========================= */
 .a5 {
     width: 148mm !important;
     min-height: 210mm !important;
+    --scale: 0.85;
 }
 
-/* A8 */
 .a8 {
     width: 52mm !important;
     min-height: 74mm !important;
-    padding: 5mm !important;
-    font-size: 10px !important;
+    padding: 3mm !important;
+    --scale: 0.55;
 }
 
-/* HEADER */
+/* =========================
+   HEADER
+========================= */
 .header {
     border-bottom: 2px solid black;
     text-align: center;
@@ -55,23 +87,22 @@ body {
 
 .header img {
     width: 100%;
-    max-height: 90px;
+    max-height: calc(90px * var(--scale));
+    object-fit: contain;
 }
 
-/* HEADER INFO */
 .header-info {
     display: flex;
     justify-content: space-between;
-    margin-top: 5px;
-    font-size: 12px;
+    margin-top: calc(5px * var(--scale));
+    font-size: calc(0.9em * var(--scale));
 }
 
-/* DOCTOR GRID */
 .doctor-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
-    width: 65%;
+    gap: calc(6px * var(--scale));
+    width: 100%;
 }
 
 .doctor-item {
@@ -79,198 +110,241 @@ body {
 }
 
 .doc-meta {
-    font-size: 11px;
+    font-size: calc(0.8em * var(--scale));
 }
 
-/* CLINIC */
-.clinic-info {
-    text-align: right;
-    width: 35%;
+/* CLINIC BAR */
+.clinic-address-bar {
+    width: 100%;
+    text-align: center;
+    font-size: calc(0.9em * var(--scale));
+    margin-top: calc(6px * var(--scale));
+    padding: calc(6px * var(--scale)) 0;
+    border-bottom: 1px solid black;
 }
 
-/* PATIENT */
+/* =========================
+   PATIENT
+========================= */
 .patient-row {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     border-bottom: 1px solid black;
-    padding: 5px 0;
-    font-size: 14px;
+    padding: calc(5px * var(--scale)) 0;
+    font-size: calc(1em * var(--scale));
+    gap: calc(5px * var(--scale));
 }
 
-/* BODY */
+/* =========================
+   BODY LAYOUT (FIXED)
+========================= */
 .rx-body {
     flex-grow: 1;
     display: flex;
-    margin-top: 10px;
+    flex-direction: row;
+    gap: calc(10px * var(--scale));
+    margin-top: calc(10px * var(--scale));
+
+    /* 🔥 IMPORTANT FIX */
+    align-items: flex-start;
 }
 
 /* LEFT */
 .left {
-    width: 30%;
+    width: 25%;
+    flex: 0 0 25%;
     border-right: 1px solid black;
-    padding-right: 10px;
+    padding-right: calc(10px * var(--scale));
 }
 
 /* RIGHT */
 .right {
-    width: 70%;
-    padding-left: 10px;
+    width: 75%;
+    flex: 0 0 75%;
+    padding-left: calc(10px * var(--scale));
 }
 
-/* SECTION */
+/* =========================
+   SECTIONS
+========================= */
 .section {
-    margin-bottom: 12px;
+    margin-bottom: calc(12px * var(--scale));
+
+    /* 🔥 prevent breaking */
+    page-break-inside: avoid;
 }
 
 .label {
     font-weight: bold;
 }
 
-/* VITALS TABLE */
+/* =========================
+   TABLE
+========================= */
 .vitals-table {
-    width: 100%;
+    width: auto;
     border-collapse: collapse;
-    margin-top: 5px;
+    table-layout: auto;
+    margin-top: calc(5px * var(--scale));
 }
 
 .vitals-table td {
     border: 1px solid black;
-    padding: 6px;
+    padding: calc(4px * var(--scale));
+    font-size: calc(0.95em * var(--scale));
+    word-break: break-word;
 }
 
 .vitals-label {
     font-weight: bold;
+    white-space: nowrap;
 }
-
-/* TRIANGLE */
-.triangle {
-    font-size: 26px;
-    font-weight: bold;
-}
-
-/* RX */
+/* =========================
+   RX + MEDICINES
+========================= */
 .rx {
-    text-align: left;
-    font-size: 48px;
+    font-size: calc(46px * var(--scale));
+    font-family: Georgia, "Times New Roman", serif;
     font-weight: bold;
-    margin: 5px 0;
 }
 
-/* MEDICINE */
 .medicine {
-    margin-bottom: 12px;
-    font-size: 14px;
+    margin-bottom: calc(10px * var(--scale));
+    padding-bottom: calc(6px * var(--scale));
+    border-bottom: 1px dashed #ccc;
+    font-size: calc(1em * var(--scale));
+
+    /* 🔥 prevent split */
+    page-break-inside: avoid;
 }
 
+/* =========================
+   FOOTER
+========================= */
 .footer {
     margin-top: auto;
     border-top: 1px solid #000;
-    padding-top: 10px;
+    padding-top: calc(10px * var(--scale));
     display: flex;
     justify-content: space-between;
-    gap: 10px;
+    align-items: flex-end;
+
+    page-break-inside: avoid;
 }
 
-/* LEFT */
-.footer-left {
+.medical-strip {
     width: 60%;
-    font-size: 12px;
+    text-align: center;
+    font-size: calc(0.9em * var(--scale));
+    font-weight: bold;
+    line-height: 1.5;
 }
 
-.footer-note {
-    margin-bottom: 6px;
-}
-
-.footer-note.small {
-    font-size: 10px;
-    color: #444;
-}
-
-/* RIGHT */
 .footer-right {
-    width: 40%;
+    width: 30%;
     text-align: right;
 }
 
-/* SIGN */
 .sign-box {
-    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
 }
 
 .sign-line {
-    width: 200px;
+    width: calc(200px * var(--scale));
     border-top: 1px solid black;
-    margin-left: auto;
 }
 
 .sign-name {
-    font-size: 13px;
-    margin-top: 3px;
+    font-size: calc(0.9em * var(--scale));
+    margin-top: calc(3px * var(--scale));
 }
 
-/* CLINIC */
-.clinic-info {
-    font-size: 11px;
-}
-.clinic-address-bar {
-    width: 100%;
-    text-align: center;
-    font-size: 12px;
-    margin-top: 6px;
-    padding: 6px 0;
-    border-bottom: 1px solid black;
-}
-.sign-line {
-    width: 200px;
-    border-top: 1px solid black;
+/* =========================
+   SMALL DEVICE FIX (A8)
+========================= */
+.a8 .header-info {
+    flex-direction: column;
 }
 
-/* PRINT CONTROLS */
-.print-controls {
-    text-align: center;
-    margin-bottom: 10px;
+.a8 .doctor-grid {
+    grid-template-columns: 1fr;
 }
 
-.print-controls button {
-    padding: 6px 12px;
-    margin: 5px;
-    cursor: pointer;
+.print-controls button{
+    padding:6px 12px;
+    margin:4px;
+    border:1px solid #888;
+    background:#eee;
+    cursor:pointer;
+    border-radius:4px;
 }
 
-/* A8 ADJUSTMENTS */
-.a8 .header img { max-height: 40px; }
-.a8 .rx { font-size: 22px; }
-.a8 .triangle { font-size: 18px; }
-.a8 .medicine { font-size: 10px; }
-.a8 .patient-row { flex-direction: column; font-size: 10px; }
-.a8 .header-info { flex-direction: column; font-size: 10px; }
-.a8 .doctor-grid { grid-template-columns: 1fr; }
-.a8 .rx-body { flex-direction: column; }
-.a8 .left, .a8 .right { width: 100%; border: none; padding: 0; }
-.a8 .sign-line { width: 100px; }
+.print-controls button.active{
+    background:#2ecc71;
+    color:white;
+    border-color:#27ae60;
+}
 
-/* PRINT */
+/* =========================
+   PRINT (CRITICAL FIXES)
+========================= */
 @media print {
-    body { background: none; }
-    .print-controls { display: none; }
-}
 
+    html, body {
+        width: 210mm;
+        height: auto;
+    }
+
+    body {
+        background: none;
+        margin: 0;
+    }
+
+    .print-controls {
+        display: none;
+    }
+
+    .container {
+        width: 100% !important;
+        margin: 0;
+        border: none;
+        page-break-after: auto;
+    }
+
+}
 </style>
 
 <script>
-function setA4() {
-    let c = document.querySelector('.container');
+function setSize(size) {
+    const c = document.querySelector('.container');
+    const buttons = document.querySelectorAll('.print-controls button');
+    // remove active state
+    buttons.forEach(btn => btn.classList.remove('active'));
+    // remove size classes
     c.classList.remove('a5','a8');
+    if(size === 'A4'){
+        document.getElementById('btnA4').classList.add('active');
+    }
+    if(size === 'A5'){
+        c.classList.add('a5');
+        document.getElementById('btnA5').classList.add('active');
+    }
+    if(size === 'A8'){
+        c.classList.add('a8');
+        document.getElementById('btnA8').classList.add('active');
+    }
 }
-function setA5() {
-    let c = document.querySelector('.container');
-    c.classList.remove('a8');
-    c.classList.add('a5');
-}
-function setA8() {
-    let c = document.querySelector('.container');
-    c.classList.remove('a5');
-    c.classList.add('a8');
+
+/* 🔥 Improved print handler */
+function printDoc(size) {
+    if (size) setSize(size);
+
+    setTimeout(() => {
+        window.print();
+    }, 300);
 }
 </script>
 
@@ -278,16 +352,15 @@ function setA8() {
 
 <body>
 
-<!-- BUTTONS -->
-<div class="print-controls">
-    <button onclick="setA4()">A4</button>
-    <button onclick="setA5()">A5</button>
-    <button onclick="setA8()">A8</button>
-    <button onclick="window.print()">Print</button>
+<!-- CONTROLS -->
+<div class="print-controls" style="text-align:center; margin-bottom:10px;">
+    <button id="btnA4" onclick="setSize('A4')">A4</button>
+    <button id="btnA5" onclick="setSize('A5')">A5</button>
+    <button id="btnA8" onclick="setSize('A8')">A8</button>
+    <button onclick="printDoc()">Print</button>
 </div>
 
 <div class="container">
-
     <!-- HEADER -->
     <div class="header">
         {% if prescription.clinic.logo %}
@@ -295,9 +368,7 @@ function setA8() {
         {% else %}
             <img src="{% static 'images/header.png' %}" alt="Default Logo">
         {% endif %}
-
         <div class="header-info">
-
             <!-- DOCTORS -->
             <div class="doctor-grid">
                 {% for doc in doctors %}
@@ -318,9 +389,6 @@ function setA8() {
                 </div>
                 {% endfor %}
             </div>
-
-
-
         </div>
     </div>
     <div class="clinic-address-bar">
@@ -329,17 +397,13 @@ function setA8() {
     </div>
     <!-- PATIENT -->
     <div class="patient-row" style="flex-wrap: wrap; gap:10px;">
-
         <div><b>Patient ID:</b> {{ prescription.patient.patient_id }}</div>
-
         <div><b>Name:</b> {{ prescription.patient.patient_name }}</div>
-
         <div>
             <b>Age/Gender:</b> 
             {{ prescription.patient.age }}/
             {{ prescription.patient.get_gender_display|default:"-" }}
         </div>
-
         <div><b>DOB:</b> 
             {% if prescription.patient.date_of_birth %}
                 {{ prescription.patient.date_of_birth|date:"d/m/Y" }}
@@ -347,7 +411,6 @@ function setA8() {
                 -
             {% endif %}
         </div>
-
         <div><b>Weight:</b> 
             {% if prescription.patient.weight %}
                 {{ prescription.patient.weight }} kg
@@ -355,61 +418,52 @@ function setA8() {
                 -
             {% endif %}
         </div>
-
         <div><b>Mobile:</b> {{ prescription.patient.phone_number|default:"-" }}</div>
-
         <div><b>Date:</b> {{ prescription.prescription_date|date:"d/m/Y" }}</div>
         <div style="font-size:12px; margin-top:5px;">
             <b>Address:</b> {{ prescription.patient.address|default:"-" }}
         </div>
-
     </div>
-
-    <!-- ADDRESS (optional but useful for print) -->
-
     <!-- BODY -->
     <div class="rx-body">
-
         <!-- LEFT -->
         <div class="left">
+            <!-- DIAGNOSIS -->
+            {% if doctor_notes.diagnosis %}
+            <div class="section">
+                <span class="label">&#9651;</span> {{ doctor_notes.diagnosis }}
+            </div>
+            {% endif %}
 
             {% if doctor_notes.observations %}
             <div class="section">
                 <span class="label">C/O:</span> {{ doctor_notes.observations }}
             </div>
             {% endif %}
-
             {% if doctor_notes.treatment_plan %}
             <div class="section">
                 <span class="label">O/E:</span> {{ doctor_notes.treatment_plan }}
             </div>
             {% endif %}
-
             {% if vitals %}
             <div class="section">
                 <span class="label">Vitals:</span>
                 <table class="vitals-table">
-
                     {% if vitals.bp %}
                     <tr><td class="vitals-label">BP</td><td>{{ vitals.bp }}</td></tr>
                     {% endif %}
-
                     {% if vitals.pulse %}
                     <tr><td class="vitals-label">Pulse</td><td>{{ vitals.pulse }}</td></tr>
                     {% endif %}
-
                     {% if vitals.temp %}
                     <tr><td class="vitals-label">Temp</td><td>{{ vitals.temp }}</td></tr>
                     {% endif %}
-
                     {% if vitals.spo2 %}
                     <tr><td class="vitals-label">SpO2</td><td>{{ vitals.spo2 }}</td></tr>
                     {% endif %}
-
                 </table>
             </div>
             {% endif %}
-
             {% if doctor_notes.notes %}
             <div class="section">
                 <span class="label">Advice:</span> {{ doctor_notes.notes }}
@@ -418,18 +472,17 @@ function setA8() {
             {% if tests %}
             <div class="section">
                 <span class="label">Suggested Tests:</span>
-
                 <table class="vitals-table" style="margin-top:5px;">
                     <thead>
                         <tr>
-                            <td><b>#</b></td>
+                            <!-- <td><b>#</b></td> -->
                             <td><b>Test Name</b></td>
                         </tr>
                     </thead>
                     <tbody>
                         {% for test in tests %}
                         <tr>
-                            <td>{{ forloop.counter }}</td>
+                            <!-- <td>{{ forloop.counter }}</td> -->
                             <td>{{ test.test_name }}</td>
                         </tr>
                         {% endfor %}
@@ -437,80 +490,72 @@ function setA8() {
                 </table>
             </div>
             {% endif %}
-
         </div>
 
         <!-- RIGHT -->
         <div class="right">
-        {% for medicine in medicines %}
 
-        <div class="medicine" style="border-bottom:1px dashed #ccc; padding-bottom:8px; margin-bottom:10px;">
+            <div class="rx">℞</div>
 
-            <!-- Line 1: Medicine Name -->
-            <div>
-                <strong>
-                    {{ forloop.counter }}. {{ medicine.get_medicine_type_display }} {{ medicine.medicine_name }}
-                </strong>
-                — {{ medicine.dosage }}
+            <!-- MEDICINES -->
+            {% for medicine in medicines %}
+            <div class="medicine" style="border-bottom:1px dashed #ccc; padding-bottom:8px; margin-bottom:10px;">
+                <!-- Line 1: Medicine Name -->
+                <div>
+                    <strong>
+                        {{ forloop.counter }}. {{ medicine.get_medicine_type_display }} {{ medicine.medicine_name }}
+                    </strong>
+                    — {{ medicine.dosage }}
+                </div>
+                <!-- Line 2: Dose Pattern (Doctor Style) -->
+                <div style="font-family: monospace; margin-top:3px;">
+                    {{ medicine.dose_pattern }} 
+                    <span style="color:#555;">
+                        (Morning - Afternoon- Night)
+                    </span>
+                </div>
+                <!-- Line 4: Food Instruction -->
+                <div style="font-size:13px;">
+                    {{ medicine.food_instruction }} Food
+                </div>
             </div>
-
-            <!-- Line 2: Dose Pattern (Doctor Style) -->
-            <div style="font-family: monospace; margin-top:3px;">
-                {{ medicine.dose_pattern }} 
-                <span style="color:#555;">
-                    (Morning - Afternoon- Night)
-                </span>
-            </div>
-
-            <!-- Line 4: Food Instruction -->
-            <div style="font-size:13px;">
-                {{ medicine.food_instruction }} Food
-            </div>
-
-        </div>
-
         {% empty %}
         <p>No medicines prescribed</p>
         {% endfor %}
         </div>
-
     </div>
 
-    <!-- SIGN -->
+
 <!-- FOOTER -->
 <div class="footer">
 
-    <!-- LEFT SIDE: NOTES -->
-    <div class="footer-left">
+    <!-- LEFT (empty or future content) -->
+    <div class="footer-left"></div>
 
-        <div class="footer-note">
-            <strong>Notes:</strong><br>
-            • Medicines should be taken as prescribed<br>
-            • Do not skip doses<br>
-            • Follow-up after 5 days or as advised
+    <!-- CENTER: Medical Store -->
+    <div class="medical-strip">
+
+        <div style="font-size:13px; margin-bottom:3px;">
+            वरील औषधे मिळण्याचे एकमेव ठिकाण
         </div>
 
-        <div class="footer-note small">
-            This is a computer generated prescription. 
-            Not valid without doctor's signature.
-        </div>
-
+        ✚ <strong>{{ primary_medical.name }}</strong> ✚ <br>
+        
+        <!-- {{ primary_medical.address }}
+        {% if primary_medical.phone_number %}
+            | 📞 {{ primary_medical.phone_number }}
+        {% endif %} -->
     </div>
 
-    <!-- RIGHT SIDE: SIGNATURE -->
+    <!-- RIGHT: Signature -->
     <div class="footer-right">
         <div class="sign-box">
             <div class="sign-line"></div>
             <div class="sign-name">
-                <!-- Dr. {{ prescription.doctor.user.get_full_name }} -->
-                 Dr. Signature
+                Dr. Signature
             </div>
         </div>
-
-
     </div>
-
-</div>
 
 </div>
 

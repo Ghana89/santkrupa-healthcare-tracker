@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
 from django.http import JsonResponse
-from .models import (Patient, MedicalReport, Prescription, Doctor, Test, Medicine, DoctorNotes, User, 
+from .models import (AssociatedMedical, Patient, MedicalReport, Prescription, Doctor, Test, Medicine, DoctorNotes, User, 
                     PatientVisit, TestReport, Clinic, MasterMedicine, MasterTest, PatientAdmission, TreatmentLog, Vitals)
 from .forms import (PatientRegistrationForm, PrescriptionForm, TestForm, MedicineForm,
                     DoctorNotesForm, MedicalReportForm, DoctorUserCreationForm, 
@@ -336,6 +336,19 @@ def register_clinic(request):
             clinic = form.save(commit=False)
             clinic.is_active = True
             clinic.save()
+            medical_name = form.cleaned_data.get('medical_name')
+            medical_address = form.cleaned_data.get('medical_address')
+            medical_phone = form.cleaned_data.get('medical_phone')
+
+            if medical_name:
+                AssociatedMedical.objects.create(
+                    clinic=clinic,
+                    name=medical_name,
+                    address=medical_address,
+                    phone_number=medical_phone,
+                    is_primary=True
+                )
+                
             # Auto-create a clinic admin account
             base_username = f"{clinic.slug}_admin".lower()
             username = base_username
@@ -363,6 +376,16 @@ def register_clinic(request):
             return redirect('homepage')
     else:
         form = ClinicRegistrationForm()
+        # 🔥 Load existing primary medical
+        medical = clinic.associated_medicals.filter(
+            is_primary=True,
+            is_active=True
+        ).first()
+
+        if medical:
+            form.initial['medical_name'] = medical.name
+            form.initial['medical_address'] = medical.address
+            form.initial['medical_phone'] = medical.phone_number
 
     return render(request, 'hospital/register_clinic.html', {'form': form})
 
@@ -376,13 +399,48 @@ def edit_clinic(request, clinic_id):
 
     if request.method == 'POST':
         form = ClinicRegistrationForm(request.POST, request.FILES, instance=clinic)
+
         if form.is_valid():
             form.save()
+
+            medical_name = form.cleaned_data.get('medical_name')
+            medical_address = form.cleaned_data.get('medical_address')
+            medical_phone = form.cleaned_data.get('medical_phone')
+
+            if medical_name:
+                medical, created = AssociatedMedical.objects.get_or_create(
+                    clinic=clinic,
+                    is_primary=True,
+                    defaults={
+                        'name': medical_name,
+                        'address': medical_address,
+                        'phone_number': medical_phone,
+                    }
+                )
+
+                # 🔥 If already exists → update it
+                if not created:
+                    medical.name = medical_name
+                    medical.address = medical_address
+                    medical.phone_number = medical_phone
+                    medical.save()
+
             messages.success(request, "Clinic updated successfully")
             return redirect('superadmin_dashboard')
     else:
         form = ClinicRegistrationForm(instance=clinic)
 
+        # 🔥 Load existing primary medical
+        medical = clinic.associated_medicals.filter(
+            is_primary=True,
+            is_active=True
+        ).first()
+
+        if medical:
+            form.initial['medical_name'] = medical.name
+            form.initial['medical_address'] = medical.address
+            form.initial['medical_phone'] = medical.phone_number
+        
     return render(request, 'hospital/superadmin/edit_clinic.html', {
         'form': form,
         'clinic': clinic
@@ -1083,6 +1141,10 @@ def print_prescription(request, prescription_id, clinic_slug=None):
     doctor_notes = prescription.doctor_notes if hasattr(prescription, 'doctor_notes') else None
     vitals = getattr(prescription, 'vitals', None)
     all_doctors = Doctor.objects.filter(clinic=prescription.clinic)
+    primary_medical = prescription.clinic.associated_medicals.filter(
+            is_primary=True,
+            is_active=True
+        ).first()
 
     schedule_map = {
         "morning": (1, 0, 0),
@@ -1117,6 +1179,7 @@ def print_prescription(request, prescription_id, clinic_slug=None):
         'doctor_notes': doctor_notes,
         'vitals': vitals,
         'doctors': all_doctors,
+        'primary_medical': primary_medical,
     }
     return render(request, 'hospital/print_prescription.html', context)
 

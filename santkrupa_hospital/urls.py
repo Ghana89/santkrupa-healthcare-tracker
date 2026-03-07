@@ -86,17 +86,6 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('register/', views.register_patient, name='register'),  # Public registration
     path('register-clinic/', views.register_clinic, name='register_clinic'),
-
-    # Global AJAX endpoint for patient search (also exposed under clinic/<slug>/)
-    path('reception/patient-search/', views.patient_search, name='patient_search_global'),
-    path('reception/checkin-dashboard/', views.checkin_dashboard, name='checkin_dashboard_global'),
-    
-    # Superadmin (Global)
-    path('superadmin/dashboard/', views.superadmin_dashboard, name='superadmin_dashboard'),
-    path('superadmin/clinic/<int:clinic_id>/delete/', views.delete_clinic, name='delete_clinic'),
-    path('superadmin/clinic/<int:clinic_id>/patients/', views.superadmin_clinic_patients, name='superadmin_clinic_patients'),
-    path('superadmin/clinic/<int:clinic_id>/doctors/', views.superadmin_clinic_doctors, name='superadmin_clinic_doctors'),
-    path('superadmin/clinic/<int:clinic_id>/prescriptions/', views.superadmin_clinic_prescriptions, name='superadmin_clinic_prescriptions'),
     path(
         'superadmin/clinic/<int:clinic_id>/edit/',
         views.edit_clinic,
@@ -107,6 +96,18 @@ urlpatterns = [
         views.reset_clinic_admin_password,
         name='superadmin_reset_password'
     ),
+    
+    # Global AJAX endpoint for patient search (also exposed under clinic/<slug>/)
+    path('reception/patient-search/', views.patient_search, name='patient_search_global'),
+    path('reception/checkin-dashboard/', views.checkin_dashboard, name='checkin_dashboard_global'),
+    
+    # Superadmin (Global)
+    path('superadmin/dashboard/', views.superadmin_dashboard, name='superadmin_dashboard'),
+    path('superadmin/clinic/<int:clinic_id>/delete/', views.delete_clinic, name='delete_clinic'),
+    path('superadmin/clinic/<int:clinic_id>/patients/', views.superadmin_clinic_patients, name='superadmin_clinic_patients'),
+    path('superadmin/clinic/<int:clinic_id>/doctors/', views.superadmin_clinic_doctors, name='superadmin_clinic_doctors'),
+    path('superadmin/clinic/<int:clinic_id>/prescriptions/', views.superadmin_clinic_prescriptions, name='superadmin_clinic_prescriptions'),
+
     # Public pages (Global)
     path('', views.homepage, name='homepage'),
     
