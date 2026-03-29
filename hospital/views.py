@@ -2,66 +2,58 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.views.decorators.http import require_http_methods
-from django.http import HttpResponse
-from django.http import JsonResponse
-from .models import (AssociatedMedical, Patient, MedicalReport, Prescription, Doctor, Test, Medicine, DoctorNotes, User, 
-                    PatientVisit, TestReport, Clinic, MasterMedicine, MasterTest, PatientAdmission, TreatmentLog, Vitals)
-from .forms import (PatientRegistrationForm, PrescriptionForm, TestForm, MedicineForm,
-                    DoctorNotesForm, MedicalReportForm, DoctorUserCreationForm, 
-                    ReceptionistUserCreationForm, DoctorProfileForm, PatientVisitForm, TestReportForm, ClinicRegistrationForm)
-from django.utils.crypto import get_random_string
-
-@login_required(login_url='login')
-@require_http_methods(["GET", "POST"])
-def receptionist_upload_medical_report(request, clinic_slug, patient_id):
-    """Receptionist - Upload medical report for a patient"""
-    if request.user.role != 'receptionist':
-        return redirect('homepage')
-    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
-    patient = get_object_or_404(Patient, id=patient_id, clinic=clinic   )
-    if request.method == 'POST':
-        report_type = request.POST.get('report_type', 'Other')
-        description = request.POST.get('description', '')
-        if 'report_file' in request.FILES:
-            report = MedicalReport(
-                clinic=clinic,
-                patient=patient,
-                report_type=report_type,
-                description=description,
-                report_file=request.FILES['report_file']
-            )
-            report.save()
-            messages.success(request, f"{report_type} uploaded successfully!")
-            return redirect('patient_details', clinic_slug=clinic_slug, patient_id=patient.id)
-        else:
-            messages.error(request, "Please select a file to upload.")
-    context = {
-        'patient': patient,
-        'clinic': clinic,
-        'report_types': [
-            ('Lab Report', 'Lab Report'),
-            ('X-Ray', 'X-Ray'),
-            ('CT Scan', 'CT Scan'),
-            ('Ultrasound', 'Ultrasound'),
-            ('ECG', 'ECG'),
-            ('Blood Test', 'Blood Test'),
-            ('COVID Report', 'COVID Report'),
-            ('Discharge Summary', 'Discharge Summary'),
-            ('Other', 'Other'),
-        ]
-    }
-    return render(request, 'hospital/reception/upload_medical_report.html', context)
-    # ...existing code...
-from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods, require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Q
+from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
-from .models import (Patient, MedicalReport, Prescription, Doctor, Test, Medicine, DoctorNotes, User, 
-                    PatientVisit, TestReport, Clinic, MasterMedicine, MasterTest, PatientAdmission, TreatmentLog)
-from .forms import (PatientRegistrationForm, PrescriptionForm, TestForm, MedicineForm,
-                    DoctorNotesForm, MedicalReportForm, DoctorUserCreationForm, 
-                    ReceptionistUserCreationForm, DoctorProfileForm, PatientVisitForm, TestReportForm, ClinicRegistrationForm)
-from django.utils.crypto import get_random_string
 
+from django.utils.crypto import get_random_string
+from django.contrib.auth.hashers import make_password
+
+import json
+
+from .models import (
+    AssociatedMedical,
+    Patient,
+    MedicalReport,
+    Prescription,
+    Doctor,
+    Test,
+    Medicine,
+    DoctorNotes,
+    User,
+    PatientVisit,
+    TestReport,
+    Clinic,
+    MasterMedicine,
+    MasterTest,
+    PatientAdmission,
+    TreatmentLog,
+    Vitals,
+    StandardPrescriptionTemplate,
+    StandardTemplateMedicine,
+    StandardTemplateTest,
+)
+
+from .forms import (
+    PatientRegistrationForm,
+    PrescriptionForm,
+    TestForm,
+    MedicineForm,
+    DoctorNotesForm,
+    MedicalReportForm,
+    DoctorUserCreationForm,
+    ReceptionistUserCreationForm,
+    DoctorProfileForm,
+    PatientVisitForm,
+    TestReportForm,
+    ClinicRegistrationForm,
+    VitalsForm,
+    StandardPrescriptionTemplateForm,
+    StandardTemplateMedicineForm,
+    StandardTemplateTestForm,
+)
 
 # ==================== HELPER FUNCTIONS ====================
 
@@ -91,7 +83,6 @@ def get_clinic_from_slug_or_middleware(clinic_slug, request):
         return request.user.clinic
     
     return None
-
 
 # ==================== AUTHENTICATION VIEWS ====================
 
@@ -233,6 +224,7 @@ def homepage(request):
     }
     return render(request, 'hospital/homepage.html', context)
 
+#===================== SUPERADMIN VIEWS =====================
 
 @login_required(login_url='login')
 def superadmin_dashboard(request):
@@ -447,8 +439,7 @@ def edit_clinic(request, clinic_id):
     })
 
 
-from django.contrib.auth.hashers import make_password
-from django.utils.crypto import get_random_string
+
 @login_required(login_url='login')
 def reset_clinic_admin_password(request, clinic_id):
     if not request.user.is_superuser:
@@ -470,6 +461,48 @@ def reset_clinic_admin_password(request, clinic_id):
 
     return redirect('superadmin_dashboard')
 # ==================== RECEPTION VIEWS ====================
+
+
+@login_required(login_url='login')
+@require_http_methods(["GET", "POST"])
+def receptionist_upload_medical_report(request, clinic_slug, patient_id):
+    """Receptionist - Upload medical report for a patient"""
+    if request.user.role != 'receptionist':
+        return redirect('homepage')
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    patient = get_object_or_404(Patient, id=patient_id, clinic=clinic   )
+    if request.method == 'POST':
+        report_type = request.POST.get('report_type', 'Other')
+        description = request.POST.get('description', '')
+        if 'report_file' in request.FILES:
+            report = MedicalReport(
+                clinic=clinic,
+                patient=patient,
+                report_type=report_type,
+                description=description,
+                report_file=request.FILES['report_file']
+            )
+            report.save()
+            messages.success(request, f"{report_type} uploaded successfully!")
+            return redirect('patient_details', clinic_slug=clinic_slug, patient_id=patient.id)
+        else:
+            messages.error(request, "Please select a file to upload.")
+    context = {
+        'patient': patient,
+        'clinic': clinic,
+        'report_types': [
+            ('Lab Report', 'Lab Report'),
+            ('X-Ray', 'X-Ray'),
+            ('CT Scan', 'CT Scan'),
+            ('Ultrasound', 'Ultrasound'),
+            ('ECG', 'ECG'),
+            ('Blood Test', 'Blood Test'),
+            ('COVID Report', 'COVID Report'),
+            ('Discharge Summary', 'Discharge Summary'),
+            ('Other', 'Other'),
+        ]
+    }
+    return render(request, 'hospital/reception/upload_medical_report.html', context)
 
 @login_required(login_url='login')
 @require_http_methods(["GET", "POST"])
@@ -629,38 +662,44 @@ def patient_checkin(request, clinic_slug=None):
     return render(request, 'hospital/reception/patient_checkin.html', context)
 
 
+
 @login_required(login_url='login')
 def patient_search(request, clinic_slug=None):
-    """AJAX endpoint: search patients by name or patient_id for autocomplete."""
+    """AJAX endpoint: search patients by name, patient_id or phone number."""
+
     if request.user.role != 'receptionist':
         return JsonResponse({'error': 'unauthorized'}, status=403)
 
     q = request.GET.get('q', '').strip()
     limit = int(request.GET.get('limit', 15))
 
-    # Resolve clinic context
     clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
 
     if not q:
         return JsonResponse({'results': []})
 
-    # Search by name or patient_id (case-insensitive partial match)
-    qs = Patient.objects.all_clinics() if hasattr(Patient.objects, 'all_clinics') else Patient.objects.all()
+    qs = Patient.objects.all()
+
     if clinic:
         qs = qs.filter(clinic=clinic)
 
-    from django.db.models import Q
-    matches = qs.filter(Q(patient_name__icontains=q) | Q(patient_id__icontains=q)).order_by('patient_name')[:limit]
+    matches = qs.filter(
+        Q(patient_name__icontains=q) |
+        Q(patient_id__icontains=q) |
+        Q(phone_number__icontains=q)
+    ).order_by('patient_name')[:limit]
 
-    results = []
-    for p in matches:
-        results.append({
-            'id': p.id,
-            'patient_id': p.patient_id,
-            'patient_name': p.patient_name,
-        })
+    results = [
+        {
+            "id": p.id,
+            "patient_id": p.patient_id,
+            "patient_name": p.patient_name,
+            "phone_number": p.phone_number,
+        }
+        for p in matches
+    ]
 
-    return JsonResponse({'results': results})
+    return JsonResponse({"results": results})
 
 
 @login_required(login_url='login')
@@ -922,8 +961,6 @@ def create_prescription(request, patient_id, clinic_slug=None):
     context = {'patient': patient, 'clinic': clinic}
     return render(request, 'hospital/doctor/create_prescription.html', context)
 
-from django.http import JsonResponse
-
 @login_required(login_url='login')
 @require_http_methods(["GET", "POST"])
 def add_prescription_details(request, prescription_id, clinic_slug=None):
@@ -941,6 +978,12 @@ def add_prescription_details(request, prescription_id, clinic_slug=None):
     tests = prescription.tests.all()
     medicines = prescription.medicines.all()
     doctor_notes = getattr(prescription, "doctor_notes", None)
+
+    latest_visit = PatientVisit.objects.filter(
+        patient=prescription.patient,
+        clinic=clinic
+    ).order_by("-check_in_date").first()
+
     vitals = Vitals.objects.filter(prescription=prescription).first()
 
     if request.method == "POST":
@@ -1026,28 +1069,81 @@ def add_prescription_details(request, prescription_id, clinic_slug=None):
             return JsonResponse({"success": False, "errors": form.errors})
 
         # ---------------- ADD THIS BLOCK IN POST HANDLER ----------------
+        elif action == "save_vitals":
+
+            vitals_instance = getattr(prescription, "vitals", None)
+
+            vitals_form = VitalsForm(request.POST, instance=vitals_instance)
+
+            if vitals_form.is_valid():
+
+                vitals = vitals_form.save(commit=False)
+                vitals.prescription = prescription
+                vitals.clinic = clinic
+                vitals.save()
+
+                return JsonResponse({
+                    "success": True,
+                    "message": "Vitals saved",
+                    "vitals": {
+                        "bp": vitals.bp,
+                        "pulse": vitals.pulse,
+                        "temp": vitals.temp,
+                        "spo2": vitals.spo2
+                    }
+                })
+
+            return JsonResponse({
+                "success": False,
+                "errors": vitals_form.errors
+            })
+
+        # ---------------- SAVE DOCTOR NOTES ----------------
         elif action == "save_notes":
 
-            # If notes already exist, update them; else create new
             doctor_notes_instance = getattr(prescription, "doctor_notes", None)
 
             notes_form = DoctorNotesForm(request.POST, instance=doctor_notes_instance)
 
             if notes_form.is_valid():
+
                 notes = notes_form.save(commit=False)
                 notes.prescription = prescription
                 notes.clinic = clinic
+                if not notes.checkin_purpose and latest_visit:
+                    notes.checkin_purpose = latest_visit.purpose
                 notes.save()
 
-                messages.success(request, "Doctor's notes saved successfully!")
-                return redirect(request.path)  # reload page to reflect changes
-            else:
-                messages.error(request, "Please fix errors in the notes form.")
+                return JsonResponse({
+                    "success": True,
+                    "message": "Doctor notes saved",
+                    "data": {
+                        "checkin_purpose": notes.checkin_purpose,
+                        "observations": notes.observations,
+                        "diagnosis": notes.diagnosis,
+                        "treatment_plan": notes.treatment_plan,
+                        "notes": notes.notes
+                    }
+                })
+
+            return JsonResponse({
+                "success": False,
+                "errors": notes_form.errors
+            })
     # ---------------- GET REQUEST (PAGE LOAD)
 
     test_form = TestForm()
     medicine_form = MedicineForm()
-    notes_form = DoctorNotesForm(instance=doctor_notes) if doctor_notes else DoctorNotesForm()
+    if doctor_notes:
+        notes_form = DoctorNotesForm(instance=doctor_notes)
+
+    else:
+        initial = {}
+
+        if latest_visit:
+            initial['checkin_purpose'] = latest_visit.purpose
+
+        notes_form = DoctorNotesForm(initial=initial)
 
     context = {
         "prescription": prescription,
@@ -1059,17 +1155,11 @@ def add_prescription_details(request, prescription_id, clinic_slug=None):
         "medicine_form": medicine_form,
         "notes_form": notes_form,
         "vitals": vitals,
+        "latest_visit": latest_visit,
     }
 
     return render(request, "hospital/doctor/add_prescription_details.html", context)
 
-
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib import messages
-from django.views.decorators.http import require_POST
-
-
-from django.http import JsonResponse
 
 @require_POST
 def delete_prescription(request, clinic_slug, prescription_id):
@@ -1199,7 +1289,6 @@ def print_prescription(request, prescription_id, clinic_slug=None):
     }
     return render(request, 'hospital/print_prescription.html', context)
 
-from django.http import JsonResponse
 
 @login_required(login_url='login')
 def delete_medicine(request, medicine_id, clinic_slug=None):
@@ -1583,10 +1672,6 @@ def manage_master_tests(request, clinic_slug=None):
     }
     return render(request, 'hospital/admin/manage_master_tests.html', context)
 
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-import json
-from .models import MasterTest, Clinic
 
 @csrf_exempt
 def add_master_test(request, clinic_slug):
@@ -1722,17 +1807,13 @@ def api_master_medicines(request, clinic_slug=None):
 # ---------------------------- #
 # Test API
 # ---------------------------- #
-from django.views.decorators.http import require_http_methods
-from django.http import JsonResponse
 
+@login_required
 @require_http_methods(["GET"])
 def api_master_tests(request, clinic_slug=None):
-
     clinic = get_clinic_from_slug_or_middleware(clinic_slug, request) or getattr(request.user, 'clinic', None)
-
     if not clinic:
         return JsonResponse({"error": "Clinic not found"}, status=400)
-
     test_type = request.GET.get("test_type")
 
     tests = MasterTest.objects.filter(
@@ -1743,8 +1824,6 @@ def api_master_tests(request, clinic_slug=None):
     if test_type:
         tests = tests.filter(test_type=test_type)
         print(f"Filtering tests by type: {test_type}")
-
-
     tests = tests.order_by("test_name")[:50]
 
     data = [
@@ -1759,6 +1838,7 @@ def api_master_tests(request, clinic_slug=None):
     print("TEST DATA:", data)
 
     return JsonResponse(data, safe=False)
+
 # ==================== ADMIN VIEWS ====================
 
 @login_required(login_url='login')
@@ -2339,3 +2419,397 @@ def upload_admission_report(request, admission_id, clinic_slug=None):
         ]
     }
     return render(request, 'hospital/doctor/upload_admission_report.html', context)
+# ============================================================================
+# STANDARD PRESCRIPTION TEMPLATE VIEWS
+# ============================================================================
+
+@login_required
+def list_prescription_templates(request, clinic_slug=None):
+    """List all prescription templates for the doctor"""
+    if request.user.role != 'doctor':
+        return redirect('homepage')
+    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    doctor = Doctor.objects.get(user=request.user)
+    
+    templates = StandardPrescriptionTemplate.objects.filter(
+        clinic=clinic, 
+        doctor=doctor
+    ).prefetch_related('medicines', 'tests')
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # AJAX request - return JSON
+        data = {
+            'templates': [
+                {
+                    'id': t.id,
+                    'name': t.name,
+                    'description': t.description,
+                    'medicines_count': t.medicines.count(),
+                    'tests_count': t.tests.count(),
+                    'is_active': t.is_active,
+                    'created_at': t.created_at.strftime('%Y-%m-%d %H:%M'),
+                }
+                for t in templates
+            ]
+        }
+        return JsonResponse(data)
+    
+    context = {
+        'templates': templates,
+        'clinic': clinic,
+    }
+    return render(request, 'hospital/doctor/prescription_templates_list.html', context)
+
+
+@login_required
+def create_prescription_template(request, clinic_slug=None):
+    """Create a new prescription template"""
+    if request.user.role != 'doctor':
+        return redirect('homepage')
+    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    doctor = Doctor.objects.get(user=request.user)
+    
+    if request.method == 'POST':
+        form = StandardPrescriptionTemplateForm(request.POST)
+        if form.is_valid():
+            template = form.save(commit=False)
+            template.clinic = clinic
+            template.doctor = doctor
+            template.save()
+            
+            messages.success(request, f'Template "{template.name}" created successfully!')
+            return redirect('view_prescription_template', clinic_slug=clinic.slug, template_id=template.id)
+    else:
+        form = StandardPrescriptionTemplateForm()
+    
+    context = {
+        'form': form,
+        'clinic': clinic,
+        'action': 'Create',
+    }
+    return render(request, 'hospital/doctor/prescription_template_form.html', context)
+
+
+@login_required
+def view_prescription_template(request, template_id, clinic_slug=None):
+    """View template details and add/edit medicines and tests"""
+    if request.user.role != 'doctor':
+        return redirect('homepage')
+    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    template = get_object_or_404(StandardPrescriptionTemplate, id=template_id, clinic=clinic)
+    doctor = Doctor.objects.get(user=request.user)
+    
+    if template.doctor != doctor:
+        return redirect('list_prescription_templates', clinic_slug=clinic.slug)
+    
+    medicines = template.medicines.all()
+    tests = template.tests.all()
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        # Add medicine to template
+        if action == 'add_medicine':
+            form = StandardTemplateMedicineForm(request.POST)
+            if form.is_valid():
+                med = form.save(commit=False)
+                med.template = template
+                med.save()
+                
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'medicine': {
+                            'id': med.id,
+                            'name': med.medicine_name,
+                            'dosage': med.dosage,
+                            'frequency_per_day': med.frequency_per_day,
+                            'duration': med.duration,
+                        }
+                    })
+                messages.success(request, 'Medicine added to template!')
+                return redirect('view_prescription_template', clinic_slug=clinic.slug, template_id=template.id)
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'errors': form.errors})
+        
+        # Add test to template
+        elif action == 'add_test':
+            form = StandardTemplateTestForm(request.POST)
+            if form.is_valid():
+                test = form.save(commit=False)
+                test.template = template
+                test.save()
+                
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'test': {
+                            'id': test.id,
+                            'name': test.test_name,
+                            'type': test.test_type,
+                        }
+                    })
+                messages.success(request, 'Test added to template!')
+                return redirect('view_prescription_template', clinic_slug=clinic.slug, template_id=template.id)
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'errors': form.errors})
+    
+    med_form = StandardTemplateMedicineForm()
+    test_form = StandardTemplateTestForm()
+    
+    context = {
+        'template': template,
+        'medicines': medicines,
+        'tests': tests,
+        'med_form': med_form,
+        'test_form': test_form,
+        'clinic': clinic,
+    }
+    return render(request, 'hospital/doctor/prescription_template_view.html', context)
+
+
+@login_required
+def edit_prescription_template(request, template_id, clinic_slug=None):
+    """Edit prescription template details"""
+    if request.user.role != 'doctor':
+        return redirect('homepage')
+    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    template = get_object_or_404(StandardPrescriptionTemplate, id=template_id, clinic=clinic)
+    doctor = Doctor.objects.get(user=request.user)
+    
+    if template.doctor != doctor:
+        return redirect('list_prescription_templates', clinic_slug=clinic.slug)
+    
+    if request.method == 'POST':
+        form = StandardPrescriptionTemplateForm(request.POST, instance=template)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Template updated successfully!')
+            return redirect('view_prescription_template', clinic_slug=clinic.slug, template_id=template.id)
+    else:
+        form = StandardPrescriptionTemplateForm(instance=template)
+    
+    context = {
+        'form': form,
+        'template': template,
+        'clinic': clinic,
+        'action': 'Edit',
+    }
+    return render(request, 'hospital/doctor/prescription_template_form.html', context)
+
+
+@login_required
+@require_POST
+def delete_template_medicine(request, medicine_id, clinic_slug=None):
+    """Delete medicine from template (AJAX)"""
+    if request.user.role != 'doctor':
+        return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
+    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    medicine = get_object_or_404(StandardTemplateMedicine, id=medicine_id)
+    doctor = Doctor.objects.get(user=request.user)
+    
+    if medicine.template.doctor != doctor or medicine.template.clinic != clinic:
+        return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
+    
+    medicine.delete()
+    return JsonResponse({'success': True})
+
+
+@login_required
+@require_POST
+def delete_template_test(request, test_id, clinic_slug=None):
+    """Delete test from template (AJAX)"""
+    if request.user.role != 'doctor':
+        return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
+    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    test = get_object_or_404(StandardTemplateTest, id=test_id)
+    doctor = Doctor.objects.get(user=request.user)
+    
+    if test.template.doctor != doctor or test.template.clinic != clinic:
+        return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
+    
+    test.delete()
+    return JsonResponse({'success': True})
+
+
+@login_required
+@require_POST
+def delete_prescription_template(request, template_id, clinic_slug=None):
+    """Delete entire prescription template"""
+    if request.user.role != 'doctor':
+        return redirect('homepage')
+    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    template = get_object_or_404(StandardPrescriptionTemplate, id=template_id, clinic=clinic)
+    doctor = Doctor.objects.get(user=request.user)
+    
+    if template.doctor != doctor:
+        return redirect('list_prescription_templates', clinic_slug=clinic.slug)
+    
+    template_name = template.name
+    template.delete()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'message': f'Template "{template_name}" deleted'})
+    
+    messages.success(request, f'Template "{template_name}" deleted successfully!')
+    return redirect('list_prescription_templates', clinic_slug=clinic.slug)
+
+
+@login_required
+def search_prescription_templates(request, clinic_slug=None):
+    """Search prescription templates by keyword (AJAX)"""
+    if request.user.role != 'doctor':
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    doctor = Doctor.objects.get(user=request.user)
+    
+    query = request.GET.get('q', '').strip()
+    
+    templates = StandardPrescriptionTemplate.objects.filter(
+        clinic=clinic,
+        doctor=doctor,
+        is_active=True
+    ).filter(
+        Q(name__icontains=query) | Q(keyword__icontains=query) | Q(description__icontains=query)
+    )
+    
+    data = {
+        'templates': [
+            {
+                'id': t.id,
+                'name': t.name,
+                'description': t.description,
+                'keyword': t.keyword,
+                'medicines_count': t.medicines.count(),
+                'tests_count': t.tests.count(),
+            }
+            for t in templates[:10]  # Limit to 10 results
+        ]
+    }
+    return JsonResponse(data)
+
+
+@login_required
+def load_template_to_prescription(request, template_id, clinic_slug=None):
+    """Load template medicines and tests to prescription (AJAX)"""
+    if request.user.role != 'doctor':
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    template = get_object_or_404(StandardPrescriptionTemplate, id=template_id, clinic=clinic)
+    
+    medicines = template.medicines.all()
+    tests = template.tests.all()
+    
+    data = {
+        'template_name': template.name,
+        'medicines': [
+            {
+                'id': m.id,
+                'medicine_name': m.medicine_name,
+                'dosage': m.dosage,
+                'frequency_per_day': m.frequency_per_day,
+                'duration': m.duration,
+                'medicine_type': m.medicine_type,
+                'schedule': m.schedule,
+                'food_instruction': m.food_instruction,
+                'qty': m.qty,
+                'instructions': m.instructions,
+            }
+            for m in medicines
+        ],
+        'tests': [
+            {
+                'id': t.id,
+                'test_name': t.test_name,
+                'test_type': t.test_type,
+                'description': t.description,
+            }
+            for t in tests
+        ]
+    }
+    return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def save_prescription_as_template(request, prescription_id, clinic_slug=None):
+    """Save current prescription as a template"""
+    if request.user.role != 'doctor':
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    prescription = get_object_or_404(Prescription, id=prescription_id, clinic=clinic)
+    doctor = Doctor.objects.get(user=request.user)
+    
+    if prescription.doctor != doctor:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    template_name = request.POST.get('template_name', '').strip()
+    template_description = request.POST.get('template_description', '').strip()
+    template_keyword = request.POST.get('template_keyword', '').strip()
+    
+    if not template_name:
+        return JsonResponse({'success': False, 'error': 'Template name is required'})
+    
+    # Check if template with same name exists
+    if StandardPrescriptionTemplate.objects.filter(
+        clinic=clinic,
+        doctor=doctor,
+        name=template_name
+    ).exists():
+        return JsonResponse({
+            'success': False,
+            'error': f'Template "{template_name}" already exists'
+        })
+    
+    # Create template
+    template = StandardPrescriptionTemplate.objects.create(
+        clinic=clinic,
+        doctor=doctor,
+        name=template_name,
+        description=template_description,
+        keyword=template_keyword,
+    )
+    
+    # Copy medicines from prescription
+    medicines = prescription.medicines.all()
+    for med in medicines:
+        StandardTemplateMedicine.objects.create(
+            template=template,
+            medicine_name=med.medicine_name,
+            dosage=med.dosage,
+            frequency_per_day=med.frequency_per_day,
+            duration=med.duration,
+            medicine_type=med.medicine_type,
+            qty=med.qty,
+            schedule=med.schedule,
+            food_instruction=med.food_instruction,
+            instructions=med.instructions,
+        )
+    
+    # Copy tests from prescription
+    tests = prescription.tests.all()
+    for test in tests:
+        StandardTemplateTest.objects.create(
+            template=template,
+            test_name=test.test_name,
+            test_type=test.test_type,
+            description=test.description,
+        )
+    
+    return JsonResponse({
+        'success': True,
+        'message': f'Template "{template.name}" saved successfully!',
+        'template_id': template.id,
+    })

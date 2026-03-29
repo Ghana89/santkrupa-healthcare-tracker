@@ -1,0 +1,81 @@
+{% extends "hospital/base.html" %}
+
+{% block title %}Prescription Templates - SantKrupa Hospital{% endblock %}
+
+{% block content %}
+
+<h1>📋 My Standard Prescription Templates</h1>
+
+<!-- CREATE BUTTON -->
+<div style="margin-bottom: 20px;">
+    <a href="{% url 'create_prescription_template' clinic_slug=clinic.slug %}" class="btn btn-primary">
+        ➕ Create New Template
+    </a>
+</div>
+
+<!-- TEMPLATES TABLE -->
+{% if templates %}
+<div class="card" style="padding: 15px;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background-color: #f5f5f5;">
+                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Template Name</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Keyword</th>
+                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Medicines</th>
+                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Tests</th>
+                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Status</th>
+                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Created</th>
+                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for template in templates %}
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 12px; font-weight: 600;">{{ template.name }}</td>
+                <td style="padding: 12px;">
+                    {% if template.keyword %}
+                        <span style="background: #e3f2fd; padding: 4px 8px; border-radius: 4px; font-size: 0.85em;">{{ template.keyword }}</span>
+                    {% else %}
+                        <small style="color: #999;">-</small>
+                    {% endif %}
+                </td>
+                <td style="padding: 12px; text-align: center;">
+                    <span style="background: #f0f7ff; padding: 4px 8px; border-radius: 4px;">{{ template.medicines.count }}</span>
+                </td>
+                <td style="padding: 12px; text-align: center;">
+                    <span style="background: #f0f7ff; padding: 4px 8px; border-radius: 4px;">{{ template.tests.count }}</span>
+                </td>
+                <td style="padding: 12px; text-align: center;">
+                    {% if template.is_active %}
+                        <span style="background: #d4edda; padding: 4px 8px; border-radius: 4px; color: #155724; font-size: 0.85em;">Active</span>
+                    {% else %}
+                        <span style="background: #f8d7da; padding: 4px 8px; border-radius: 4px; color: #721c24; font-size: 0.85em;">Inactive</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 12px; text-align: center;">
+                    <small>{{ template.created_at|date:"M d, Y" }}</small>
+                </td>
+                <td style="padding: 12px; text-align: center;">
+                    <a href="{% url 'view_prescription_template' clinic_slug=clinic.slug template_id=template.id %}" class="btn btn-sm btn-info" title="View">👁️</a>
+                    <a href="{% url 'edit_prescription_template' clinic_slug=clinic.slug template_id=template.id %}" class="btn btn-sm btn-warning" title="Edit">✏️</a>
+                    <form method="POST" action="{% url 'delete_prescription_template' clinic_slug=clinic.slug template_id=template.id %}" style="display: inline;" onsubmit="return confirm('Delete this template?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-danger" title="Delete">🗑️</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card" style="padding: 20px; background-color: #f9f9f9; text-align: center; border: 2px dashed #ddd;">
+    <p style="color: #666; font-size: 1.1em;">📋 No templates yet.</p>
+    <p style="color: #999;">Create your first template to save time when writing prescriptions!</p>
+    <a href="{% url 'create_prescription_template' clinic_slug=clinic.slug %}" class="btn btn-primary">Create First Template</a>
+</div>
+{% endif %}
+
+<a href="{% url 'doctor_dashboard' clinic.slug %}" class="btn btn-secondary" style="margin-top: 20px;">← Back to Dashboard</a>
+
+{% endblock %}

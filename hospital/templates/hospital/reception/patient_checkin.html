@@ -35,7 +35,7 @@
         </div>
 
         <div class="form-group">
-            <label for="purpose">Purpose of Visit</label>
+            <label for="purpose">Purpose of Visit (Patient complaints)</label>
             {{ form.purpose }}
         </div>
 
@@ -73,18 +73,20 @@
     };
 
     const updateOptions = (items) => {
-        // clear existing
         datalist.innerHTML = '';
+
         items.forEach(it => {
             const opt = document.createElement('option');
+
             opt.value = it.patient_id;
-            opt.label = it.patient_name;
-            // Provide readable text in case browser shows it
-            opt.textContent = `${it.patient_name} - ${it.patient_id}`;
+            opt.label = `${it.patient_name} | ${it.phone_number}`;
+
+            opt.textContent = `${it.patient_name} - ${it.patient_id} - ${it.phone_number}`;
+
             datalist.appendChild(opt);
         });
     };
-
+    
     const fetchSuggestions = async (q) => {
         if (!q || q.length < 2) return updateOptions([]);
         try {

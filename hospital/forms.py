@@ -1,6 +1,10 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import Patient, Prescription, Test, Medicine, DoctorNotes, MedicalReport, Doctor, User, PatientVisit, TestReport, Clinic
+from .models import (
+    Patient, Prescription, Test, Medicine, DoctorNotes, MedicalReport, Doctor, User, 
+    PatientVisit, TestReport, Clinic, Vitals, StandardPrescriptionTemplate, 
+    StandardTemplateMedicine, StandardTemplateTest
+)
 from django.utils.text import slugify
 
 
@@ -232,8 +236,11 @@ class MedicineForm(forms.ModelForm):
 class DoctorNotesForm(forms.ModelForm):
     class Meta:
         model = DoctorNotes
-        fields = ['observations', 'diagnosis', 'treatment_plan', 'notes']
+        fields = ['checkin_purpose', 'observations', 'diagnosis', 'treatment_plan', 'notes']
         widgets = {
+            'checkin_purpose': forms.TextInput(attrs={ 
+                'class': 'form-control', 'placeholder': 'Purpose of check-in' 
+                }),
             'observations': forms.Textarea(attrs={
                 'class': 'form-control',
                 'placeholder': 'Enter observations',
@@ -256,7 +263,31 @@ class DoctorNotesForm(forms.ModelForm):
             }),
         }
 
+# Patient Vitals Form
+class VitalsForm(forms.ModelForm):
+    class Meta:
+        model = Vitals
+        fields = ['bp', 'pulse', 'temp', 'spo2']
 
+        widgets = {
+            'bp': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'BP (e.g. 120/80)'
+            }),
+            'pulse': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Pulse (e.g. 72)'
+            }),
+            'temp': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Temperature (e.g. 98.6)'
+            }),
+            'spo2': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'SpO2 (e.g. 98%)'
+            }),
+        }
+        
 # Medical Report Form
 class MedicalReportForm(forms.ModelForm):
     class Meta:
@@ -324,6 +355,103 @@ class DoctorProfileForm(forms.ModelForm):
             'license_number': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Medical license number'
+            }),
+        }
+
+
+# ============================================================================
+# STANDARD PRESCRIPTION TEMPLATE FORMS
+# ============================================================================
+
+class StandardPrescriptionTemplateForm(forms.ModelForm):
+    """Form to create/edit standard prescription templates"""
+    class Meta:
+        model = StandardPrescriptionTemplate
+        fields = ['name', 'description', 'keyword', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Cold & Cough, Diabetes Management'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Describe when this template should be used'
+            }),
+            'keyword': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Search keyword (e.g., fever, pneumonia, cold)'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+
+
+class StandardTemplateMedicineForm(forms.ModelForm):
+    """Form to add/edit medicines in templates"""
+    class Meta:
+        model = StandardTemplateMedicine
+        fields = [
+            'medicine_name', 'medicine_type', 'dosage', 'frequency_per_day',
+            'duration', 'schedule', 'food_instruction', 'qty', 'instructions'
+        ]
+        widgets = {
+            'medicine_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Medicine name'
+            }),
+            'medicine_type': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'dosage': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '500mg, 2ml, etc.'
+            }),
+            'frequency_per_day': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'max': '4'
+            }),
+            'duration': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '5 days, 2 weeks'
+            }),
+            'schedule': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'food_instruction': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'qty': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1'
+            }),
+            'instructions': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Special instructions (optional)'
+            }),
+        }
+
+
+class StandardTemplateTestForm(forms.ModelForm):
+    """Form to add/edit tests in templates"""
+    class Meta:
+        model = StandardTemplateTest
+        fields = ['test_name', 'test_type', 'description']
+        widgets = {
+            'test_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Test name'
+            }),
+            'test_type': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Description (optional)'
             }),
         }
 

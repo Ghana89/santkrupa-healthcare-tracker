@@ -10,6 +10,16 @@ clinic_urlpatterns = [
     # Clinic-specific authentication
     path('login/', views.login_view, name='login'),
 
+    # Admin
+    path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('admin-dashboard/create-doctor/', views.create_doctor, name='create_doctor'),
+    path('admin-dashboard/create-receptionist/', views.create_receptionist, name='create_receptionist'),
+    path('admin-dashboard/all-patients/', views.view_all_patients, name='view_all_patients'),
+    path('admin-dashboard/all-doctors/', views.view_all_doctors, name='view_all_doctors'),
+    path('admin-dashboard/all-receptionists/', views.view_all_receptionists, name='view_all_receptionists'),
+    path('admin-dashboard/doctor/<int:doctor_id>/delete/', views.delete_doctor, name='delete_doctor'),
+    path('admin-dashboard/receptionist/<int:user_id>/delete/', views.delete_receptionist, name='delete_receptionist'),
+
     # Reception
     path('reception/dashboard/', views.reception_dashboard, name='reception_dashboard'),
     path('reception/register-patient/', views.register_patient, name='register_patient'),
@@ -30,11 +40,8 @@ clinic_urlpatterns = [
     path('doctor/test/<int:test_id>/delete/', views.delete_test, name='delete_test'),
     path('doctor/medicine/<int:medicine_id>/delete/', views.delete_medicine, name='delete_medicine'),
     path('doctor/patient-history/<int:patient_id>/', views.patient_history, name='patient_history'),
-    path(
-        'doctor/prescription/<int:prescription_id>/delete/',
-        views.delete_prescription,
-        name='delete_prescription'
-    ),
+    path('doctor/prescription/<int:prescription_id>/delete/', views.delete_prescription, name='delete_prescription'),
+
     # Admissions & Hospitalization
     path('doctor/admit-patient/<int:patient_id>/', views.admit_patient, name='admit_patient'),
     path('doctor/admission/<int:admission_id>/', views.admission_details, name='admission_details'),
@@ -46,6 +53,18 @@ clinic_urlpatterns = [
     path('doctor/prescription/<int:prescription_id>/recommend-admission/', views.recommend_admission, name='recommend_admission'),
     path('doctor/admission-recommendations/', views.admission_recommendations, name='admission_recommendations'),
     
+    # Standard Prescription Templates
+    path('doctor/templates/', views.list_prescription_templates, name='list_prescription_templates'),
+    path('doctor/templates/create/', views.create_prescription_template, name='create_prescription_template'),
+    path('doctor/templates/<int:template_id>/', views.view_prescription_template, name='view_prescription_template'),
+    path('doctor/templates/<int:template_id>/edit/', views.edit_prescription_template, name='edit_prescription_template'),
+    path('doctor/templates/<int:template_id>/delete/', views.delete_prescription_template, name='delete_prescription_template'),
+    path('doctor/templates/search/', views.search_prescription_templates, name='search_prescription_templates'),
+    path('doctor/templates/<int:template_id>/load/', views.load_template_to_prescription, name='load_template_to_prescription'),
+    path('doctor/templates/medicine/<int:medicine_id>/delete/', views.delete_template_medicine, name='delete_template_medicine'),
+    path('doctor/templates/test/<int:test_id>/delete/', views.delete_template_test, name='delete_template_test'),
+    path('doctor/prescription/<int:prescription_id>/save-as-template/', views.save_prescription_as_template, name='save_prescription_as_template'),
+    
     # Patient
     path('patient/dashboard/', views.patient_dashboard, name='patient_dashboard'),
     path('patient/prescription/<int:prescription_id>/', views.view_prescription, name='view_prescription'),
@@ -54,33 +73,16 @@ clinic_urlpatterns = [
     path('patient/upload-test-report/', views.upload_test_report, name='upload_test_report'),
     path('patient/test-reports/', views.view_test_reports, name='view_test_reports'),
     
-    # Admin
-    path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
-    path('admin-dashboard/create-doctor/', views.create_doctor, name='create_doctor'),
-    path('admin-dashboard/create-receptionist/', views.create_receptionist, name='create_receptionist'),
-    path('admin-dashboard/all-patients/', views.view_all_patients, name='view_all_patients'),
-    path('admin-dashboard/all-doctors/', views.view_all_doctors, name='view_all_doctors'),
-    path('admin-dashboard/all-receptionists/', views.view_all_receptionists, name='view_all_receptionists'),
-    path('admin-dashboard/doctor/<int:doctor_id>/delete/', views.delete_doctor, name='delete_doctor'),
-    path('admin-dashboard/receptionist/<int:user_id>/delete/', views.delete_receptionist, name='delete_receptionist'),
-    
     # Master Data Management
     path('admin-dashboard/manage-medicines/', views.manage_master_medicines, name='manage_master_medicines'),
     path('admin-dashboard/delete-medicine/<int:medicine_id>/', views.delete_master_medicine, name='delete_master_medicine'),
     path('admin-dashboard/manage-tests/', views.manage_master_tests, name='manage_master_tests'),
     path('admin-dashboard/delete-test/<int:test_id>/', views.delete_master_test, name='delete_master_test'),
     path('api/master-medicines/', views.api_master_medicines, name='api_master_medicines'),
+
     # path('api/master-tests/', views.api_master_tests, name='api_master_tests'),
-    path(
-        "api/master-tests/",
-        views.api_master_tests,
-        name="api_master_tests"
-    ),
-    path(
-        'tests/edit/<int:test_id>/',
-        views.edit_master_test,
-        name='edit_master_test'
-    ),
+    path("api/master-tests/", views.api_master_tests, name="api_master_tests"),
+    path('tests/edit/<int:test_id>/', views.edit_master_test,name='edit_master_test'),
     path('api/master-tests/add/', views.add_master_test, name='add_master_test')
 ]
 
@@ -92,16 +94,8 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('register/', views.register_patient, name='register'),  # Public registration
     path('register-clinic/', views.register_clinic, name='register_clinic'),
-    path(
-        'superadmin/clinic/<int:clinic_id>/edit/',
-        views.edit_clinic,
-        name='superadmin_edit_clinic'
-    ),
-    path(
-        'superadmin/clinic/<int:clinic_id>/reset-password/',
-        views.reset_clinic_admin_password,
-        name='superadmin_reset_password'
-    ),
+    path('superadmin/clinic/<int:clinic_id>/edit/', views.edit_clinic, name='superadmin_edit_clinic'),
+    path('superadmin/clinic/<int:clinic_id>/reset-password/', views.reset_clinic_admin_password, name='superadmin_reset_password'),
     
     # Global AJAX endpoint for patient search (also exposed under clinic/<slug>/)
     path('reception/patient-search/', views.patient_search, name='patient_search_global'),

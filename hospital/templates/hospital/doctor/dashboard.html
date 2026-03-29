@@ -29,6 +29,12 @@
         <h3 style="color: #fff; margin-top: 0;">Admission Needed</h3>
         <p style="color: #f0f0f0; font-size: 2em; margin: 10px 0;" id="admission_count">0</p>
     </div>
+
+    <div class="dashboard-item" style="background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%); cursor: pointer;" onclick="window.location='{% url 'list_prescription_templates' clinic_slug=clinic.slug %}'">
+        <div class="icon">📋</div>
+        <h3 style="color: #fff; margin-top: 0;">Prescription Templates</h3>
+        <p style="color: #f0f0f0; text-align: center; margin: 20px 0;">Manage your standard<br/>templates for faster<br/>prescriptions</p>
+    </div>
 </div>
 
 <div class="card">

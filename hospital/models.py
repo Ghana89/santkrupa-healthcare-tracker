@@ -161,6 +161,8 @@ class Patient(models.Model):
         indexes = [
             models.Index(fields=['clinic', 'registration_date']),
             models.Index(fields=['clinic', 'phone_number']),
+            models.Index(fields=['clinic', 'patient_name']),
+            models.Index(fields=['clinic', 'patient_id']),
         ]
 
 # Doctor model
@@ -258,6 +260,7 @@ class DoctorNotes(models.Model):
     diagnosis = models.TextField()
     treatment_plan = models.TextField()
     notes = models.TextField(blank=True)
+    checkin_purpose = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -576,6 +579,119 @@ class PatientAdmission(models.Model):
     
     class Meta:
         ordering = ['-admission_date']
+
+
+# ============================================================================
+# STANDARD PRESCRIPTION TEMPLATE MODELS
+# ============================================================================
+
+class StandardPrescriptionTemplate(models.Model):
+    """
+    Stores doctor's standard prescription templates to save time.
+    Doctor can create templates from common prescriptions and reuse them.
+    """
+    clinic = models.ForeignKey(
+        Clinic,
+        on_delete=models.CASCADE,
+        related_name='prescription_templates'
+    )
+    doctor = models.ForeignKey(
+        'Doctor',
+        on_delete=models.CASCADE,
+        related_name='prescription_templates'
+    )
+    
+    name = models.CharField(max_length=255, help_text="Template name (e.g., 'Cold & Cough')")
+    description = models.TextField(blank=True, help_text="What is this template for?")
+    keyword = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Search keyword for quick access (e.g., 'fever', 'pneumonia')"
+    )
+    
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    objects = ClinicManager()
+    
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = [['clinic', 'doctor', 'name']]
+    
+    def __str__(self):
+        return f"{self.name} - Dr. {self.doctor.user.first_name}"
+
+
+class StandardTemplateMedicine(models.Model):
+    """
+    Medicines included in a standard prescription template.
+    """
+    template = models.ForeignKey(
+        StandardPrescriptionTemplate,
+        on_delete=models.CASCADE,
+        related_name='medicines'
+    )
+    
+    medicine_name = models.CharField(max_length=200)
+    dosage = models.CharField(max_length=100)
+    frequency_per_day = models.PositiveIntegerField(default=1)
+    duration = models.CharField(max_length=100)
+    medicine_type = models.CharField(
+        max_length=20,
+        choices=MasterMedicine.MEDICINE_TYPE_CHOICES,
+        default='tablet'
+    )
+    qty = models.PositiveIntegerField(default=1)
+    schedule = models.CharField(
+        max_length=50,
+        choices=MasterMedicine.SCHEDULE_CHOICES,
+        blank=True
+    )
+    food_instruction = models.CharField(
+        max_length=20,
+        choices=MasterMedicine.FOOD_CHOICES,
+        blank=True
+    )
+    instructions = models.TextField(blank=True)
+    
+    class Meta:
+        ordering = ['medicine_name']
+    
+    def __str__(self):
+        return f"{self.medicine_name} - {self.template.name}"
+
+
+class StandardTemplateTest(models.Model):
+    """
+    Tests included in a standard prescription template.
+    """
+    TEST_TYPES = [
+        ('blood', 'Blood Test'),
+        ('urine', 'Urine Test'),
+        ('xray', 'X-Ray'),
+        ('ultrasound', 'Ultrasound'),
+        ('ecg', 'ECG'),
+        ('ct_scan', 'CT Scan'),
+        ('mri', 'MRI'),
+        ('other', 'Other'),
+    ]
+    
+    template = models.ForeignKey(
+        StandardPrescriptionTemplate,
+        on_delete=models.CASCADE,
+        related_name='tests'
+    )
+    
+    test_name = models.CharField(max_length=200)
+    test_type = models.CharField(max_length=50, choices=TEST_TYPES)
+    description = models.TextField(blank=True)
+    
+    class Meta:
+        ordering = ['test_name']
+    
+    def __str__(self):
+        return f"{self.test_name} - {self.template.name}"
 
 
 class TreatmentLog(models.Model):
