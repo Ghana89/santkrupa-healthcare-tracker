@@ -41,6 +41,17 @@
         <p style="color: #f0f0f0;">Manage records</p>
         <a href="#patients" class="btn" style="background:#fff; color:#2a5298;">Open</a>
     </div>
+
+    <div class="dashboard-item" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+        <div class="icon">🔐</div>
+        <h3 style="color: #fff;">Enable Patient Login</h3>
+        <p style="color: #f0f0f0;">Create login for existing patients</p>
+        {% if clinic %}
+        <a href="{% url 'patients_without_login' clinic.slug %}" class="btn" style="background:#fff; color:#f5576c;">Manage</a>
+        {% else %}
+        <a href="{% url 'patients_without_login' %}" class="btn" style="background:#fff; color:#f5576c;">Manage</a>
+        {% endif %}
+    </div>
 </div>
 
 <!-- ================= PATIENT TABLE ================= -->

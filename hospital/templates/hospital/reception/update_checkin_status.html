@@ -1,0 +1,163 @@
+{% extends 'hospital/base.html' %}
+
+{% block title %}Update Check-in Status{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">✏️ Update Patient Check-in Status</h5>
+                    <a href="{% url 'checkin_patient_details' clinic.slug visit.id %}" class="btn btn-sm btn-secondary">
+                        ← Back
+                    </a>
+                </div>
+
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <!-- Patient Info Card -->
+                    <div class="alert alert-info mb-4" role="alert">
+                        <h6 class="alert-heading">👤 Patient Information</h6>
+                        <p class="mb-0">
+                            <strong>{{ patient.patient_id }}</strong> - {{ patient.patient_name }} ({{ patient.age }} years)
+                        </p>
+                        <small class="text-muted">
+                            Checked in at: {{ visit.check_in_date|date:"d M Y, H:i A" }}
+                        </small>
+                    </div>
+
+                    <!-- Current Status -->
+                    <div class="mb-4 p-3 bg-light rounded">
+                        <h6>📊 Current Status</h6>
+                        <div class="alert alert-secondary mb-0" role="alert">
+                            <strong>{{ visit.get_status_display }}</strong>
+                            {% if visit.notes %}
+                                <br><small class="text-muted">Notes: {{ visit.notes }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Update Form -->
+                    <form method="POST" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Status Selection -->
+                        <div class="mb-4">
+                            <label for="status" class="form-label"><strong>🔄 New Status</strong></label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="">-- Select Status --</option>
+                                {% for value, label in status_choices %}
+                                    <option value="{{ value }}" {% if visit.status == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted d-block mt-2">
+                                💡 Select the current status of the patient:<br>
+                                • <strong>Checked In:</strong> Patient has arrived and waiting<br>
+                                • <strong>In Consultation:</strong> Patient is with doctor<br>
+                                • <strong>Completed:</strong> Visit is finished, patient can leave<br>
+                                • <strong>Cancelled:</strong> Patient left early due to emergency or other reason
+                            </small>
+                        </div>
+
+                        <!-- Notes Section -->
+                        <div class="mb-4">
+                            <label for="notes" class="form-label"><strong>📝 Notes</strong> (Optional)</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="4" 
+                                      placeholder="Add any notes about the status change...&#10;Example: Left due to emergency, Will reschedule, etc.">{{ visit.notes }}</textarea>
+                            <small class="text-muted">
+                                Add notes to explain why status is being changed (especially if cancelled)
+                            </small>
+                        </div>
+
+                        <!-- Warning for Cancellation -->
+                        <div id="cancelWarning" class="alert alert-danger d-none" role="alert">
+                            ⚠️ <strong>Cancellation Notice:</strong><br>
+                            The patient's visit will be marked as cancelled. Please ensure you've noted the reason in the notes field.
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2 pt-3 border-top">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                ✅ Update Status
+                            </button>
+                            <a href="{% url 'checkin_patient_details' clinic.slug visit.id %}" class="btn btn-secondary btn-lg">
+                                ❌ Cancel
+                            </a>
+                        </div>
+                    </form>
+
+                    <!-- Info Box -->
+                    <div class="mt-4 p-3 bg-light rounded border-left-warning">
+                        <h6 class="text-muted">📌 What Happens Next?</h6>
+                        <ul class="mb-0 text-muted small">
+                            <li>Status change will be recorded immediately</li>
+                            <li>Patient record will be updated</li>
+                            <li>Check-in dashboard will reflect this change</li>
+                            <li>Doctor can see this update in their dashboard</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Warning Message -->
+<script>
+document.getElementById('status').addEventListener('change', function() {
+    const warning = document.getElementById('cancelWarning');
+    if (this.value === 'cancelled') {
+        warning.classList.remove('d-none');
+    } else {
+        warning.classList.add('d-none');
+    }
+});
+
+// Bootstrap form validation
+(function () {
+    'use strict';
+    window.addEventListener('load', function () {
+        let forms = document.querySelectorAll('.needs-validation');
+        Array.prototype.slice.call(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+</script>
+
+<style>
+    .border-left-warning {
+        border-left: 4px solid #ffc107 !important;
+    }
+
+    .alert-heading {
+        margin-bottom: 0.5rem;
+    }
+
+    .form-select, .form-control {
+        border-radius: 5px;
+    }
+
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}

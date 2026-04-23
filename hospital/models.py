@@ -359,6 +359,8 @@ class MasterMedicine(models.Model):
         ('injection', 'Injection'),
         ('ointment', 'Ointment'),
         ('drops', 'Drops'),
+        ('soap', 'Soap'),
+        ('lotion', 'Lotion'),
     ]
 
     # ✅ Easy schedule (doctor-friendly)

@@ -139,7 +139,7 @@
 </div>
 
 <div class="card" style="text-align: center;">
-    <a href="{% url 'print_prescription_patient' prescription.id %}" class="btn" style="background: #007bff; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; margin-right: 10px;">🖨️ Print Prescription</a>
-    <a href="{% url 'patient_dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
+    <a href="{% url 'print_prescription_patient' clinic.slug prescription.id %}" class="btn" style="background: #007bff; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; margin-right: 10px;">🖨️ Print Prescription</a>
+    <a href="{% url 'patient_dashboard' clinic.slug %}" class="btn btn-secondary">← Back to Dashboard</a>
 </div>
 {% endblock %}

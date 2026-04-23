@@ -30,21 +30,21 @@
         <div class="icon">🔬</div>
         <h3 style="color: #fff; margin-top: 0;">Test Reports</h3>
         <p style="color: #f0f0f0; font-size: 2em; margin: 10px 0;">{{ test_reports.count }}</p>
-        <a href="{% url 'view_test_reports' %}" class="btn" style="background: #fff; color: #2a5298;">View All</a>
+        <a href="{% url 'view_test_reports' clinic.slug %}" class="btn" style="background: #fff; color: #2a5298;">View All</a>
     </div>
     
     <div class="dashboard-item">
         <div class="icon">📤</div>
         <h3 style="color: #fff; margin-top: 0;">Upload Report</h3>
         <p style="color: #f0f0f0;">Add your medical documents</p>
-        <a href="{% url 'upload_medical_report' %}" class="btn" style="background: #fff; color: #2a5298;">Upload</a>
+        <a href="{% url 'upload_medical_report' clinic.slug %}" class="btn" style="background: #fff; color: #2a5298;">Upload</a>
     </div>
 
     <div class="dashboard-item">
         <div class="icon">🔬</div>
         <h3 style="color: #fff; margin-top: 0;">Upload Test</h3>
         <p style="color: #f0f0f0;">Add your test reports</p>
-        <a href="{% url 'upload_test_report' %}" class="btn" style="background: #fff; color: #2a5298;">Upload</a>
+        <a href="{% url 'upload_test_report' clinic.slug %}" class="btn" style="background: #fff; color: #2a5298;">Upload</a>
     </div>
 </div>
 
@@ -74,7 +74,7 @@
                     <strong>Tests:</strong> {{ prescription.tests.count }} | 
                     <strong>Medicines:</strong> {{ prescription.medicines.count }}
                 </p>
-                <a href="{% url 'view_prescription' prescription.id %}" class="btn" style="width: 100%; text-align: center;">View Details</a>
+                <a href="{% url 'view_prescription' clinic.slug prescription.id %}" class="btn" style="width: 100%; text-align: center;">View Details</a>
             </div>
             {% endfor %}
         </div>
@@ -111,7 +111,7 @@
     {% endif %}
     
     <div style="margin-top: 20px;">
-        <a href="{% url 'upload_medical_report' %}" class="btn">📤 Upload New Report</a>
+        <a href="{% url 'upload_medical_report' clinic.slug %}" class="btn">📤 Upload New Report</a>
     </div>
 </div>
 

@@ -1,0 +1,226 @@
+{% extends 'hospital/base.html' %}
+
+{% block title %}Check-in Patient Details{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <!-- Header -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">👤 Check-in Patient Details</h5>
+                    <a href="{% url 'checkin_dashboard' clinic.slug %}" class="btn btn-sm btn-light">
+                        ← Back to Dashboard
+                    </a>
+                </div>
+
+                <!-- Patient Info Section -->
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="row">
+                        <!-- Left Column: Patient & Check-in Info -->
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2">📋 Patient Information</h6>
+                            <dl class="row">
+                                <dt class="col-sm-4">Patient ID:</dt>
+                                <dd class="col-sm-8"><strong>{{ patient.patient_id }}</strong></dd>
+
+                                <dt class="col-sm-4">Name:</dt>
+                                <dd class="col-sm-8">{{ patient.patient_name }}</dd>
+
+                                <dt class="col-sm-4">Age:</dt>
+                                <dd class="col-sm-8">{{ patient.age }} years</dd>
+
+                                <dt class="col-sm-4">Gender:</dt>
+                                <dd class="col-sm-8">{{ patient.get_gender_display }}</dd>
+
+                                <dt class="col-sm-4">Phone:</dt>
+                                <dd class="col-sm-8">{{ patient.phone_number }}</dd>
+
+                                <dt class="col-sm-4">Address:</dt>
+                                <dd class="col-sm-8">{{ patient.address }}</dd>
+
+                                <dt class="col-sm-4">Status:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-info text-dark">{{ patient.get_status_display }}</span>
+                                </dd>
+                            </dl>
+                        </div>
+
+                        <!-- Right Column: Check-in Info -->
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2">✅ Check-in Information</h6>
+                            <dl class="row">
+                                <dt class="col-sm-4">Check-in Date:</dt>
+                                <dd class="col-sm-8"><strong>{{ visit.check_in_date|date:"d M Y, H:i A" }}</strong></dd>
+
+                                <dt class="col-sm-4">Check-in By:</dt>
+                                <dd class="col-sm-8">{{ visit.checked_in_by.first_name }} {{ visit.checked_in_by.last_name }}</dd>
+
+                                <dt class="col-sm-4">Purpose:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-warning text-dark">{{ visit.purpose|default:"Not specified" }}</span>
+                                </dd>
+
+                                <dt class="col-sm-4">Status:</dt>
+                                <dd class="col-sm-8">
+                                    {% if visit.status == 'checked_in' %}
+                                        <span class="badge bg-success">{{ visit.get_status_display }}</span>
+                                    {% elif visit.status == 'in_consultation' %}
+                                        <span class="badge bg-info">{{ visit.get_status_display }}</span>
+                                    {% elif visit.status == 'completed' %}
+                                        <span class="badge bg-primary">{{ visit.get_status_display }}</span>
+                                    {% elif visit.status == 'cancelled' %}
+                                        <span class="badge bg-danger">{{ visit.get_status_display }}</span>
+                                    {% endif %}
+                                </dd>
+
+                                <dt class="col-sm-4">Notes:</dt>
+                                <dd class="col-sm-8">{{ visit.notes|default:"No notes" }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-4 d-flex gap-2">
+                        <a href="{% url 'update_checkin_status' clinic.slug visit.id %}" class="btn btn-warning">
+                            📝 Update Status / Add Notes
+                        </a>
+                        <a href="{% url 'patient_details' clinic.slug patient.id %}" class="btn btn-info">
+                            👁️ View Full Patient Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prescriptions Section -->
+            {% if todays_prescriptions %}
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">💊 Today's Prescriptions</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Prescription ID</th>
+                                        <th>Doctor</th>
+                                        <th>Date</th>
+                                        <th>Medicines</th>
+                                        <th>Tests</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for prescription in todays_prescriptions %}
+                                        <tr>
+                                            <td><strong>#{{ prescription.id }}</strong></td>
+                                            <td>Dr. {{ prescription.doctor.user.first_name }} {{ prescription.doctor.user.last_name }}</td>
+                                            <td>{{ prescription.prescription_date|date:"H:i" }}</td>
+                                            <td>{{ prescription.medicines.count }} medicine(s)</td>
+                                            <td>{{ prescription.tests.count }} test(s)</td>
+                                            <td>
+                                                <span class="badge bg-success">{{ prescription.status }}</span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Vitals Section -->
+            {% if vitals %}
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">🏥 Today's Vitals</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="alert alert-info" role="alert">
+                                    <strong>BP:</strong> {{ vitals.bp|default:"—" }}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="alert alert-warning" role="alert">
+                                    <strong>Pulse:</strong> {{ vitals.pulse|default:"—" }}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="alert alert-danger" role="alert">
+                                    <strong>Temperature:</strong> {{ vitals.temp|default:"—" }}°C
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="alert alert-primary" role="alert">
+                                    <strong>SpO2:</strong> {{ vitals.spo2|default:"—" }}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Medical Reports Section -->
+            {% if medical_reports %}
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0">📄 Recent Medical Reports</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            {% for report in medical_reports %}
+                                <a href="{{ report.report_file.url }}" class="list-group-item list-group-item-action" target="_blank">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ report.report_type }}</h6>
+                                        <small>{{ report.uploaded_at|date:"d M Y" }}</small>
+                                    </div>
+                                    <p class="mb-1 text-muted">{{ report.description }}</p>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-left: 4px solid #007bff;
+    }
+
+    .card-header {
+        border-radius: 0;
+    }
+
+    dl.row {
+        margin-bottom: 0;
+    }
+
+    dt {
+        font-weight: 600;
+        color: #333;
+    }
+
+    dd {
+        margin-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}

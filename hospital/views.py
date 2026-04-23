@@ -7,9 +7,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
-
 from django.utils.crypto import get_random_string
 from django.contrib.auth.hashers import make_password
+
+# Note: PDF generation now uses client-side html2pdf.js library
+# Server-side PDF libraries (weasyprint, reportlab) no longer needed
+# This ensures downloaded PDF matches print layout exactly
+# See: https://github.com/eKoopmans/html2pdf.js
 
 import json
 
@@ -581,10 +585,30 @@ def register_patient(request, clinic_slug=None):
                 patient.clinic = clinic
             patient.save()
 
+            # ✅ CREATE USER ACCOUNT FOR PATIENT LOGIN
+            # Use patient_id as username for easy login
+            username = patient.patient_id.lower()
+            
+            # Check if user already exists
+            if not User.objects.filter(username=username).exists():
+                # Create User account
+                patient_user = User.objects.create_user(
+                    username=username,  # patient_id becomes username
+                    password=patient.default_password,  # Use generated password
+                    email=f"{patient.phone_number}@patient.local",  # Auto-generated email
+                    clinic=clinic,
+                    role='patient',
+                )
+                # Link user to patient
+                patient.user = patient_user
+                patient.save()
+                
+                print(f"✅ Patient user account created: username='{username}'")
+            
             messages.success(
                 request,
                 f"Patient {patient.patient_name} registered successfully! "
-                f"Patient ID: {patient.patient_id}, Password: {patient.default_password}"
+                f"Login Username: {patient.patient_id} | Password: {patient.default_password}"
             )
 
             if clinic_slug:
@@ -709,7 +733,7 @@ def checkin_dashboard(request, clinic_slug=None):
     Accessible to roles: super_admin, admin, receptionist, doctor.
     If clinic_slug provided, data is restricted to that clinic; superadmins can view across clinics.
     """
-    if request.user.role not in ['super_admin', 'admin']:
+    if request.user.role not in ['super_admin', 'admin', 'receptionist']:
         return redirect('homepage')
 
     # Resolve clinic context
@@ -804,6 +828,219 @@ def delete_patient(request, patient_id, clinic_slug=None):
     # include clinic context for template links
     context['clinic'] = get_clinic_from_slug_or_middleware(clinic_slug, request)
     return render(request, 'hospital/reception/confirm_delete_patient.html', context)
+
+
+@login_required(login_url='login')
+@require_http_methods(["GET", "POST"])
+def edit_patient(request, patient_id, clinic_slug=None):
+    """Reception/Admin - Edit patient registration details"""
+    if request.user.role not in ['receptionist', 'admin']:
+        return redirect('homepage')
+    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    patient = get_object_or_404(Patient, id=patient_id, clinic=clinic)
+    
+    if request.method == 'POST':
+        form = PatientRegistrationForm(request.POST, instance=patient)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Patient {patient.patient_name} updated successfully!")
+            if clinic_slug:
+                return redirect('patient_details', clinic_slug=clinic_slug, patient_id=patient_id)
+            return redirect('patient_details', patient_id=patient_id)
+    else:
+        form = PatientRegistrationForm(instance=patient)
+    
+    context = {
+        'form': form,
+        'clinic': clinic,
+        'patient': patient,
+        'is_edit': True
+    }
+    return render(request, 'hospital/reception/edit_patient.html', context)
+
+
+@login_required(login_url='login')
+def patients_without_login(request, clinic_slug=None):
+    """Reception - View patients without login credentials"""
+    if request.user.role != 'receptionist':
+        return redirect('homepage')
+    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    
+    # Get patients without user accounts
+    patients_without_login = Patient.objects.filter(clinic=clinic, user__isnull=True).order_by('-registration_date')
+    
+    context = {
+        'clinic': clinic,
+        'patients': patients_without_login,
+        'total_patients': patients_without_login.count(),
+        'clinic_slug': clinic_slug,
+    }
+    return render(request, 'hospital/reception/patients_without_login.html', context)
+
+
+@login_required(login_url='login')
+@require_http_methods(["GET", "POST"])
+def enable_patient_login(request, patient_id, clinic_slug=None):
+    """Reception - Create login credentials for existing patient"""
+    if request.user.role != 'receptionist':
+        return redirect('homepage')
+    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    patient = get_object_or_404(Patient, id=patient_id, clinic=clinic)
+    
+    if request.method == 'POST':
+        # Check if user already exists
+        if patient.user:
+            messages.warning(request, f"Patient {patient.patient_name} already has login credentials!")
+            if clinic_slug:
+                return redirect('patients_without_login', clinic_slug=clinic_slug)
+            return redirect('patients_without_login')
+        
+        # Generate password if not exists
+        if not patient.default_password:
+            patient.default_password = patient.generate_default_password()
+            patient.save()
+        
+        username = patient.patient_id.lower()
+        password = patient.default_password
+        
+        # Create User account
+        patient_user = User.objects.create_user(
+            username=username,
+            password=password,
+            email=f"{patient.phone_number}@patient.local",
+            clinic=clinic,
+            role='patient',
+        )
+        
+        # Link user to patient
+        patient.user = patient_user
+        patient.save()
+        
+        messages.success(
+            request,
+            f"✅ Login enabled for {patient.patient_name}!\n"
+            f"Username: {username}\n"
+            f"Password: {password}\n"
+            f"Patient can now login with these credentials!"
+        )
+        
+        if clinic_slug:
+            return redirect('patients_without_login', clinic_slug=clinic_slug)
+        return redirect('patients_without_login')
+    
+    context = {
+        'patient': patient,
+        'clinic': clinic,
+        'username': patient.patient_id.lower(),
+        'password': patient.default_password,
+    }
+    return render(request, 'hospital/reception/enable_patient_login.html', context)
+
+
+
+
+
+@login_required(login_url='login')
+def checkin_patient_details(request, visit_id, clinic_slug=None):
+    """Reception - View checked-in patient details"""
+    if request.user.role != 'receptionist':
+        return redirect('homepage')
+    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    visit = get_object_or_404(PatientVisit, id=visit_id, clinic=clinic)
+    patient = visit.patient
+    
+    # Get patient's prescriptions from today if any
+    from django.utils import timezone
+    today = timezone.now().date()
+    todays_prescriptions = patient.prescriptions.filter(
+        prescription_date__date=today
+    ).order_by('-prescription_date')
+    
+    # Get patient's medical reports
+    medical_reports = patient.medical_reports.all().order_by('-uploaded_at')[:5]
+    
+    # Get patient's vitals from today
+    vitals = Vitals.objects.filter(
+        prescription__patient=patient,
+        prescription__prescription_date__date=today
+    ).first()
+    
+    context = {
+        'visit': visit,
+        'patient': patient,
+        'clinic': clinic,
+        'todays_prescriptions': todays_prescriptions,
+        'medical_reports': medical_reports,
+        'vitals': vitals,
+    }
+    return render(request, 'hospital/reception/checkin_patient_details.html', context)
+
+
+@login_required(login_url='login')
+@require_http_methods(["GET", "POST"])
+def update_checkin_status(request, visit_id, clinic_slug=None):
+    """Reception - Update check-in patient status"""
+    if request.user.role != 'receptionist':
+        return redirect('homepage')
+    
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    visit = get_object_or_404(PatientVisit, id=visit_id, clinic=clinic)
+    patient = visit.patient
+    
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        notes = request.POST.get('notes', '')
+        
+        # Validate status
+        valid_statuses = ['checked_in', 'in_consultation', 'completed', 'cancelled']
+        if new_status not in valid_statuses:
+            messages.error(request, 'Invalid status!')
+            if clinic_slug:
+                return redirect('checkin_patient_details', clinic_slug=clinic_slug, visit_id=visit_id)
+            return redirect('checkin_patient_details', visit_id=visit_id)
+        
+        # Update visit
+        old_status = visit.status
+        visit.status = new_status
+        if notes:
+            visit.notes = notes
+        visit.save()
+        
+        # Log the status change
+        status_map = {
+            'checked_in': 'Checked In',
+            'in_consultation': 'In Consultation',
+            'completed': 'Completed',
+            'cancelled': 'Cancelled'
+        }
+        
+        messages.success(
+            request,
+            f"✅ {patient.patient_name}'s check-in status updated!\n"
+            f"Status: {status_map.get(old_status, old_status)} → {status_map.get(new_status, new_status)}"
+        )
+        
+        if clinic_slug:
+            return redirect('checkin_dashboard', clinic_slug=clinic_slug)
+        return redirect('checkin_dashboard')
+    
+    # GET request - show update form
+    context = {
+        'visit': visit,
+        'patient': patient,
+        'clinic': clinic,
+        'status_choices': [
+            ('checked_in', 'Checked In'),
+            ('in_consultation', 'In Consultation'),
+            ('completed', 'Completed'),
+            ('cancelled', 'Cancelled (Emergency/Left)'),
+        ],
+    }
+    return render(request, 'hospital/reception/update_checkin_status.html', context)
 
 
 # ==================== DOCTOR VIEWS ====================
@@ -1291,6 +1528,179 @@ def print_prescription(request, prescription_id, clinic_slug=None):
 
 
 @login_required(login_url='login')
+def download_prescription(request, prescription_id, clinic_slug=None):
+    """Download prescription as PDF with same format as print view"""
+    prescription = get_object_or_404(
+        Prescription.objects.select_related(
+            'patient', 'doctor__user', 'clinic'
+        ).prefetch_related('medicines', 'tests'),
+        id=prescription_id
+    )
+    
+    # Check if user is the doctor who created it or the patient
+    if request.user.role == 'doctor':
+        doctor = Doctor.objects.get(user=request.user)
+        if prescription.doctor != doctor:
+            if clinic_slug:
+                return redirect('doctor_dashboard', clinic_slug=clinic_slug)
+            return redirect('doctor_dashboard')
+    elif request.user.role == 'patient':
+        patient = Patient.objects.get(user=request.user)
+        if prescription.patient != patient:
+            return redirect('patient_dashboard')
+    else:
+        return redirect('homepage')
+    
+    tests = prescription.tests.all()
+    medicines = prescription.medicines.all()
+    doctor_notes = prescription.doctor_notes if hasattr(prescription, 'doctor_notes') else None
+    vitals = getattr(prescription, 'vitals', None)
+    all_doctors = Doctor.objects.filter(clinic=prescription.clinic)
+    primary_medical = prescription.clinic.associated_medicals.filter(
+            is_primary=True,
+            is_active=True
+        ).first()
+
+    schedule_map = {
+        "morning": (1, 0, 0),
+        "afternoon": (0, 1, 0),
+        "night": (0, 0, 1),
+        "morning_evening": (1, 0, 1),
+        "morning_night": (1, 0, 1),
+        "afternoon_night": (0, 1, 1),
+        "morning_afternoon_night": (1, 1, 1),
+        "sos": (0, 0, 0),
+    }
+
+    for med in medicines:
+        med.schedule_counts = schedule_map.get(med.schedule, (0, 0, 0))
+        med.frequency_display = (med.frequency_per_day or "")
+        med.food_instruction = (med.food_instruction or "-").title()
+        med.dose_pattern = f"{med.schedule_counts[0]}-{med.schedule_counts[1]}-{med.schedule_counts[2]}"
+        med.duration_display = med.duration or "-"
+        
+    context = {
+        'prescription': prescription,
+        'tests': tests,
+        'medicines': medicines,
+        'doctor_notes': doctor_notes,
+        'vitals': vitals,
+        'doctors': all_doctors,
+        'primary_medical': primary_medical,
+        'hide_controls': True,  # Hide print controls in downloaded PDF
+    }
+    
+    # Render the same template used for printing
+    # The client-side html2pdf.js library will convert this to PDF
+    # This ensures the PDF looks exactly like the print preview
+    html_string = render_to_string('hospital/print_prescription.html', context)
+    
+    # Return as HTML for client-side PDF generation
+    # This lets html2pdf.js on the frontend convert it to PDF with exact formatting
+    response = HttpResponse(html_string, content_type='text/html; charset=utf-8')
+    response['Content-Disposition'] = f'inline; filename="prescription_{prescription.id}.html"'
+    
+    print(f"✅ Prescription {prescription.id} prepared for PDF download (client-side generation)")
+    return response
+
+
+@login_required(login_url='login')
+def share_prescription(request, prescription_id, clinic_slug=None):
+    """Share prescription via WhatsApp or SMS"""
+    try:
+        prescription = get_object_or_404(Prescription, id=prescription_id)
+        
+        # Check if user is the doctor who created it or the patient
+        if request.user.role == 'doctor':
+            try:
+                doctor = Doctor.objects.get(user=request.user)
+                if prescription.doctor != doctor:
+                    return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+            except Doctor.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Doctor profile not found'}, status=403)
+        elif request.user.role == 'patient':
+            try:
+                patient = Patient.objects.get(user=request.user)
+                if prescription.patient != patient:
+                    return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+            except Patient.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Patient profile not found'}, status=403)
+        else:
+            return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+        
+        share_method = request.GET.get('method', 'whatsapp').lower()  # whatsapp or sms
+        
+        if not prescription.patient.phone_number:
+            return JsonResponse({'success': False, 'message': 'Patient phone number not found'}, status=400)
+        
+        phone = prescription.patient.phone_number.replace('+', '').replace('-', '').replace(' ', '')
+        
+        if not phone:
+            return JsonResponse({'success': False, 'message': 'Invalid phone number'}, status=400)
+        
+        # Build message
+        clinic_name = prescription.clinic.name if prescription.clinic else "SantKrupa Hospital"
+        patient_name = prescription.patient.patient_name
+        doctor_name = f"Dr. {prescription.doctor.user.first_name} {prescription.doctor.user.last_name}"
+        prescription_date = prescription.prescription_date.strftime("%d %B %Y")
+        medicines_count = prescription.medicines.count()
+        tests_count = prescription.tests.count()
+        
+        message = (
+            f"Hello {patient_name},\n\n"
+            f"Your prescription from {clinic_name} is ready.\n\n"
+            f"Doctor: {doctor_name}\n"
+            f"Date: {prescription_date}\n"
+            f"Medicines: {medicines_count}\n"
+            f"Tests: {tests_count}\n\n"
+            f"Please view and download your prescription from our patient portal.\n"
+            f"Prescription ID: {prescription_id}\n\n"
+            f"Follow the doctor's instructions carefully."
+        )
+        
+        import urllib.parse
+        
+        if share_method == 'whatsapp':
+            # WhatsApp API link
+            whatsapp_message = urllib.parse.quote(message)
+            # Use WhatsApp Web link (works for most users)
+            whatsapp_url = f"https://wa.me/{phone}?text={whatsapp_message}"
+            print(f"✅ WhatsApp share prepared for prescription {prescription_id}")
+            return JsonResponse({
+                'success': True,
+                'url': whatsapp_url,
+                'message': 'Opening WhatsApp...'
+            })
+        
+        elif share_method == 'sms':
+            # SMS link
+            sms_message = urllib.parse.quote(message)
+            # Standard SMS protocol
+            sms_url = f"sms:{phone}?body={sms_message}"
+            print(f"✅ SMS share prepared for prescription {prescription_id}")
+            return JsonResponse({
+                'success': True,
+                'url': sms_url,
+                'message': 'Opening SMS app...'
+            })
+        
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': f'Invalid share method: {share_method}'
+            }, status=400)
+    
+    except Exception as e:
+        import traceback
+        error_msg = f"Share prescription error: {str(e)}\n{traceback.format_exc()}"
+        print(f"⚠️ {error_msg}")
+        return JsonResponse({
+            'success': False,
+            'message': f'Error preparing share: {str(e)}'
+        }, status=500)
+
+
+@login_required(login_url='login')
 def delete_medicine(request, medicine_id, clinic_slug=None):
 
     if request.user.role != 'doctor':
@@ -1396,8 +1806,8 @@ def patient_dashboard(request, clinic_slug=None):
         clinic = patient.clinic
     
     prescriptions = patient.prescriptions.all().order_by('-prescription_date')
-    medical_reports = patient.medical_reports.all().order_by('-uploaded_date')
-    test_reports = patient.test_reports.all().order_by('-uploaded_date')
+    medical_reports = patient.medical_reports.all().order_by('-uploaded_at')
+    test_reports = patient.test_reports.all().order_by('-uploaded_at')
     
     # Get pending tests (tests awaiting lab submission)
     pending_tests = Test.objects.filter(prescription__patient=patient, is_completed=False).count()
@@ -1423,7 +1833,7 @@ def patient_dashboard(request, clinic_slug=None):
 
 
 @login_required(login_url='login')
-def view_prescription(request, prescription_id):
+def view_prescription(request, prescription_id, clinic_slug=None):
     """Patient - View prescription details"""
     # Allow patients to view their own prescriptions and allow admin/doctor/super_admin to view any
     if request.user.role == 'patient':
@@ -1443,12 +1853,16 @@ def view_prescription(request, prescription_id):
     tests = prescription.tests.all()
     medicines = prescription.medicines.all()
     doctor_notes = prescription.doctor_notes if hasattr(prescription, 'doctor_notes') else None
-    
+    clinic = (
+    get_clinic_from_slug_or_middleware(clinic_slug, request)
+    or prescription.clinic
+)
     context = {
         'prescription': prescription,
         'tests': tests,
         'medicines': medicines,
         'doctor_notes': doctor_notes,
+        'clinic': clinic
     }
     return render(request, 'hospital/patient/view_prescription.html', context)
 

@@ -87,31 +87,59 @@
 <div class="card">
     <h3>Recent Visits</h3>
     {% if recent_visits %}
-    <table>
-        <thead>
-            <tr><th>Time</th><th>Patient</th><th>Patient ID</th><th>Checked-in by</th><th>Purpose</th></tr>
+    <div class="table-responsive">
+    <table class="table table-hover table-sm">
+        <thead class="table-light">
+            <tr>
+                <th>Time</th>
+                <th>Patient</th>
+                <th>Patient ID</th>
+                <th>Checked-in by</th>
+                <th>Purpose</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
         </thead>
         <tbody>
             {% for v in recent_visits %}
             <tr>
-                <td>{{ v.check_in_date }}</td>
+                <td>{{ v.check_in_date|date:"H:i" }}</td>
                 <td>{{ v.patient.patient_name }}</td>
-                <td>{{ v.patient.patient_id }}</td>
+                <td><strong>{{ v.patient.patient_id }}</strong></td>
                 <td>{% if v.checked_in_by %}{{ v.checked_in_by.username }}{% else %}-{% endif %}</td>
-                <td>{{ v.purpose }}</td>
-                    <td>
+                <td>{{ v.purpose|default:"-" }}</td>
+                <td>
+                    {% if v.status == 'checked_in' %}
+                        <span class="badge bg-success">{{ v.get_status_display }}</span>
+                    {% elif v.status == 'in_consultation' %}
+                        <span class="badge bg-info">{{ v.get_status_display }}</span>
+                    {% elif v.status == 'completed' %}
+                        <span class="badge bg-primary">{{ v.get_status_display }}</span>
+                    {% elif v.status == 'cancelled' %}
+                        <span class="badge bg-danger">{{ v.get_status_display }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ v.get_status_display }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
                         {% if clinic %}
-                            <a href="{% url 'patient_details' clinic.slug v.patient.id %}">Details</a>
-                            &nbsp;|&nbsp;
-                            <a href="{% url 'patient_history' clinic.slug v.patient.id %}">History</a>
+                            <a href="{% url 'checkin_patient_details' clinic.slug v.id %}" class="btn btn-outline-primary" title="View Details">
+                                👁️
+                            </a>
+                            <a href="{% url 'patient_details' clinic.slug v.patient.id %}" class="btn btn-outline-info" title="Patient Info">
+                                📋
+                            </a>
                         {% else %}
-                            <a href="{% url 'homepage' %}">Details</a>
+                            <a href="{% url 'homepage' %}" class="btn btn-outline-primary">Details</a>
                         {% endif %}
-                    </td>
-                </tr>
+                    </div>
+                </td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
     {% else %}
     <div class="alert-info">No recent visits.</div>
     {% endif %}

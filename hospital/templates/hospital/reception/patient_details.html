@@ -106,6 +106,7 @@
 </div>
 
 <div class="card" style="text-align: center;">
+    <a href="{% url 'edit_patient' patient_id=patient.id clinic_slug=clinic.slug %}" class="btn" style="background-color: #2196f3; border-color: #2196f3; margin-right: 10px;">✏️ Edit Patient</a>
     <a href="{% if clinic %}{% url 'reception_dashboard' clinic.slug %}{% else %}{% url 'homepage' %}{% endif %}" class="btn btn-secondary">← Back to Dashboard</a>
 </div>
 {% endblock %}

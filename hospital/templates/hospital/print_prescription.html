@@ -346,19 +346,102 @@ function printDoc(size) {
         window.print();
     }, 300);
 }
+
+/* Download PDF */
+function downloadPDF() {
+    const prescriptionId = '{{ prescription.id }}';
+    const patientName = '{{ prescription.patient.patient_name }}';
+    
+    // Get the container HTML (same as print)
+    const element = document.querySelector('.container');
+    
+    if (!element) {
+        alert('Error: Prescription content not found');
+        return;
+    }
+    
+    // Options for html2pdf
+    const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `prescription_${prescriptionId}_${patientName.replace(/\s+/g, '_')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2,
+            logging: false,
+            useCORS: true,
+            allowTaint: true
+        },
+        jsPDF: { 
+            orientation: 'portrait', 
+            unit: 'mm', 
+            format: 'a4',
+            compressPDF: true
+        }
+    };
+    
+    // Show loading message
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ Generating PDF...';
+    btn.disabled = true;
+    
+    // Generate and download PDF
+    setTimeout(() => {
+        try {
+            // Use html2pdf library
+            if (typeof html2pdf !== 'undefined') {
+                html2pdf()
+                    .set(opt)
+                    .from(element)
+                    .save()
+                    .then(() => {
+                        console.log('✅ PDF generated successfully');
+                        btn.innerHTML = '✅ Downloaded!';
+                        setTimeout(() => {
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                        }, 2000);
+                    })
+                    .catch((error) => {
+                        console.error('PDF generation error:', error);
+                        alert('Failed to generate PDF. Please try again or use Ctrl+P to print to PDF.');
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    });
+            } else {
+                // Fallback: use backend
+                throw new Error('html2pdf library not loaded');
+            }
+        } catch (error) {
+            console.error('PDF Error:', error);
+            alert('PDF download failed: ' + error.message);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }, 100);
+}
+
 </script>
+
+<!-- html2pdf Library for Client-side PDF Generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 </head>
 
 <body>
 
 <!-- CONTROLS -->
+{% if not hide_controls %}
 <div class="print-controls" style="text-align:center; margin-bottom:10px;">
     <button id="btnA4" onclick="setSize('A4')">A4</button>
     <button id="btnA5" onclick="setSize('A5')">A5</button>
     <button id="btnA8" onclick="setSize('A8')">A8</button>
     <button onclick="printDoc()">Print</button>
+    <button onclick="downloadPDF()" style="background-color: #4CAF50; color: white;">📥 Download PDF</button>
 </div>
+{% else %}
+<!-- Controls hidden for PDF download -->
+{% endif %}
 
 <div class="container">
     <!-- HEADER -->
