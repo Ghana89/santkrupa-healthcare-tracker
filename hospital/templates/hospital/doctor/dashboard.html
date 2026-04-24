@@ -1,4 +1,5 @@
 {% extends "hospital/base.html" %}
+{% load custom_filters %}
 
 {% block title %}Doctor Dashboard - SantKrupa Hospital{% endblock %}
 
@@ -43,6 +44,63 @@
     <p><strong>License Number:</strong> {{ doctor.license_number }}</p>
 </div>
 
+<!-- ✅ PRESCRIPTIONS SECTION (MOVED UP & ENHANCED) -->
+<div class="card" style="margin-bottom: 20px;">
+    <h2 style="margin-top: 0;">📊 Your Prescriptions</h2>
+    
+    <!-- Search & Filter Bar -->
+    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
+        <input 
+            type="text" 
+            id="rx_search" 
+            placeholder="Search by patient name or ID..." 
+            style="flex: 1; min-width: 200px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95em;">
+        
+        <select id="rx_status_filter" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95em;">
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+        </select>
+        
+        <button onclick="loadPrescriptions(1)" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.95em;">
+            🔍 Search
+        </button>
+    </div>
+    
+    <!-- Prescriptions Table -->
+    <div id="loading" style="display: none; text-align: center; padding: 20px;">
+        <p>Loading prescriptions...</p>
+    </div>
+    
+    <div id="prescriptions_container" style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f5f5f5;">
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Patient Name</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Date</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Status</th>
+                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd;">Tests</th>
+                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd;">Medicines</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="prescriptions_table_body">
+                <!-- Loaded via AJAX -->
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    <div id="pagination_container" style="display: flex; justify-content: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; align-items: center;">
+        <!-- Loaded via AJAX -->
+    </div>
+    
+    <div id="no_results" style="display: none; text-align: center; padding: 20px; color: #666;">
+        No prescriptions found.
+    </div>
+</div>
+
 <div class="card">
     <h2>📋 Select Patient to Create Prescription</h2>
     
@@ -57,7 +115,7 @@
             <div style="background: #fff8f0; padding: 12px; border-radius: 6px; border-left: 4px solid #ff9f43;">
                 <h4 style="margin: 0 0 6px 0;">{{ visit.patient.patient_name }}</h4>
                 <div style="font-size: 0.95em; color: #444; margin-bottom:6px;">
-                    <strong>ID:</strong> {{ visit.patient.patient_id }} &nbsp; • &nbsp; <strong>Time:</strong> {{ visit.check_in_date|date:"H:i" }}
+                    <strong>ID:</strong> {{ visit.patient.patient_id }} &nbsp; • &nbsp; <strong>Time:</strong> {{ visit.check_in_date|format_ist_time }}
                 </div>
                 {% if clinic %}
                 <a href="{% url 'create_prescription' clinic.slug visit.patient.id %}" class="btn" style="display:block; margin-bottom:6px;">Create Prescription</a>
@@ -82,7 +140,9 @@
             <input type="text" name="search" placeholder="Search by patient name..." value="{{ search_query }}" 
                    style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
         </form>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin: 20px 0;">
+        <!-- <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin: 20px 0;"> -->
+        <div style="max-height: 500px; overflow-y: auto; padding-right: 5px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1px)); gap: 20px; margin: 20px 0;">
             {% for patient in patients %}
             <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; border-left: 4px solid #2a5298;">
                 <h3 style="margin-top: 0; color: #1e3c72;">{{ patient.patient_name }}</h3>
@@ -100,69 +160,12 @@
             </div>
             {% endfor %}
         </div>
+        </div>
     {% else %}
         <div class="alert-info">No patients available.</div>
     {% endif %}
 </div>
 
-
-<div class="card">
-    <h2>📊 Your Prescriptions</h2>
-
-    {% if prescriptions %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Patient Name</th>
-                    <th>Date</th>
-                    <th>Status</th>
-                    <th>Tests</th>
-                    <th>Medicines</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for prescription in prescriptions %}
-                <tr id="row-{{ prescription.id }}">
-                    <td>{{ prescription.patient.patient_name }}</td>
-                    <td>{{ prescription.prescription_date|date:"M d, Y" }}</td>
-                    <td>
-                        <span style="background: 
-                            {% if prescription.status == 'pending' %}#fff3cd
-                            {% elif prescription.status == 'completed' %}#d4edda
-                            {% else %}#f8d7da{% endif %};
-                            padding: 5px 10px; border-radius: 4px;">
-                            {{ prescription.get_status_display }}
-                        </span>
-                    </td>
-                    <td>{{ prescription.tests.count }}</td>
-                    <td>{{ prescription.medicines.count }}</td>
-                    <td style="display:flex; gap:6px;">
-                        {% if clinic %}
-                            <a href="{% url 'add_prescription_details' clinic.slug prescription.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em;">Edit</a>
-
-                            <a href="{% url 'print_prescription' clinic.slug prescription.id %}" class="btn" style="padding: 6px 12px; font-size: 0.9em; background:#17a2b8;">🖨️ Print</a>
-
-                            <!-- ✅ AJAX DELETE -->
-                            <button 
-                                onclick="deletePrescription('{{ clinic.slug }}', {{ prescription.id }})"
-                                style="background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:4px;">
-                                🗑 Delete
-                            </button>
-                        {% else %}
-                            <a href="{% url 'add_prescription_details' prescription.id %}" class="btn" style="padding: 6px 12px;">Edit</a>
-
-                            <a href="{% url 'print_prescription' prescription.id %}" class="btn" style="padding: 6px 12px; background:#17a2b8;">🖨️ Print</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <div class="alert-info">No prescriptions created yet.</div>
-    {% endif %}
-</div>
 <!-- ✅ TOP ACTION BAR -->
 <div class="card" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
 
@@ -197,7 +200,7 @@
 
 </div>
 
-<!-- ✅ AJAX SCRIPT -->
+<!-- ✅ AJAX SCRIPT FOR PRESCRIPTIONS -->
 <script>
 function getCSRFToken() {
     return document.cookie.split('; ')
@@ -205,8 +208,113 @@ function getCSRFToken() {
         ?.split('=')[1];
 }
 
-function deletePrescription(clinicSlug, prescriptionId) {
+// Load prescriptions with pagination and search
+function loadPrescriptions(page = 1) {
+    const search = document.getElementById('rx_search').value;
+    const status = document.getElementById('rx_status_filter').value;
+    
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('prescriptions_table_body').innerHTML = '';
+    
+    const params = new URLSearchParams({
+        page: page,
+        search: search,
+        status: status
+    });
+    
+    const clinicSlug = "{{ clinic.slug }}" || '';
+    const url = clinicSlug 
+        ? `/clinic/${clinicSlug}/doctor/dashboard/prescriptions-ajax/?${params}`
+        : `/doctor/dashboard/prescriptions-ajax/?${params}`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('loading').style.display = 'none';
+            
+            if (data.success && data.prescriptions.length > 0) {
+                document.getElementById('no_results').style.display = 'none';
+                
+                // Render prescriptions
+                data.prescriptions.forEach(rx => {
+                    const row = document.createElement('tr');
+                    row.style.borderBottom = '1px solid #eee';
+                    row.innerHTML = `
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">
+                            <strong>${rx.patient_name}</strong><br/>
+                            <small style="color: #666;">ID: ${rx.patient_id}</small>
+                        </td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">${rx.date}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">
+                            <span style="background: 
+                                ${rx.status_value === 'pending' ? '#fff3cd' : 
+                                  rx.status_value === 'completed' ? '#d4edda' : 
+                                  '#f8d7da'};
+                                padding: 5px 10px; border-radius: 4px;">
+                                ${rx.status}
+                            </span>
+                        </td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">${rx.tests_count}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">${rx.medicines_count}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee; display: flex; gap: 6px; flex-wrap: wrap;">
+                            <a href="/clinic/${rx.clinic_slug}/doctor/prescription/${rx.id}/" class="btn" style="padding: 6px 12px; font-size: 0.9em; text-decoration: none;">Edit</a>
+                            <a href="/clinic/${rx.clinic_slug}/doctor/prescription/${rx.id}/print/" class="btn" style="padding: 6px 12px; font-size: 0.9em; background:#17a2b8; text-decoration: none;">🖨️ Print</a>
+                            <button onclick="deletePrescriptionAjax('${rx.clinic_slug}', ${rx.id})" style="background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:4px; cursor: pointer; font-size: 0.9em;">
+                                🗑 Delete
+                            </button>
+                        </td>
+                    `;
+                    document.getElementById('prescriptions_table_body').appendChild(row);
+                });
+                
+                // Render pagination
+                renderPagination(data.pagination);
+            } else {
+                document.getElementById('no_results').style.display = 'block';
+                document.getElementById('pagination_container').innerHTML = '';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('loading').style.display = 'none';
+            alert('Error loading prescriptions');
+        });
+}
 
+// Render pagination controls
+function renderPagination(pagination) {
+    const container = document.getElementById('pagination_container');
+    container.innerHTML = '';
+    
+    if (pagination.total_pages <= 1) return;
+    
+    // Previous button
+    if (pagination.has_previous) {
+        const prevBtn = document.createElement('button');
+        prevBtn.textContent = '← Previous';
+        prevBtn.onclick = () => loadPrescriptions(pagination.current_page - 1);
+        prevBtn.style.cssText = 'background: #007bff; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;';
+        container.appendChild(prevBtn);
+    }
+    
+    // Page info
+    const pageInfo = document.createElement('span');
+    pageInfo.textContent = `Page ${pagination.current_page} of ${pagination.total_pages} (${pagination.total_count} total)`;
+    pageInfo.style.cssText = 'padding: 8px 12px; font-weight: bold;';
+    container.appendChild(pageInfo);
+    
+    // Next button
+    if (pagination.has_next) {
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = 'Next →';
+        nextBtn.onclick = () => loadPrescriptions(pagination.current_page + 1);
+        nextBtn.style.cssText = 'background: #007bff; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;';
+        container.appendChild(nextBtn);
+    }
+}
+
+// Delete prescription via AJAX
+function deletePrescriptionAjax(clinicSlug, prescriptionId) {
     if (!confirm("Delete this prescription?")) return;
 
     fetch(`/clinic/${clinicSlug}/doctor/prescription/${prescriptionId}/delete/`, {
@@ -219,7 +327,7 @@ function deletePrescription(clinicSlug, prescriptionId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            document.getElementById(`row-${prescriptionId}`).remove();
+            loadPrescriptions(1); // Reload prescriptions
         } else {
             alert(data.error || "Delete failed");
         }
@@ -229,6 +337,18 @@ function deletePrescription(clinicSlug, prescriptionId) {
         alert("Something went wrong");
     });
 }
+
+// Load prescriptions on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadPrescriptions(1);
+    
+    // Add Enter key support for search
+    document.getElementById('rx_search').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            loadPrescriptions(1);
+        }
+    });
+});
 </script>
 
 {% endblock %}

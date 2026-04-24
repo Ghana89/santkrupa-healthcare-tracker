@@ -1131,6 +1131,99 @@ def doctor_dashboard(request, clinic_slug=None):
 
 
 @login_required(login_url='login')
+@require_http_methods(["GET"])
+def doctor_dashboard_prescriptions_ajax(request, clinic_slug=None):
+    """AJAX endpoint for prescription pagination and search in dashboard"""
+    if request.user.role != 'doctor':
+        return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
+    
+    try:
+        doctor = Doctor.objects.get(user=request.user)
+    except Doctor.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Doctor profile not found'}, status=404)
+    
+    # Resolve clinic
+    clinic = getattr(request, 'clinic', None)
+    if not clinic and clinic_slug:
+        try:
+            clinic = Clinic.objects.get(slug=clinic_slug)
+        except Clinic.DoesNotExist:
+            clinic = None
+    if not clinic and getattr(request.user, 'clinic', None):
+        clinic = request.user.clinic
+    if not clinic and getattr(doctor, 'clinic', None):
+        clinic = doctor.clinic
+    
+    # Get prescriptions
+    if clinic:
+        prescriptions = Prescription.objects.filter(doctor=doctor, clinic=clinic).order_by('-prescription_date')
+    else:
+        prescriptions = Prescription.objects.filter(doctor=doctor).order_by('-prescription_date')
+    
+    # Apply filters
+    search_query = request.GET.get('search', '').strip()
+    if search_query:
+        prescriptions = prescriptions.filter(
+            Q(patient__patient_name__icontains=search_query) |
+            Q(patient__patient_id__icontains=search_query)
+        )
+    
+    status_filter = request.GET.get('status', '').strip()
+    if status_filter in ['pending', 'completed', 'cancelled']:
+        prescriptions = prescriptions.filter(status=status_filter)
+    
+    # Pagination
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    page = request.GET.get('page', 1)
+    paginator = Paginator(prescriptions, 10)  # 10 items per page
+    
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+    
+    # Build prescription data
+    prescriptions_data = []
+    import pytz
+    from django.utils import timezone
+    ist_tz = pytz.timezone('Asia/Kolkata')
+    
+    for rx in page_obj:
+        # Convert prescription_date to IST
+        rx_date = rx.prescription_date
+        if timezone.is_naive(rx_date):
+            rx_date = timezone.make_aware(rx_date)
+        rx_date_ist = rx_date.astimezone(ist_tz)
+        
+        prescriptions_data.append({
+            'id': rx.id,
+            'patient_name': rx.patient.patient_name,
+            'patient_id': rx.patient.patient_id,
+            'date': rx_date_ist.strftime('%d %b %Y, %I:%M %p'),
+            'date_short': rx_date_ist.strftime('%d %b %Y'),
+            'status': rx.get_status_display(),
+            'status_value': rx.status,
+            'tests_count': rx.tests.count(),
+            'medicines_count': rx.medicines.count(),
+            'clinic_slug': clinic.slug if clinic else '',
+        })
+    
+    return JsonResponse({
+        'success': True,
+        'prescriptions': prescriptions_data,
+        'pagination': {
+            'current_page': page_obj.number,
+            'total_pages': paginator.num_pages,
+            'total_count': paginator.count,
+            'has_next': page_obj.has_next(),
+            'has_previous': page_obj.has_previous(),
+        }
+    })
+
+
+@login_required(login_url='login')
 def doctor_prescription_tracking(request, clinic_slug=None):
     """Doctor - View and track all prescriptions created"""
     if request.user.role != 'doctor':

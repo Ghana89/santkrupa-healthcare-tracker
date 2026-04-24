@@ -37,6 +37,7 @@ clinic_urlpatterns = [
     
     # Doctor
     path('doctor/dashboard/', views.doctor_dashboard, name='doctor_dashboard'),
+    path('doctor/dashboard/prescriptions-ajax/', views.doctor_dashboard_prescriptions_ajax, name='doctor_dashboard_prescriptions_ajax'),
     path('doctor/prescription-tracking/', views.doctor_prescription_tracking, name='doctor_prescription_tracking'),
     path('doctor/create-prescription/<int:patient_id>/', views.create_prescription, name='create_prescription'),
     path('doctor/prescription/<int:prescription_id>/', views.add_prescription_details, name='add_prescription_details'),
