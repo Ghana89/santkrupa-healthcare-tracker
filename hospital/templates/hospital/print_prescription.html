@@ -9,11 +9,21 @@
 <style>
 
 /* =========================
-   PAGE DEFAULT
+   PAGE DEFINITIONS (Named Pages)
 ========================= */
 @page {
     size: A4;
     margin: 10mm;
+}
+
+@page a5 {
+    size: A5;
+    margin: 8mm;
+}
+
+@page a8 {
+    size: A8;
+    margin: 5mm;
 }
 
 /* =========================
@@ -22,6 +32,8 @@
 :root {
     --scale: 1;
     --base-font: 14px;
+    --page-width: 210mm;
+    --page-height: 297mm;
 }
 
 /* =========================
@@ -50,134 +62,34 @@ body {
    CONTAINER
 ========================= */
 .container {
-    width: 210mm;
+    width: var(--page-width);
+    height: var(--page-height);
     margin: auto;
     background: white;
     padding: calc(10mm * var(--scale));
     border: 2px solid #000;
     display: flex;
     flex-direction: column;
-
-    --scale: 1;
 }
 
-/* A5 Container Override */
-.a5 {
-    width: 148mm !important;
-    min-height: auto !important;
+/* A4 Container (Default) */
+.a4.container {
+    width: var(--page-width);
+    height: var(--page-height);
 }
 
 /* A5 Container */
 .a5.container {
-    width: 148mm !important;
-    min-height: auto !important;
-    padding: calc(5mm * var(--scale)) !important;
-    --scale: 0.60;
+    width: 148mm;
+    height: 210mm;
+    --scale: 0.70;
 }
 
-/* A5 HEADER */
-.a5 .header {
-    padding-bottom: calc(4px * var(--scale)) !important;
-}
-
-.a5 .header img {
-    max-height: calc(60px * var(--scale)) !important;
-}
-
-.a5 .clinic-address-bar {
-    font-size: calc(0.8em * var(--scale)) !important;
-    padding: calc(3px * var(--scale)) 0 !important;
-    margin-top: calc(3px * var(--scale)) !important;
-}
-
-/* A5 PATIENT ROW */
-.a5 .patient-row {
-    font-size: calc(0.85em * var(--scale)) !important;
-    padding: calc(3px * var(--scale)) 0 !important;
-    gap: calc(3px * var(--scale)) !important;
-}
-
-.a5 .patient-row > div {
-    margin-bottom: 2px;
-}
-
-/* A5 DOCTOR GRID */
-.a5 .doctor-grid {
-    grid-template-columns: 1fr !important;
-    gap: calc(2px * var(--scale)) !important;
-}
-
-.a5 .doctor-item {
-    line-height: 1.2;
-}
-
-.a5 .doc-meta {
-    font-size: calc(0.7em * var(--scale)) !important;
-}
-
-/* A5 BODY LAYOUT - STACK VERTICALLY */
-.a5 .rx-body {
-    flex-direction: column !important;
-    gap: calc(5px * var(--scale)) !important;
-    margin-top: calc(5px * var(--scale)) !important;
-}
-
-.a5 .left {
-    width: 100% !important;
-    flex: 0 0 auto !important;
-    border-right: none !important;
-    border-bottom: 2px solid black !important;
-    padding: calc(5px * var(--scale)) !important;
-    margin-bottom: calc(2px * var(--scale)) !important;
-    background: #f9f9f9;
-}
-
-.a5 .right {
-    width: 100% !important;
-    flex: 0 0 auto !important;
-    border-right: none !important;
-    padding: calc(5px * var(--scale)) !important;
-    margin-top: 0 !important;
-}
-
-/* A5 MEDICINES */
-.a5 .medicine {
-    margin-bottom: calc(5px * var(--scale)) !important;
-    padding-bottom: calc(4px * var(--scale)) !important;
-}
-
-/* A5 RX SYMBOL */
-.a5 .rx {
-    font-size: calc(24px * var(--scale)) !important;
-    margin-bottom: calc(4px * var(--scale)) !important;
-}
-
-/* A5 SECTIONS */
-.a5 .section {
-    margin-bottom: calc(6px * var(--scale)) !important;
-    page-break-inside: avoid;
-}
-
-.a5 .label {
-    font-size: calc(0.9em * var(--scale));
-    font-weight: bold;
-}
-
-.a5 .vitals-table {
-    width: 100% !important;
-    font-size: calc(0.85em * var(--scale)) !important;
-}
-
-.a5 .vitals-table td {
-    padding: calc(2px * var(--scale)) !important;
-    font-size: calc(0.80em * var(--scale)) !important;
-}
-
-.a8 {
-    width: 52mm !important;
-    min-height: 74mm !important;
-    padding: 3mm !important;
-    --scale: 0.55;
+/* A8 Container */
+.a8.container {
+    width: 52mm;
+    height: 74mm;
+    --scale: 0.50;
 }
 
 /* =========================
@@ -326,27 +238,6 @@ body {
     margin-bottom: 2px;
 }
 
-.a5 .vitals-grid {
-    grid-template-columns: 1fr;
-    gap: calc(3px * var(--scale));
-    margin-top: calc(2px * var(--scale));
-}
-
-.a5 .vital-item {
-    font-size: calc(0.80em * var(--scale));
-    padding: calc(2px * var(--scale));
-    margin-bottom: calc(1px * var(--scale));
-    line-height: 1.2;
-}
-
-.a5 .vital-item strong {
-    margin-bottom: 1px;
-    display: inline;
-}
-
-.a5 .vital-item strong::after {
-    content: " ";
-}
 /* =========================
    RX + MEDICINES
 ========================= */
@@ -380,12 +271,6 @@ body {
     page-break-inside: avoid;
 }
 
-.a5 .footer {
-    padding-top: calc(4px * var(--scale));
-    padding-bottom: calc(2px * var(--scale));
-    margin-top: calc(5px * var(--scale));
-}
-
 .medical-strip {
     width: 60%;
     text-align: center;
@@ -394,19 +279,9 @@ body {
     line-height: 1.5;
 }
 
-.a5 .medical-strip {
-    font-size: calc(0.70em * var(--scale));
-    line-height: 1.1;
-    width: 60%;
-}
-
 .footer-right {
     width: 30%;
     text-align: right;
-}
-
-.a5 .footer-right {
-    width: 25%;
 }
 
 .sign-box {
@@ -420,18 +295,9 @@ body {
     border-top: 1px solid black;
 }
 
-.a5 .sign-line {
-    width: calc(60px * var(--scale));
-}
-
 .sign-name {
     font-size: calc(0.9em * var(--scale));
     margin-top: calc(3px * var(--scale));
-}
-
-.a5 .sign-name {
-    font-size: calc(0.65em * var(--scale));
-    margin-top: 1px;
 }
 
 /* =========================
@@ -461,29 +327,54 @@ body {
 }
 
 /* =========================
-   PRINT (CRITICAL FIXES)
+   PRINT (CRITICAL FIXES - REAL PAGE SIZES)
 ========================= */
 @media print {
 
     html, body {
-        width: 210mm;
+        width: 100%;
         height: auto;
+        margin: 0;
+        padding: 0;
     }
 
     body {
         background: none;
-        margin: 0;
     }
 
     .print-controls {
         display: none;
     }
 
+    /* A4 Print: Full A4 page */
     .container {
-        width: 100% !important;
+        width: 100%;
         margin: 0;
         border: none;
+        page: auto;
         page-break-after: auto;
+    }
+
+    .a4.container {
+        width: 210mm;
+        height: 297mm;
+        page: auto;
+    }
+
+    /* A5 Print: A5 named page */
+    .a5.container {
+        width: 148mm;
+        height: 210mm;
+        page: a5;
+        --scale: 0.70;
+    }
+
+    /* A8 Print: A8 named page (small slip) */
+    .a8.container {
+        width: 52mm;
+        height: 74mm;
+        page: a8;
+        --scale: 0.50;
     }
 
 }
@@ -493,20 +384,21 @@ body {
 function setSize(size) {
     const c = document.querySelector('.container');
     const buttons = document.querySelectorAll('.print-controls button');
-    // remove active state
+    
+    // Remove all size classes
+    c.classList.remove('a4', 'a5', 'a8');
+    
+    // Remove active state from all buttons
     buttons.forEach(btn => btn.classList.remove('active'));
-    // remove size classes
-    c.classList.remove('a5','a8');
-    if(size === 'A4'){
-        document.getElementById('btnA4').classList.add('active');
-    }
-    if(size === 'A5'){
-        c.classList.add('a5');
-        document.getElementById('btnA5').classList.add('active');
-    }
-    if(size === 'A8'){
-        c.classList.add('a8');
-        document.getElementById('btnA8').classList.add('active');
+    
+    // Add the selected size class and mark button as active
+    const sizeClass = size.toLowerCase();
+    c.classList.add(sizeClass);
+    
+    const btnId = 'btn' + size.toUpperCase();
+    const btn = document.getElementById(btnId);
+    if (btn) {
+        btn.classList.add('active');
     }
 }
 
@@ -598,6 +490,13 @@ function downloadPDF() {
 <!-- html2pdf Library for Client-side PDF Generation -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
+<script>
+// Initialize: Set A4 as default on page load
+document.addEventListener('DOMContentLoaded', function() {
+    setSize('A4');
+});
+</script>
+
 </head>
 
 <body>
@@ -605,10 +504,13 @@ function downloadPDF() {
 <!-- CONTROLS -->
 {% if not hide_controls %}
 <div class="print-controls" style="text-align:center; margin-bottom:10px;">
-    <button id="btnA4" onclick="setSize('A4')">A4</button>
-    <button id="btnA5" onclick="setSize('A5')">A5</button>
-    <button id="btnA8" onclick="setSize('A8')">A8</button>
-    <button onclick="printDoc()">Print</button>
+    <div style="margin-bottom: 8px; font-size: 12px; color: #555;">
+        📋 Select size, then click Print and choose matching paper size in printer settings
+    </div>
+    <button id="btnA4" onclick="setSize('A4')">A4 (Full Page)</button>
+    <button id="btnA5" onclick="setSize('A5')">A5 (Half Page)</button>
+    <!-- <button id="btnA8" onclick="setSize('A8')">A8 (Slip)</button> -->
+    <button onclick="printDoc()">🖨️ Print</button>
     <button onclick="downloadPDF()" style="background-color: #4CAF50; color: white;">📥 Download PDF</button>
 </div>
 {% else %}
@@ -761,7 +663,7 @@ function downloadPDF() {
                 <!-- Line 1: Medicine Name & Dosage -->
                 <div style="margin-bottom: 4px;">
                     <strong>
-                        {{ forloop.counter }}. {{ medicine.get_medicine_type_display }} {{ medicine.medicine_name }}  
+                        {{ forloop.counter }}. {{ medicine.get_medicine_type_display }} {{ medicine.medicine_name }}  --- Qty: {{ medicine.qty }}
                     </strong>
                     <br>
                     {{ medicine.dosage }}
@@ -771,9 +673,9 @@ function downloadPDF() {
                     {{ medicine.dose_pattern }} | {{ medicine.food_instruction }} Food
                 </div>
                 <!-- Line 3: Quantity -->
-                <div style="font-weight: bold; font-size: 0.9em;">
+                <!-- <div style="font-weight: bold; font-size: 0.9em;">
                     Qty: {{ medicine.qty }}
-                </div>
+                </div> -->
             </div>
         {% empty %}
         <p>No medicines prescribed</p>

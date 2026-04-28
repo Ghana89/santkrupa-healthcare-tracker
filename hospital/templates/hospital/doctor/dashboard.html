@@ -44,62 +44,7 @@
     <p><strong>License Number:</strong> {{ doctor.license_number }}</p>
 </div>
 
-<!-- ✅ PRESCRIPTIONS SECTION (MOVED UP & ENHANCED) -->
-<div class="card" style="margin-bottom: 20px;">
-    <h2 style="margin-top: 0;">📊 Your Prescriptions</h2>
-    
-    <!-- Search & Filter Bar -->
-    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
-        <input 
-            type="text" 
-            id="rx_search" 
-            placeholder="Search by patient name or ID..." 
-            style="flex: 1; min-width: 200px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95em;">
-        
-        <select id="rx_status_filter" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95em;">
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-        </select>
-        
-        <button onclick="loadPrescriptions(1)" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.95em;">
-            🔍 Search
-        </button>
-    </div>
-    
-    <!-- Prescriptions Table -->
-    <div id="loading" style="display: none; text-align: center; padding: 20px;">
-        <p>Loading prescriptions...</p>
-    </div>
-    
-    <div id="prescriptions_container" style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr style="background: #f5f5f5;">
-                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Patient Name</th>
-                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Date</th>
-                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Status</th>
-                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd;">Tests</th>
-                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd;">Medicines</th>
-                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="prescriptions_table_body">
-                <!-- Loaded via AJAX -->
-            </tbody>
-        </table>
-    </div>
-    
-    <!-- Pagination -->
-    <div id="pagination_container" style="display: flex; justify-content: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; align-items: center;">
-        <!-- Loaded via AJAX -->
-    </div>
-    
-    <div id="no_results" style="display: none; text-align: center; padding: 20px; color: #666;">
-        No prescriptions found.
-    </div>
-</div>
+
 
 <div class="card">
     <h2>📋 Select Patient to Create Prescription</h2>
@@ -164,6 +109,63 @@
     {% else %}
         <div class="alert-info">No patients available.</div>
     {% endif %}
+</div>
+
+<!-- ✅ PRESCRIPTIONS SECTION (MOVED UP & ENHANCED) -->
+<div class="card" style="margin-bottom: 20px;">
+    <h2 style="margin-top: 0;">📊 Your Prescriptions</h2>
+    
+    <!-- Search & Filter Bar -->
+    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
+        <input 
+            type="text" 
+            id="rx_search" 
+            placeholder="Search by patient name or ID..." 
+            style="flex: 1; min-width: 200px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95em;">
+        
+        <select id="rx_status_filter" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95em;">
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+        </select>
+        
+        <button onclick="loadPrescriptions(1)" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.95em;">
+            🔍 Search
+        </button>
+    </div>
+    
+    <!-- Prescriptions Table -->
+    <div id="loading" style="display: none; text-align: center; padding: 20px;">
+        <p>Loading prescriptions...</p>
+    </div>
+    
+    <div id="prescriptions_container" style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f5f5f5;">
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Patient Name</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Date</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Status</th>
+                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd;">Tests</th>
+                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd;">Medicines</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="prescriptions_table_body">
+                <!-- Loaded via AJAX -->
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    <div id="pagination_container" style="display: flex; justify-content: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; align-items: center;">
+        <!-- Loaded via AJAX -->
+    </div>
+    
+    <div id="no_results" style="display: none; text-align: center; padding: 20px; color: #666;">
+        No prescriptions found.
+    </div>
 </div>
 
 <!-- ✅ TOP ACTION BAR -->
