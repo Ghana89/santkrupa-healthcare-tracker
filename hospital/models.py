@@ -216,6 +216,7 @@ class Vitals(models.Model):
     pulse = models.CharField(max_length=20, blank=True, null=True)
     temp = models.CharField(max_length=20, blank=True, null=True)
     spo2 = models.CharField(max_length=20, blank=True, null=True)
+    sugar = models.CharField(max_length=20, blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -361,6 +362,7 @@ class MasterMedicine(models.Model):
         ('drops', 'Drops'),
         ('soap', 'Soap'),
         ('lotion', 'Lotion'),
+        ('powder', 'Powder'),
     ]
 
     # ✅ Easy schedule (doctor-friendly)

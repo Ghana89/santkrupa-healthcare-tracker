@@ -69,6 +69,7 @@
             <input type="text" name="pulse" placeholder="Pulse" value="{{ vitals.pulse|default:'' }}">
             <input type="text" name="temp" placeholder="Temp" value="{{ vitals.temp|default:'' }}">
             <input type="text" name="spo2" placeholder="SpO2" value="{{ vitals.spo2|default:'' }}">
+            <input type="text" name="sugar" placeholder="Blood Sugar" value="{{ vitals.sugar|default:'' }}">
         </div>
         <button type="submit" class="btn btn-primary">💾 Save Vitals</button>
     </form>
@@ -738,17 +739,30 @@ if (vitalsForm) {
             console.log("📥 Vitals Response:", data);
 
             if(data.success){
-                console.log("✅ Vitals saved");
+                console.log("✅ Vitals saved successfully");
+                
+                // Update form fields with saved values
+                if (data.vitals) {
+                    console.log("Updating vitals in form:", data.vitals);
+                    form.querySelector('input[name="bp"]').value = data.vitals.bp || '';
+                    form.querySelector('input[name="pulse"]').value = data.vitals.pulse || '';
+                    form.querySelector('input[name="temp"]').value = data.vitals.temp || '';
+                    form.querySelector('input[name="spo2"]').value = data.vitals.spo2 || '';
+                    form.querySelector('input[name="sugar"]').value = data.vitals.sugar || '';
+                    console.log("✅ Form fields updated with saved values");
+                }
+                
                 alert("✅ Vitals saved successfully")
             }
             else{
                 console.error("❌ Error saving vitals:", data);
-                alert("❌ Error saving vitals")
+                alert("❌ Error saving vitals: " + JSON.stringify(data.errors))
             }
 
         })
         .catch(err => {
             console.error("❌ Vitals fetch error:", err);
+            alert("❌ Error: " + err.message)
         })
 
     })

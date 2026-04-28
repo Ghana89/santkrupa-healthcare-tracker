@@ -267,7 +267,7 @@ class DoctorNotesForm(forms.ModelForm):
 class VitalsForm(forms.ModelForm):
     class Meta:
         model = Vitals
-        fields = ['bp', 'pulse', 'temp', 'spo2']
+        fields = ['bp', 'pulse', 'temp', 'spo2', 'sugar']
 
         widgets = {
             'bp': forms.TextInput(attrs={
@@ -286,6 +286,11 @@ class VitalsForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'SpO2 (e.g. 98%)'
             }),
+            'sugar': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Blood Sugar (e.g. 100 mg/dL)'
+            })
+
         }
         
 # Medical Report Form

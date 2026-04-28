@@ -1419,7 +1419,8 @@ def add_prescription_details(request, prescription_id, clinic_slug=None):
                         "bp": vitals.bp,
                         "pulse": vitals.pulse,
                         "temp": vitals.temp,
-                        "spo2": vitals.spo2
+                        "spo2": vitals.spo2,
+                        "sugar": vitals.sugar
                     }
                 })
 
@@ -1474,7 +1475,7 @@ def add_prescription_details(request, prescription_id, clinic_slug=None):
             initial['checkin_purpose'] = latest_visit.purpose
 
         notes_form = DoctorNotesForm(initial=initial)
-
+    print("vitals instance:", vitals)
     context = {
         "prescription": prescription,
         "clinic": clinic,
