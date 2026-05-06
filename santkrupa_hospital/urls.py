@@ -25,6 +25,7 @@ clinic_urlpatterns = [
     path('reception/register-patient/', views.register_patient, name='register_patient'),
     path('reception/patient-search/', views.patient_search, name='patient_search'),
     path('reception/checkin-dashboard/', views.checkin_dashboard, name='checkin_dashboard'),
+    path('reception/checkin-dashboard/search/', views.checkin_dashboard_search, name='checkin_dashboard_search'),
     path('reception/checkin/<int:visit_id>/', views.checkin_patient_details, name='checkin_patient_details'),
     path('reception/checkin/<int:visit_id>/update-status/', views.update_checkin_status, name='update_checkin_status'),
     path('reception/patient/<int:patient_id>/', views.view_patient_details, name='patient_details'),
@@ -110,6 +111,7 @@ urlpatterns = [
     # Global AJAX endpoint for patient search (also exposed under clinic/<slug>/)
     path('reception/patient-search/', views.patient_search, name='patient_search_global'),
     path('reception/checkin-dashboard/', views.checkin_dashboard, name='checkin_dashboard_global'),
+    path('reception/checkin-dashboard/search/', views.checkin_dashboard_search, name='checkin_dashboard_search_global'),
     
     # Superadmin (Global)
     path('superadmin/dashboard/', views.superadmin_dashboard, name='superadmin_dashboard'),

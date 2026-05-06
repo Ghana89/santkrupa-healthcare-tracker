@@ -750,9 +750,20 @@ def checkin_dashboard(request, clinic_slug=None):
 
     # Optional date filters
     period = request.GET.get('period', '')  # e.g., 'today', 'this_month', 'this_year'
+    specific_date = request.GET.get('specific_date', '')
+    specific_month = request.GET.get('specific_month', '')
+    
     from django.utils import timezone
     now = timezone.now()
-    if period == 'today':
+    if specific_date:
+        qs = qs.filter(check_in_date__date=specific_date)
+    elif specific_month:
+        try:
+            year, month = specific_month.split('-')
+            qs = qs.filter(check_in_date__year=year, check_in_date__month=month)
+        except ValueError:
+            pass
+    elif period == 'today':
         qs = qs.filter(check_in_date__date=now.date())
     elif period == 'this_month':
         qs = qs.filter(check_in_date__year=now.year, check_in_date__month=now.month)
@@ -801,12 +812,70 @@ def checkin_dashboard(request, clinic_slug=None):
         'clinic': clinic,
         'granularity': gran,
         'period': period,
+        'specific_date': specific_date,
+        'specific_month': specific_month,
         'results': results,
         'recent_visits': recent_visits,
         'tabular_visits': tabular_visits,
         'total_visits': qs.count(),
     }
     return render(request, 'hospital/reception/checkin_dashboard.html', context)
+
+
+@login_required(login_url='login')
+@require_http_methods(["GET"])
+def checkin_dashboard_search(request, clinic_slug=None):
+    """AJAX endpoint for searching check-in records"""
+    if request.user.role not in ['super_admin', 'admin', 'receptionist']:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    # Resolve clinic context
+    clinic = get_clinic_from_slug_or_middleware(clinic_slug, request)
+    
+    # Get search parameters
+    search_q = request.GET.get('q', '').strip()
+    search_type = request.GET.get('type', 'all')  # 'patient_id', 'patient_name', 'all'
+    limit = int(request.GET.get('limit', 30))
+    
+    qs = PatientVisit.objects.all_clinics() if hasattr(PatientVisit.objects, 'all_clinics') else PatientVisit.objects.all()
+    if clinic:
+        qs = qs.filter(clinic=clinic)
+    
+    # Apply search filter
+    if search_q:
+        if search_type == 'patient_id':
+            qs = qs.filter(patient__patient_id__icontains=search_q)
+        elif search_type == 'patient_name':
+            qs = qs.filter(patient__patient_name__icontains=search_q)
+        else:  # 'all'
+            qs = qs.filter(Q(patient__patient_id__icontains=search_q) | Q(patient__patient_name__icontains=search_q))
+    
+    # Order by recent and limit results
+    visits = qs.select_related('patient', 'checked_in_by').order_by('-check_in_date')[:limit]
+    
+    # Format results with prescription info
+    results = []
+    for v in visits:
+        pres = Prescription.objects.filter(patient=v.patient, prescription_date__date=v.check_in_date.date()).order_by('-prescription_date').first()
+        
+        results.append({
+            'id': v.id,
+            'patient_id': v.patient.patient_id,
+            'patient_name': v.patient.patient_name,
+            'patient_pk': v.patient.id,
+            'check_in_time': v.check_in_date.strftime('%Y-%m-%d %H:%M'),
+            'status': v.status,
+            'status_display': v.get_status_display(),
+            'doctor_name': f"Dr. {pres.doctor.user.first_name} {pres.doctor.user.last_name}".strip() if pres and pres.doctor else '',
+            'prescription_id': pres.id if pres else None,
+            'checked_in_by': v.checked_in_by.username if v.checked_in_by else '-',
+        })
+    
+    return JsonResponse({
+        'success': True,
+        'count': len(results),
+        'results': results
+    })
 
 
 @login_required(login_url='login')

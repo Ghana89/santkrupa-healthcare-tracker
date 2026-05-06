@@ -3,146 +3,584 @@
 {% block title %}Check-in Dashboard - SantKrupa Hospital{% endblock %}
 
 {% block content %}
-<h1>📊 Check-in Dashboard</h1>
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
 
-<div class="card">
-    <form method="get" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-        <label>Granularity:
-            <select name="granularity">
-                <option value="day" {% if granularity == 'day' %}selected{% endif %}>Day</option>
-                <option value="month" {% if granularity == 'month' %}selected{% endif %}>Month</option>
-                <option value="year" {% if granularity == 'year' %}selected{% endif %}>Year</option>
-            </select>
-        </label>
+    .page-header h1 {
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 600;
+    }
 
-        <label>Quick period:
-            <select name="period">
-                <option value="" {% if not period %}selected{% endif %}>All time</option>
-                <option value="today" {% if period == 'today' %}selected{% endif %}>Today</option>
-                <option value="this_month" {% if period == 'this_month' %}selected{% endif %}>This month</option>
-                <option value="this_year" {% if period == 'this_year' %}selected{% endif %}>This year</option>
-            </select>
-        </label>
+    .page-header p {
+        margin: 0.5rem 0 0 0;
+        opacity: 0.9;
+    }
 
-        <button type="submit" class="btn">Apply</button>
-        <a href="{% if clinic %}{% url 'reception_dashboard' clinic.slug %}{% else %}{% url 'homepage' %}{% endif %}" class="btn btn-secondary">Back</a>
-    </form>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .stat-card .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #667eea;
+        margin: 0.5rem 0;
+    }
+
+    .stat-card .stat-label {
+        font-size: 0.9rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .search-section {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .search-container {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .search-input-group {
+        flex: 1;
+        min-width: 250px;
+    }
+
+    .search-input-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #333;
+        font-size: 0.9rem;
+    }
+
+    .search-input-group input,
+    .search-input-group select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 1rem;
+    }
+
+    .search-input-group input:focus,
+    .search-input-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .search-results-container {
+        margin-top: 1rem;
+    }
+
+    .loading-spinner {
+        display: none;
+        text-align: center;
+        padding: 1rem;
+    }
+
+    .loading-spinner.active {
+        display: block;
+    }
+
+    .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 2rem;
+        color: #999;
+    }
+
+    .results-table {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .results-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .results-table thead {
+        background: #f8f9fa;
+        border-bottom: 2px solid #e0e0e0;
+    }
+
+    .results-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: #333;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .results-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .results-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .badge.bg-success { background: #28a745; color: white; }
+    .badge.bg-info { background: #17a2b8; color: white; }
+    .badge.bg-primary { background: #007bff; color: white; }
+    .badge.bg-danger { background: #dc3545; color: white; }
+    .badge.bg-secondary { background: #6c757d; color: white; }
+    .badge.bg-warning { background: #ffc107; color: black; }
+
+    .btn-group-sm {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-action {
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        text-decoration: none;
+        border: 1px solid #ddd;
+        display: inline-block;
+        transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+        background: #f0f0f0;
+        border-color: #999;
+        text-decoration: none;
+    }
+
+    .filter-toggle {
+        display: inline-block;
+        margin-top: auto;
+    }
+
+    .filter-section {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    .filter-controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1>📊 Check-in Dashboard</h1>
+    <p>{% if clinic %}{{ clinic.name }}{% else %}System-wide Check-ins{% endif %}</p>
 </div>
 
-<div class="card">
-    <h3>Summary</h3>
-    <p>Total visits matching filters: <strong>{{ total_visits }}</strong></p>
+<!-- Statistics Cards (Page Initialization) -->
+<div class="stats-grid" id="statsGrid">
+    <div class="stat-card">
+        <div class="stat-label">Total Check-ins</div>
+        <div class="stat-value" id="totalVisitsCount">{{ total_visits }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Today's Check-ins</div>
+        <div class="stat-value" id="todayVisitsCount">-</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">This Month</div>
+        <div class="stat-value" id="monthVisitsCount">-</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Active Records</div>
+        <div class="stat-value" id="activeVisitsCount">-</div>
+    </div>
 </div>
 
-<div class="card">
-    <h3>Check-in Records</h3>
-    {% if tabular_visits %}
-    <table>
+<!-- Search & Filter Section -->
+<div class="search-section">
+    <h3 style="margin-top: 0; margin-bottom: 1rem;">🔍 Search & Filter</h3>
+    
+    <div class="search-container">
+        <div class="search-input-group" style="flex: 2;">
+            <label for="searchInput">Search by Patient Name or ID:</label>
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Type patient name or ID..." 
+                autocomplete="off"
+            >
+        </div>
+        
+        <div class="search-input-group">
+            <label for="searchType">Search Type:</label>
+            <select id="searchType">
+                <option value="all">All Fields</option>
+                <option value="patient_id">Patient ID</option>
+                <option value="patient_name">Patient Name</option>
+            </select>
+        </div>
+
+        <div>
+            <button type="button" class="btn btn-primary" onclick="clearSearch()" style="padding: 0.75rem 1.5rem;">
+                🔄 Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Advanced Filters -->
+    <div class="filter-section">
+        <div style="margin-bottom: 1rem;">
+            <button type="button" onclick="toggleAdvancedFilters()" style="background: none; border: 1px solid #ddd; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+                ⚙️ Advanced Filters <span id="filterToggleIcon">▼</span>
+            </button>
+        </div>
+
+        <div id="advancedFilters" style="display: none;">
+            <div class="filter-controls">
+                <div>
+                    <label>Granularity:</label>
+                    <select id="granularity" onchange="applyFilters()">
+                        <option value="day" {% if granularity == 'day' %}selected{% endif %}>Day</option>
+                        <option value="month" {% if granularity == 'month' %}selected{% endif %}>Month</option>
+                        <option value="year" {% if granularity == 'year' %}selected{% endif %}>Year</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Quick Period:</label>
+                    <select id="period" onchange="applyFilters()">
+                        <option value="">All time</option>
+                        <option value="today" {% if period == 'today' %}selected{% endif %}>Today</option>
+                        <option value="this_month" {% if period == 'this_month' %}selected{% endif %}>This month</option>
+                        <option value="this_year" {% if period == 'this_year' %}selected{% endif %}>This year</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Specific Date:</label>
+                    <input type="date" id="specificDate" value="{{ specific_date }}" onchange="applyFilters()">
+                </div>
+
+                <div>
+                    <label>Specific Month:</label>
+                    <input type="month" id="specificMonth" value="{{ specific_month }}" onchange="applyFilters()">
+                </div>
+
+                <div style="display: flex; align-items: flex-end;">
+                    <button type="button" class="btn btn-success" onclick="applyFilters()">
+                        ✓ Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner"></div>
+        <p>Searching...</p>
+    </div>
+
+    <!-- Search Results -->
+    <div class="search-results-container" id="searchResultsContainer"></div>
+</div>
+
+<!-- Default Results Table -->
+<div id="defaultResultsContainer">
+    <div class="results-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Patient ID</th>
+                    <th>Patient Name</th>
+                    <th>Doctor</th>
+                    <th>Status</th>
+                    <th>Checked-in by</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="defaultTableBody">
+                {% for v in tabular_visits %}
+                <tr>
+                    <td>{{ v.check_in_date|date:"Y-m-d H:i" }}</td>
+                    <td><strong>{{ v.patient_id }}</strong></td>
+                    <td>{{ v.patient_name }}</td>
+                    <td>{{ v.doctor_name|default:"-" }}</td>
+                    <td>
+                        {% if v.status == 'checked_in' %}
+                            <span class="badge bg-success">Checked In</span>
+                        {% elif v.status == 'in_consultation' %}
+                            <span class="badge bg-info">In Consultation</span>
+                        {% elif v.status == 'completed' %}
+                            <span class="badge bg-primary">Completed</span>
+                        {% elif v.status == 'cancelled' %}
+                            <span class="badge bg-danger">Cancelled</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ v.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>-</td>
+                    <td>
+                        <div class="btn-group-sm">
+                            {% if clinic %}
+                                <a href="{% url 'patient_details' clinic.slug v.patient_pk %}" class="btn-action">📋 Details</a>
+                                <a href="{% url 'patient_history' clinic.slug v.patient_pk %}" class="btn-action">📜 History</a>
+                                <a href="{% url 'update_checkin_status' clinic.slug v.visit_id %}" class="btn-action">✏️ Update</a>
+                            {% else %}
+                                <a href="{% url 'homepage' %}" class="btn-action">View</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: #999;">
+                        No check-ins found for selected filters.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div style="margin-top: 1.5rem; text-align: center;">
+    <a href="{% if clinic %}{% url 'reception_dashboard' clinic.slug %}{% else %}{% url 'homepage' %}{% endif %}" class="btn btn-secondary">
+        ← Back to Reception Dashboard
+    </a>
+</div>
+
+<script>
+// ==============================================================================
+// PAGE INITIALIZATION
+// ==============================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Check-in Dashboard Initialized');
+    initializePageStats();
+    initializeSearch();
+});
+
+function initializePageStats() {
+    // Calculate today's check-ins and this month's check-ins from tabular_visits
+    const allVisits = document.querySelectorAll('#defaultTableBody tr');
+    const today = new Date().toISOString().split('T')[0];
+    const thisMonth = new Date().toISOString().substring(0, 7);
+    
+    let todayCount = 0;
+    let monthCount = 0;
+    let activeCount = 0;
+
+    allVisits.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length > 0) {
+            const dateStr = cells[0].textContent.trim().split(' ')[0];
+            const statusBadge = cells[4].textContent.trim();
+            
+            if (dateStr.includes(today)) todayCount++;
+            if (dateStr.includes(thisMonth)) monthCount++;
+            if (statusBadge.includes('Checked In') || statusBadge.includes('In Consultation')) activeCount++;
+        }
+    });
+
+    document.getElementById('todayVisitsCount').textContent = todayCount;
+    document.getElementById('monthVisitsCount').textContent = monthCount;
+    document.getElementById('activeVisitsCount').textContent = activeCount;
+}
+
+// ==============================================================================
+// SEARCH & FILTER FUNCTIONALITY
+// ==============================================================================
+
+function initializeSearch() {
+    const searchInput = document.getElementById('searchInput');
+    
+    // Debounce search
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            if (this.value.trim().length > 0) {
+                performSearch(this.value);
+            } else {
+                document.getElementById('searchResultsContainer').innerHTML = '';
+                document.getElementById('defaultResultsContainer').style.display = 'block';
+            }
+        }, 300);
+    });
+}
+
+function performSearch(query) {
+    const searchType = document.getElementById('searchType').value;
+    const loader = document.getElementById('loadingSpinner');
+    const resultsContainer = document.getElementById('searchResultsContainer');
+    const defaultContainer = document.getElementById('defaultResultsContainer');
+    
+    loader.classList.add('active');
+    defaultContainer.style.display = 'none';
+    
+    const url = `{% if clinic %}{% url 'checkin_dashboard_search' clinic.slug %}{% else %}/reception/checkin-dashboard/search/{% endif %}`;
+    const params = new URLSearchParams({
+        q: query,
+        type: searchType,
+        limit: 50
+    });
+    
+    fetch(`${url}?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            loader.classList.remove('active');
+            
+            if (!data.success || data.results.length === 0) {
+                resultsContainer.innerHTML = '<div class="no-results">No results found for your search.</div>';
+                return;
+            }
+            
+            resultsContainer.innerHTML = renderSearchResults(data.results);
+        })
+        .catch(error => {
+            loader.classList.remove('active');
+            console.error('Search error:', error);
+            resultsContainer.innerHTML = '<div class="no-results">Error performing search. Please try again.</div>';
+        });
+}
+
+function renderSearchResults(results) {
+    let html = '<div class="results-table"><table>';
+    html += `
         <thead>
             <tr>
-                <th>Date</th>
+                <th>Date & Time</th>
                 <th>Patient ID</th>
                 <th>Patient Name</th>
                 <th>Doctor</th>
-                <th>Prescription</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for v in tabular_visits %}
-            <tr>
-                <td>{{ v.check_in_date }}</td>
-                <td>{{ v.patient_id }}</td>
-                <td>{{ v.patient_name }}</td>
-                <td>{{ v.doctor_name }}</td>
-                <td>
-                    {% if v.prescription_id %}
-                        {% if clinic %}
-                            <a href="{% url 'view_prescription' clinic.slug v.prescription_id %}">View Prescription</a>
-                        {% else %}
-                            <a href="{% url 'view_prescription' v.prescription_id %}">View Prescription</a>
-                        {% endif %}
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>
-                    {% if clinic %}
-                        <a href="{% url 'patient_details' clinic.slug v.patient_pk %}">Details</a>
-                        &nbsp;|&nbsp;
-                        <a href="{% url 'patient_history' clinic.slug v.patient_pk %}">History</a>
-                    {% else %}
-                        <a href="{% url 'homepage' %}">Details</a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <div class="alert-info">No check-ins found for selected filters.</div>
-    {% endif %}
-</div>
-
-<div class="card">
-    <h3>Recent Visits</h3>
-    {% if recent_visits %}
-    <div class="table-responsive">
-    <table class="table table-hover table-sm">
-        <thead class="table-light">
-            <tr>
-                <th>Time</th>
-                <th>Patient</th>
-                <th>Patient ID</th>
-                <th>Checked-in by</th>
-                <th>Purpose</th>
                 <th>Status</th>
+                <th>Checked-in by</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            {% for v in recent_visits %}
+    `;
+    
+    results.forEach(result => {
+        const statusBadgeClass = {
+            'checked_in': 'bg-success',
+            'in_consultation': 'bg-info',
+            'completed': 'bg-primary',
+            'cancelled': 'bg-danger',
+        }[result.status] || 'bg-secondary';
+        
+        html += `
             <tr>
-                <td>{{ v.check_in_date|date:"H:i" }}</td>
-                <td>{{ v.patient.patient_name }}</td>
-                <td><strong>{{ v.patient.patient_id }}</strong></td>
-                <td>{% if v.checked_in_by %}{{ v.checked_in_by.username }}{% else %}-{% endif %}</td>
-                <td>{{ v.purpose|default:"-" }}</td>
+                <td>${result.check_in_time}</td>
+                <td><strong>${result.patient_id}</strong></td>
+                <td>${result.patient_name}</td>
+                <td>${result.doctor_name || '-'}</td>
+                <td><span class="badge ${statusBadgeClass}">${result.status_display}</span></td>
+                <td>${result.checked_in_by}</td>
                 <td>
-                    {% if v.status == 'checked_in' %}
-                        <span class="badge bg-success">{{ v.get_status_display }}</span>
-                    {% elif v.status == 'in_consultation' %}
-                        <span class="badge bg-info">{{ v.get_status_display }}</span>
-                    {% elif v.status == 'completed' %}
-                        <span class="badge bg-primary">{{ v.get_status_display }}</span>
-                    {% elif v.status == 'cancelled' %}
-                        <span class="badge bg-danger">{{ v.get_status_display }}</span>
-                    {% else %}
-                        <span class="badge bg-secondary">{{ v.get_status_display }}</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <div class="btn-group btn-group-sm" role="group">
-                        {% if clinic %}
-                            <a href="{% url 'checkin_patient_details' clinic.slug v.id %}" class="btn btn-outline-primary" title="View Details">
-                                👁️
-                            </a>
-                            <a href="{% url 'patient_details' clinic.slug v.patient.id %}" class="btn btn-outline-info" title="Patient Info">
-                                📋
-                            </a>
-                        {% else %}
-                            <a href="{% url 'homepage' %}" class="btn btn-outline-primary">Details</a>
-                        {% endif %}
+                    <div class="btn-group-sm">
+                        <a href="{% if clinic %}/clinic/{{ clinic.slug }}{% endif %}/reception/patient/${result.patient_pk}/" class="btn-action">📋 Details</a>
+                        <a href="{% if clinic %}/clinic/{{ clinic.slug }}{% endif %}/doctor/patient-history/${result.patient_pk}/" class="btn-action">📜 History</a>
+                        <a href="{% if clinic %}/clinic/{{ clinic.slug }}{% endif %}/reception/checkin/${result.id}/update-status/" class="btn-action">✏️ Update</a>
                     </div>
                 </td>
             </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    </div>
-    {% else %}
-    <div class="alert-info">No recent visits.</div>
-    {% endif %}
-</div>
+        `;
+    });
+    
+    html += '</tbody></table></div>';
+    return html;
+}
+
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('searchResultsContainer').innerHTML = '';
+    document.getElementById('defaultResultsContainer').style.display = 'block';
+}
+
+function toggleAdvancedFilters() {
+    const filters = document.getElementById('advancedFilters');
+    const icon = document.getElementById('filterToggleIcon');
+    
+    if (filters.style.display === 'none') {
+        filters.style.display = 'block';
+        icon.textContent = '▲';
+    } else {
+        filters.style.display = 'none';
+        icon.textContent = '▼';
+    }
+}
+
+function applyFilters() {
+    const params = new URLSearchParams();
+    
+    const granularity = document.getElementById('granularity').value;
+    const period = document.getElementById('period').value;
+    const specificDate = document.getElementById('specificDate').value;
+    const specificMonth = document.getElementById('specificMonth').value;
+    
+    if (granularity) params.append('granularity', granularity);
+    if (period) params.append('period', period);
+    if (specificDate) params.append('specific_date', specificDate);
+    if (specificMonth) params.append('specific_month', specificMonth);
+    
+    window.location.href = `{% if clinic %}{% url 'checkin_dashboard' clinic.slug %}{% else %}{% url 'checkin_dashboard_global' %}{% endif %}?${params}`;
+}
+</script>
 
 {% endblock %}
+
