@@ -3,56 +3,241 @@
 {% block title %}Login - SantKrupa Hospital{% endblock %}
 
 {% block content %}
-<div style="max-width: 500px; margin: 50px auto;">
-    <div class="card" style="background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%); color: #fff; border-left: none; text-align: center;">
-        <h1 style="color: #fff; border: none; padding: 0; margin-bottom: 10px;">{% if request.clinic %}🏥 {{ request.clinic.name }}{% else %}🏥 SantKrupa Hospital{% endif %}</h1>
-        <p style="color: #f0f0f0; margin: 0;">{% if request.clinic %}Login to {{ request.clinic.name }}{% else %}Login to Your Account{% endif %}</p>
-    </div>
-    
-    <div class="card">
+<style>
+    .login-wrapper {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        min-height: 75vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(-45deg, #1e3c72, #2a5298, #667eea, #764ba2);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+        border-radius: 24px;
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+        margin-top: 1rem;
+    }
+
+    /* Decorative blurred circles */
+    .login-wrapper::before,
+    .login-wrapper::after {
+        content: '';
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        filter: blur(40px);
+        z-index: 0;
+    }
+
+    .login-wrapper::before {
+        width: 300px;
+        height: 300px;
+        top: -100px;
+        left: -100px;
+    }
+
+    .login-wrapper::after {
+        width: 400px;
+        height: 400px;
+        bottom: -150px;
+        right: -150px;
+    }
+
+    @keyframes gradientBG {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        border-radius: 20px;
+        padding: 2.5rem;
+        width: 100%;
+        max-width: 450px;
+        color: #fff;
+        z-index: 1;
+        position: relative;
+    }
+
+    .glass-card h2 {
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .glass-card p.subtitle {
+        color: rgba(255, 255, 255, 0.85);
+        font-weight: 300;
+        margin-bottom: 2rem;
+    }
+
+    /* Form Inputs */
+    .form-floating>.form-control {
+        background-color: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+        border-radius: 12px;
+    }
+
+    .form-floating>.form-control:focus {
+        background-color: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.5);
+        box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.1);
+        color: #fff;
+    }
+
+    .form-floating>label {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .form-floating>.form-control:focus~label,
+    .form-floating>.form-control:not(:placeholder-shown)~label {
+        color: rgba(255, 255, 255, 0.9);
+        background: transparent;
+    }
+
+    /* Fix autofill background in webkit */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.1) inset !important;
+        -webkit-text-fill-color: white !important;
+        transition: background-color 5000s ease-in-out 0s;
+        border-radius: 12px;
+    }
+
+    .btn-login {
+        background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
+        border: none;
+        border-radius: 12px;
+        color: #fff;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        padding: 0.9rem;
+        width: 100%;
+        margin-top: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        background: linear-gradient(135deg, #3b82f6 0%, #4ade80 100%);
+        color: white;
+    }
+
+
+
+    .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 1.5rem;
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        font-size: 0.95rem;
+        transition: color 0.3s;
+    }
+
+    .back-link:hover {
+        color: #fff;
+    }
+
+    .custom-alert {
+        background: rgba(220, 53, 69, 0.2);
+        border: 1px solid rgba(220, 53, 69, 0.3);
+        color: #fff;
+        border-radius: 10px;
+        padding: 0.8rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        font-size: 0.95rem;
+    }
+
+    .custom-alert.alert-success {
+        background: rgba(25, 135, 84, 0.2);
+        border: 1px solid rgba(25, 135, 84, 0.3);
+    }
+</style>
+
+<div class="login-wrapper">
+    <div class="glass-card">
+        <div class="text-center mb-4">
+            <h2>{% if request.clinic %}🏥 {{ request.clinic.name }}{% else %}🏥 SantKrupa Hospital{% endif %}</h2>
+            <p class="subtitle">{% if request.clinic %}Welcome back to {{ request.clinic.name }}{% else %}Welcome back,
+                please log in{% endif %}</p>
+        </div>
+
+        <!-- We'll keep local messages if they exist, but base.html also has them. It's okay. -->
         {% if messages %}
-            {% for message in messages %}
-                <div class="alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">
-                    {{ message }}
-                </div>
-            {% endfor %}
+        {% for message in messages %}
+        <div class="custom-alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
         {% endif %}
-        
+
         <form method="post">
             {% csrf_token %}
-            
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" class="form-control" required>
+
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
+                <label for="username"><i class="fas fa-user me-2"></i>Username</label>
             </div>
-            
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" class="form-control" required>
+
+            <div class="form-floating mb-3 position-relative">
+                <input type="password" class="form-control" id="password" name="password" placeholder="Password"
+                    required style="padding-right: 2.5rem;">
+                <label for="password"><i class="fas fa-lock me-2"></i>Password</label>
+                <button type="button" class="btn position-absolute top-50 end-0 translate-middle-y me-2 p-0"
+                    id="togglePassword"
+                    style="color: rgba(255, 255, 255, 0.7); z-index: 5; border: none; background: transparent;">
+                    <i class="fas fa-eye"></i>
+                </button>
             </div>
-            
-            <button type="submit" class="btn" style="width: 100%; text-align: center; font-size: 1.1em; padding: 12px;">
-                🔓 Login
+
+            <button type="submit" class="btn btn-login">
+                Sign In <i class="fas fa-arrow-right ms-2"></i>
             </button>
         </form>
-    </div>
-    
-    <div class="card" style="background-color: #f0f7ff; border-left-color: #17a2b8; text-align: center;">
-        <h3 style="color: #0c5460; margin-top: 0;">Demo Accounts</h3>
-        <p style="color: #0c5460; margin: 10px 0;">
-            <strong>Receptionist:</strong> Use your assigned username and password
-        </p>
-        <p style="color: #0c5460; margin: 10px 0;">
-            <strong>Doctor:</strong> Use your assigned credentials
-        </p>
-        <p style="color: #0c5460; margin: 0;">
-            <strong>Patient:</strong> Patient ID is auto-generated at registration
-        </p>
-    </div>
-    
-    <div class="card" style="text-align: center;">
-        <p>Don't have an account? Contact the reception desk.</p>
-        <a href="{% url 'homepage' %}" class="btn btn-secondary">← Back to Home</a>
+
+        <a href="{% url 'homepage' %}" class="back-link">
+            <i class="fas fa-arrow-left me-1"></i> Back to Home
+        </a>
     </div>
 </div>
+
+<script>
+    document.getElementById('togglePassword').addEventListener('click', function () {
+        const passwordInput = document.getElementById('password');
+        const icon = this.querySelector('i');
+
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    });
+</script>
 {% endblock %}
